@@ -111,6 +111,15 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
     return () => document.removeEventListener('keydown', onKey)
   }, [shortcut])
 
+  // Auto-play each new sentence after "Câu tiếp theo" (not on the very first one: the
+  // browser may block audio before any interaction, and StrictMode re-runs effects).
+  const playedIndex = useRef(0)
+  useEffect(() => {
+    if (playedIndex.current === i) return
+    playedIndex.current = i
+    playRef.current(false)
+  }, [i])
+
   // Enter moves on once a sentence has been checked.
   const nextRef = useRef(next)
   useEffect(() => {
@@ -118,7 +127,11 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
   })
   useEffect(() => {
     if (!checked) return
+    // The Enter that triggered "Kiểm tra" is still bubbling to `document` when React flushes
+    // this effect; ignore any key event that started before the listener was armed.
+    const armedAt = performance.now()
     const onKey = (e: KeyboardEvent) => {
+      if (e.timeStamp < armedAt) return
       if (e.key !== 'Enter' || e.repeat) return
       if (e.target instanceof HTMLButtonElement) return // let the focused button handle it
       e.preventDefault()

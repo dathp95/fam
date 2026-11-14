@@ -38,6 +38,80 @@ describe('splitSentences', () => {
   })
 })
 
+describe('splitSentences with abbreviations', () => {
+  it('does not split inside D.C. when a lowercase word follows', () => {
+    expect(splitSentences('I live in Washington, D.C. and I like it very much.')).toEqual([
+      'I live in Washington, D.C. and I like it very much.',
+    ])
+  })
+
+  it('splits after D.C. when a capital letter follows', () => {
+    expect(splitSentences('I live in Washington, D.C. Anna lives there too.')).toEqual([
+      'I live in Washington, D.C.',
+      'Anna lives there too.',
+    ])
+  })
+
+  it('keeps titles and a.m. inside one sentence', () => {
+    expect(splitSentences('Mr. Smith and Dr. Lee arrive at 9 a.m. today.')).toEqual([
+      'Mr. Smith and Dr. Lee arrive at 9 a.m. today.',
+    ])
+  })
+
+  it('splits after p.m. before a capital letter', () => {
+    expect(splitSentences('It is 5 p.m. We go home.')).toEqual(['It is 5 p.m.', 'We go home.'])
+  })
+
+  it('treats the last period as the sentence end at the end of the text', () => {
+    expect(splitSentences('She works in the U.S.')).toEqual(['She works in the U.S.'])
+    expect(splitSentences('She works in the U.S. He works in the U.K.')).toEqual([
+      'She works in the U.S.',
+      'He works in the U.K.',
+    ])
+  })
+
+  it('never ends a sentence after e.g. / i.e. / vs. / Jr.', () => {
+    expect(splitSentences('Eat fruit, e.g. Apples are good.')).toEqual(['Eat fruit, e.g. Apples are good.'])
+    expect(splitSentences('It is cheap, i.e. Free.')).toEqual(['It is cheap, i.e. Free.'])
+    expect(splitSentences('Cats vs. Dogs is a game.')).toEqual(['Cats vs. Dogs is a game.'])
+    expect(splitSentences('Martin Luther King Jr. Was kind.')).toEqual(['Martin Luther King Jr. Was kind.'])
+  })
+
+  it('splits after etc. only when it is followed by a capital letter or the end', () => {
+    expect(splitSentences('We eat rice, fish, etc. and drink tea.')).toEqual(['We eat rice, fish, etc. and drink tea.'])
+    expect(splitSentences('We eat rice, fish, etc. Then we sleep.')).toEqual([
+      'We eat rice, fish, etc.',
+      'Then we sleep.',
+    ])
+  })
+
+  it('works inside quotes and brackets and after ? or !', () => {
+    expect(splitSentences('He said "I live in D.C." Then he left.')).toEqual([
+      'He said "I live in D.C."',
+      'Then he left.',
+    ])
+    expect(splitSentences('[He is in the U.S. now.] She is here.')).toEqual([
+      '[He is in the U.S. now.]',
+      'She is here.',
+    ])
+    expect(splitSentences('Is it 5 p.m.? Yes! Mr. Lee is late.')).toEqual(['Is it 5 p.m.?', 'Yes!', 'Mr. Lee is late.'])
+  })
+
+  it('still splits long sentences containing abbreviations at commas', () => {
+    const long =
+      'When Dr. Lee arrived at the old station in Washington, D.C. at nine a.m. today, the tired workers were already waiting, and the quiet children ran to school.'
+    const parts = splitSentences(long)
+    expect(parts.length).toBeGreaterThan(1)
+    for (const p of parts) expect(words(p)).toBeGreaterThanOrEqual(6)
+    expect(parts.join(' ')).toBe(long)
+  })
+
+  it('never leaks the placeholder character', () => {
+    const out = splitSentences('Mr. Lee lives in the U.S. now.  odd char.')
+    expect(out.join(' ')).not.toMatch(//)
+  })
+})
+
 describe('alignSentences', () => {
   const texts = ['First sentence here.', 'Second one.', 'A third, rather longer sentence.', 'End.']
 

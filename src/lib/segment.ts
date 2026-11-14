@@ -13,9 +13,39 @@ const MIN_CHUNK_WORDS = 6
 const wordCount = (s: string) => s.split(' ').length
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-/** Split on . ! ? ; long sentences are further split at , ; : into chunks of ≥ 6 words. */
+/** Stands in for a period that belongs to an abbreviation, so it does not end a sentence. */
+const PROTECTED_DOT = String.fromCharCode(0xe000)
+
+/** After a final period: closing quotes/brackets, then whitespace + capital letter (or end of text). */
+const SENTENCE_BREAK_AFTER = /^["')\]]*(?:\s+["'([]?[A-Z]|\s*$)/
+
+/**
+ * Replace periods that are part of an abbreviation with PROTECTED_DOT:
+ * - titles (Mr. Mrs. Ms. Dr. St. Jr. Sr.) and "vs." never end a sentence;
+ * - "etc." is protected only when followed by a lowercase word;
+ * - multi-letter dotted abbreviations (U.S., D.C., a.m., e.g.): inner periods are always protected,
+ *   the last one only ends the sentence when followed by a capital letter or the end of the text
+ *   ("e.g." and "i.e." never end a sentence).
+ */
+function protectAbbreviations(text: string): string {
+  return text
+    .replace(/\b(?:Mr|Mrs|Ms|Dr|St|Jr|Sr|vs)\./g, (m) => m.slice(0, -1) + PROTECTED_DOT)
+    .replace(/\betc\.(?=\s+[a-z])/g, 'etc' + PROTECTED_DOT)
+    .replace(/(?<![A-Za-z])(?:[A-Za-z]\.){2,}/g, (m, offset: number, whole: string) => {
+      const inner = m.slice(0, -1).replaceAll('.', PROTECTED_DOT)
+      const alwaysMidSentence = /^(?:e\.g|i\.e)\.$/i.test(m)
+      const endsSentence =
+        !alwaysMidSentence && SENTENCE_BREAK_AFTER.test(whole.slice(offset + m.length))
+      return inner + (endsSentence ? '.' : PROTECTED_DOT)
+    })
+}
+
+/**
+ * Split on . ! ? (not after abbreviations such as Mr., D.C., a.m.);
+ * long sentences are further split at , ; : into chunks of ≥ 6 words.
+ */
 export function splitSentences(text: string): string[] {
-  const flat = text.replace(/\s+/g, ' ').trim()
+  const flat = protectAbbreviations(text.replaceAll(PROTECTED_DOT, '').replace(/\s+/g, ' ').trim())
   if (!flat) return []
   const raw = (flat.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g) ?? [])
     .map((s) => s.trim())
@@ -39,7 +69,7 @@ export function splitSentences(text: string): string[] {
       else out.push(buf)
     }
   }
-  return out
+  return out.map((s) => s.replaceAll(PROTECTED_DOT, '.'))
 }
 
 /** Midpoints (seconds) of silent stretches ≥ 0.3 s, using RMS over 50 ms frames. */
