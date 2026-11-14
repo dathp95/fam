@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ALL_TILES,
   bonusLessonId,
+  bonusPictureId,
   buildBonusLesson,
   contentIssues,
   isBonusLesson,
@@ -161,5 +163,23 @@ describe('contentIssues', () => {
 
   it('names the picture in each message', () => {
     expect(contentIssues(picture({ id: 'met-77', description: s(1) }))[0]).toContain('met-77')
+  })
+})
+
+describe('bonusPictureId / ALL_TILES', () => {
+  it('maps a bonus lesson id back to its picture id', () => {
+    expect(bonusPictureId(bonusLessonId('met-39799'))).toBe('met-39799')
+    expect(bonusPictureId('bonus:met-1')).toBe('met-1')
+  })
+
+  it('is null for other lessons', () => {
+    expect(bonusPictureId('voa-l01-welcome')).toBeNull()
+    expect(bonusPictureId('sample')).toBeNull()
+    expect(bonusPictureId('')).toBeNull()
+  })
+
+  it('lists every tile index', () => {
+    expect(ALL_TILES).toEqual([0, 1, 2, 3, 4, 5])
+    expect(ALL_TILES).toHaveLength(PICTURE_TILES)
   })
 })

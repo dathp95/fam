@@ -43,6 +43,9 @@ export function isPermutation(order: unknown, n: number): order is number[] {
   return true
 }
 
+/** Every tile index, for showing a complete picture. */
+export const ALL_TILES: number[] = Array.from({ length: PICTURE_TILES }, (_, i) => i)
+
 /** Indexes of the open tiles: the first `opened` entries of `order`. */
 export function revealedTiles(state: PictureProgress | null): number[] {
   return state ? state.order.slice(0, state.opened) : []
@@ -54,6 +57,10 @@ export const isPictureComplete = (state: PictureProgress | null): boolean =>
 export const BONUS_PREFIX = 'bonus:'
 export const bonusLessonId = (pictureId: string) => `${BONUS_PREFIX}${pictureId}`
 export const isBonusLesson = (lessonId: string) => lessonId.startsWith(BONUS_PREFIX)
+
+/** The picture a bonus lesson belongs to ("bonus:met-1" -> "met-1"); null for any other lesson. */
+export const bonusPictureId = (lessonId: string): string | null =>
+  isBonusLesson(lessonId) ? lessonId.slice(BONUS_PREFIX.length) : null
 
 /** Bonus lesson: dictation of the picture's English intro sentences, read aloud by speechSynthesis. */
 export function buildBonusLesson(picture: Picture): SampleLesson {

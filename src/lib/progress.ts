@@ -28,8 +28,10 @@ export interface Progress {
   lessonsDone: Record<string, LessonDone>
   /** The picture being uncovered, or null before the first one is picked. */
   picture: PictureProgress | null
-  /** Pictures completed in the current cycle (oldest first). */
+  /** Pictures completed in the current cycle (oldest first). Reset when a new cycle starts. */
   picturesDone: string[]
+  /** Every picture ever completed (oldest first), never reset: the album. */
+  album: string[]
 }
 
 const KEY = 'fam.prog'
@@ -45,6 +47,7 @@ const emptyProgress = (): Progress => ({
   lessonsDone: {},
   picture: null,
   picturesDone: [],
+  album: [],
 })
 
 const dayString = (d: Date) => d.toLocaleDateString('en-CA')
@@ -75,7 +78,7 @@ function parsePictureProgress(raw: unknown): PictureProgress | null {
 }
 
 /** Unique, non-empty ids in their original order. */
-function parsePicturesDone(raw: unknown): string[] {
+function parseIds(raw: unknown): string[] {
   if (!Array.isArray(raw)) return []
   const out: string[] = []
   for (const v of raw as unknown[]) {
@@ -84,18 +87,29 @@ function parsePicturesDone(raw: unknown): string[] {
   return out
 }
 
+/** Album for data saved before it existed: the pictures done in the cycle, plus a finished current one. */
+function legacyAlbum(picturesDone: string[], picture: PictureProgress | null): string[] {
+  const ids = [...picturesDone]
+  if (picture && picture.opened >= PICTURE_TILES && !ids.includes(picture.id)) ids.push(picture.id)
+  return ids
+}
+
 export function loadProgress(): Progress {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null')
     if (isRecord(raw)) {
+      const picture = parsePictureProgress(raw.picture)
+      const picturesDone = parseIds(raw.picturesDone)
       return {
         xp: Number(raw.xp) || 0,
         streak: Number(raw.streak) || 0,
         last: typeof raw.last === 'string' ? raw.last : '',
         sentences: Number(raw.sentences) || 0,
         lessonsDone: parseLessonsDone(raw.lessonsDone),
-        picture: parsePictureProgress(raw.picture),
-        picturesDone: parsePicturesDone(raw.picturesDone),
+        picture,
+        picturesDone,
+        // Saved before the album existed: start it from what is known to be completed.
+        album: Array.isArray(raw.album) ? parseIds(raw.album) : legacyAlbum(picturesDone, picture),
       }
     }
   } catch {
@@ -181,6 +195,20 @@ export function ensureActivePicture(p: Progress, pictures: Picture[], random: Ra
   return { ...p, picture: startPicture(next.picture, random), picturesDone: next.picturesDone }
 }
 
+/**
+ * Call when a new lesson attempt starts. A completed picture stays on Home until then (description,
+ * bonus lesson); from here on the learner works on a NEW, still covered picture, so the Practice
+ * screen never shows the finished one. Any other state (no picture, picture still being opened,
+ * picture no longer in the catalog) is returned unchanged. Pure.
+ */
+export function advancePicture(p: Progress, pictures: Picture[], random: Random = Math.random): Progress {
+  const current = p.picture
+  if (!current || current.opened < PICTURE_TILES || !pictures.some((x) => x.id === current.id)) return p
+  const next = pickNextPicture(pictures, p.picturesDone, random)
+  if (!next) return p
+  return { ...p, picture: startPicture(next.picture, random), picturesDone: next.picturesDone }
+}
+
 /** What the result screen should say about the picture after finishing a lesson. */
 export type PictureOutcome =
   | {
@@ -201,7 +229,7 @@ export type PictureOutcome =
 /**
  * Apply one finished lesson to the picture: every pass (average ≥ PASS_SCORE, replays included)
  * opens the next `tilesPerPass` tiles (never more than the picture has). Opening the 6th tile
- * completes the picture and adds it to `picturesDone`. A pass after a completed picture starts a
+ * completes the picture and adds it to `picturesDone` and to the album. A pass after a completed picture starts a
  * new random one first. Nothing happens below PASS_SCORE.
  * Without pictures the outcome is null. Pure.
  */
@@ -230,11 +258,15 @@ export function recordPicturePass(
 
   const opened = Math.min(PICTURE_TILES, state.opened + Math.max(1, Math.floor(tilesPerPass)))
   const picture: PictureProgress = { ...state, opened }
-  if (opened === PICTURE_TILES && !done.includes(picture.id)) done = [...done, picture.id]
+  let album = p.album
+  if (opened === PICTURE_TILES) {
+    if (!done.includes(picture.id)) done = [...done, picture.id]
+    if (!album.includes(picture.id)) album = [...album, picture.id]
+  }
   const shown = pictures.find((x) => x.id === picture.id)
   if (!shown) return { progress: p, outcome: null }
   return {
-    progress: { ...p, picture, picturesDone: done },
+    progress: { ...p, picture, picturesDone: done, album },
     outcome: {
       kind: 'opened',
       picture: shown,
@@ -245,4 +277,9 @@ export function recordPicturePass(
       started,
     },
   }
+}
+
+/** The pictures of the album that are still in the catalog, oldest first. */
+export function albumPictures(p: Pick<Progress, 'album'>, pictures: Picture[]): Picture[] {
+  return p.album.flatMap((id) => pictures.find((x) => x.id === id) ?? [])
 }

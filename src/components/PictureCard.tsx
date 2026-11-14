@@ -9,12 +9,14 @@ interface Props {
   /** The bonus lesson of this picture was passed before. */
   bonusDone: boolean
   onStartBonus: () => void
+  /** Shown in the album: a finished picture, without the progress caption and "next picture" hint. */
+  inAlbum?: boolean
 }
 
 const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
 
 /** The picture being uncovered; once complete it also shows the description, credit and bonus. */
-export function PictureCard({ picture, state, bonusDone, onStartBonus }: Props) {
+export function PictureCard({ picture, state, bonusDone, onStartBonus, inAlbum = false }: Props) {
   const complete = isPictureComplete(state)
   const { credit } = picture.image
 
@@ -22,9 +24,11 @@ export function PictureCard({ picture, state, bonusDone, onStartBonus }: Props) 
     <div className="card stack picture-card">
       <h3>{complete ? picture.title : 'Bức tranh bí ẩn'}</h3>
       <Picture picture={picture} revealed={revealedTiles(state)} />
-      <p className="muted" role="status">
-        Đã mở {state.opened}/{PICTURE_TILES} mảnh
-      </p>
+      {!inAlbum && (
+        <p className="muted" role="status">
+          Đã mở {state.opened}/{PICTURE_TILES} mảnh
+        </p>
+      )}
 
       {!complete && (
         <p className="muted">
@@ -60,7 +64,7 @@ export function PictureCard({ picture, state, bonusDone, onStartBonus }: Props) 
             </button>
             {bonusDone && <span className="tag">Đã hoàn thành</span>}
           </div>
-          <p className="muted">Hoàn thành thêm một bài nữa để bắt đầu bức tranh mới.</p>
+          {!inAlbum && <p className="muted">Hoàn thành thêm một bài nữa để bắt đầu bức tranh mới.</p>}
         </div>
       )}
     </div>

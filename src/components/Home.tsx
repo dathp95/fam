@@ -3,7 +3,8 @@ import { groupStaticLessons } from '../lib/lessonGroups.ts'
 import { bonusLessonId, buildBonusLesson } from '../lib/pictures.ts'
 import type { LessonDone, Progress } from '../lib/progress.ts'
 import { LESSON_SOURCES, type LessonSourceId } from '../lib/sources.ts'
-import type { Lesson, MediaLesson, StaticLesson } from '../lib/types.ts'
+import { assetUrl } from '../lib/catalog.ts'
+import type { Lesson, MediaLesson, Picture, StaticLesson } from '../lib/types.ts'
 import { PictureCard } from './PictureCard.tsx'
 
 interface Props {
@@ -20,6 +21,9 @@ interface Props {
   onEdit: (lesson: MediaLesson) => void
   onDelete: (lesson: MediaLesson) => void
   onNew: () => void
+  /** Completed pictures (the album), oldest first. */
+  album: Picture[]
+  onOpenAlbum: () => void
 }
 
 const CATALOG_SECTION_ID = 'catalog-section'
@@ -37,6 +41,8 @@ export function Home({
   onEdit,
   onDelete,
   onNew,
+  album,
+  onOpenAlbum,
 }: Props) {
   function pickSource(id: LessonSourceId) {
     switch (id) {
@@ -108,6 +114,25 @@ export function Home({
             bonusDone={Object.hasOwn(progress.lessonsDone, bonusLessonId(activePicture.id))}
             onStartBonus={() => onStart(buildBonusLesson(activePicture))}
           />
+        </section>
+      )}
+
+      {catalog && catalog.pictures.length > 0 && (
+        <section className="stack" aria-labelledby="album-title">
+          <h2 id="album-title">Album</h2>
+          <button className="card album-entry" onClick={onOpenAlbum}>
+            <span className="stack">
+              <b>
+                Đã sưu tập {album.length}/{catalog.pictures.length} tranh
+              </b>
+              <span className="muted">Xem lại các tranh bạn đã mở</span>
+            </span>
+            <span className="album-thumbs">
+              {album.slice(-3).map((p) => (
+                <img key={p.id} src={assetUrl(p.image.src)} alt="" loading="lazy" />
+              ))}
+            </span>
+          </button>
         </section>
       )}
 

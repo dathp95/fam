@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Album } from './components/Album.tsx'
 import { Home } from './components/Home.tsx'
 import { NewLesson } from './components/NewLesson.tsx'
 import { Practice } from './components/Practice.tsx'
@@ -9,8 +10,10 @@ import { useTheme } from './hooks/useTheme.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { averageScore } from './lib/diff.ts'
 import { isSourcePickerVisible } from './lib/features.ts'
-import { isBonusLesson, revealedTiles } from './lib/pictures.ts'
+import { ALL_TILES, bonusLessonId, bonusPictureId, buildBonusLesson, isBonusLesson, revealedTiles } from './lib/pictures.ts'
 import {
+  advancePicture,
+  albumPictures,
   ensureActivePicture,
   loadProgress,
   recordAnswer,
@@ -26,6 +29,7 @@ import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
 type View =
   | { name: 'home' }
   | { name: 'new' }
+  | { name: 'album' }
   | { name: 'review'; draft: Draft }
   | { name: 'practice'; lesson: Lesson; source: PlaybackSource; run: number }
   | {
@@ -104,10 +108,16 @@ export default function App() {
     }
   }
 
+  /** A finished picture is replaced by a new, covered one as soon as another lesson starts. */
+  function beginAttempt(lesson: Lesson) {
+    if (catalog && !isBonusLesson(lesson.id)) setProgress((p) => advancePicture(p, catalog.pictures))
+  }
+
   async function start(lesson: Lesson) {
     setMessage('')
     const source = await loadSource(lesson)
     if (source === undefined) return
+    beginAttempt(lesson)
     setView({ name: 'practice', lesson, source, run: 0 })
   }
 
@@ -169,8 +179,14 @@ export default function App() {
 
   // The practice screen is full-height and has its own header, so it is rendered outside .wrap.
   if (view.name === 'practice') {
-    // The picture as it is BEFORE this attempt: tiles only open when the lesson ends.
-    const active = progress.picture ? catalog?.pictures.find((p) => p.id === progress.picture?.id) : undefined
+    // The picture as it is BEFORE this attempt: tiles only open when the lesson ends. A bonus lesson
+    // shows its own (finished) picture, whichever one is being uncovered now.
+    const bonusId = bonusPictureId(view.lesson.id)
+    const active = bonusId
+      ? catalog?.pictures.find((p) => p.id === bonusId)
+      : progress.picture
+        ? catalog?.pictures.find((p) => p.id === progress.picture?.id)
+        : undefined
     return (
       <Practice
         key={view.run}
@@ -178,7 +194,7 @@ export default function App() {
         source={view.source}
         progress={progress}
         picture={active ?? null}
-        revealed={revealedTiles(progress.picture)}
+        revealed={bonusId ? ALL_TILES : revealedTiles(progress.picture)}
         onAnswered={onAnswered}
         onQuit={goHome}
         onFinish={(scores, gained) =>
@@ -203,6 +219,17 @@ export default function App() {
           onEdit={edit}
           onDelete={remove}
           onNew={() => setView({ name: 'new' })}
+          album={albumPictures(progress, catalog?.pictures ?? [])}
+          onOpenAlbum={() => setView({ name: 'album' })}
+        />
+      )}
+      {view.name === 'album' && (
+        <Album
+          pictures={albumPictures(progress, catalog?.pictures ?? [])}
+          total={catalog?.pictures.length ?? 0}
+          bonusDone={(id) => Object.hasOwn(progress.lessonsDone, bonusLessonId(id))}
+          onStartBonus={(picture) => void start(buildBonusLesson(picture))}
+          onBack={goHome}
         />
       )}
       {view.name === 'new' && (
@@ -214,9 +241,10 @@ export default function App() {
           scores={view.scores}
           gained={view.gained}
           outcome={view.outcome}
-          onAgain={() =>
+          onAgain={() => {
+            beginAttempt(view.lesson)
             setView({ name: 'practice', lesson: view.lesson, source: view.source, run: view.run + 1 })
-          }
+          }}
           onHome={goHome}
         />
       )}

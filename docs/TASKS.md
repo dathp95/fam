@@ -157,6 +157,7 @@ interface Progress {
   - Ngược lại: nếu chưa có tranh, tranh đã hoàn chỉnh hoặc không còn trong catalog thì bắt đầu tranh mới trước (`started = true` khi trước đó đã có tranh); sau đó `opened + 1` (kể cả luyện lại bài cũ). Khi `opened` chạm 6 thì tranh hoàn chỉnh và thêm vào `picturesDone` (không trùng). `outcome = { kind: 'opened', picture, revealed, fresh: order[opened-1], count, complete, started }`.
   - Mỗi lần qua bài mở `tilesPerPass` mảnh kế tiếp (tối thiểu 1, không vượt quá 6); `fresh` là danh sách các ô vừa mở. Màn Kết quả ghi "Bạn vừa mở k mảnh (n/6)" khi mở nhiều ô cùng lúc, "Bạn vừa mở mảnh thứ n/6" khi mở một ô.
   - Không có tranh nào trong catalog: `outcome = null`.
+- `advancePicture(p, pictures, random)`: gọi khi bắt đầu luyện một bài (trừ bài thưởng, cả khi bấm "Luyện lại" ở màn Kết quả). Nếu tranh hiện tại đã hoàn chỉnh thì chọn ngay một tranh mới còn che (`opened = 0`), để màn luyện tập luôn hiện tranh còn trắng chứ không hiện lại tranh vừa xong. Tranh hoàn chỉnh chỉ hiện trên Home (mô tả, bài thưởng) cho đến lúc đó. Trạng thái khác thì giữ nguyên.
 - Mọi bài hoàn thành đều tính (bài có sẵn, bài của người dùng, bài mẫu) **trừ bài thưởng** (`bonus:<pictureId>`), vì bài thưởng chỉ dành cho tranh đã hoàn chỉnh. Việc ghi điểm cao nhất của bài vào `lessonsDone` do `recordLessonDone` đảm nhiệm, tách khỏi việc mở mảnh.
 
 ### E3. Giao diện
@@ -165,6 +166,13 @@ interface Progress {
 - **Result** khi qua bài: "Bạn vừa mở mảnh thứ k/6" và ảnh với ô vừa mở được làm nổi (viền nhấn và hiệu ứng mờ dần ~600 ms; tắt hiệu ứng khi `prefers-reduced-motion`, viền vẫn giữ). Nếu vừa bắt đầu tranh mới: "Một bức tranh mới bắt đầu!". Khi vừa hoàn chỉnh: nhắc về trang chính để xem giới thiệu và làm bài thưởng. Điểm < `PASS_SCORE`: "Cần điểm trung bình từ 60 để mở mảnh tranh" và nút "Luyện lại".
 - **Bài thưởng**: bài `tts` dựng từ `picture.intro` (hàm thuần `buildBonusLesson` trong `pictures.ts`; id `bonus:<pictureId>`, `langId: 'en'`), chép chính tả các câu tiếng Anh. Hoàn thành thì ghi điểm vào `lessonsDone` với khóa `bonus:<pictureId>`, nhận XP như thường, không mở mảnh.
 - Toàn bộ chữ trên giao diện là tiếng Việt, trừ `intro`.
+
+### E3b. Album
+- `Progress.album: string[]` là danh sách mọi tranh đã hoàn thành (cũ → mới), **không bao giờ bị đặt lại** (khác `picturesDone`, bị đặt lại mỗi vòng). Một tranh được thêm vào khi mở đủ 6 mảnh, không trùng. `loadProgress` với dữ liệu cũ chưa có `album` (hoặc `album` hỏng) thì suy ra từ `picturesDone` cộng tranh hiện tại nếu đã hoàn chỉnh.
+- Hàm thuần `albumPictures(progress, pictures)` trả về các tranh trong album còn tồn tại trong catalog, theo thứ tự đã sưu tập.
+- **Home**: mục "Album" (hiện khi catalog có tranh) với dòng "Đã sưu tập n/N tranh" và tối đa 3 ảnh thu nhỏ; bấm vào để mở màn Album.
+- **Màn Album** (`Album.tsx`): lưới 2 cột các tranh đã sưu tập (ảnh đầy đủ, không che, kèm tên); chưa có tranh thì hiện câu hướng dẫn. Bấm một tranh để xem chi tiết (dùng `PictureCard` với `inAlbum`): tên, ảnh đầy đủ, mô tả tiếng Việt, nguồn ảnh và nút "Bài thưởng". Bài thưởng bắt đầu từ album hiện đúng tranh đó (đã mở đủ 6 mảnh), không đổi tranh đang mở và không mở mảnh.
+- Khi bắt đầu một bài, tranh hoàn chỉnh trên Home được thay bằng tranh mới (`advancePicture`), nhưng tranh cũ vẫn nằm trong album.
 
 ### E4. Công cụ nạp tranh (`npm run ingest:pictures`)
 Mã: `scripts/ingest-pictures.ts` (chạy bằng `node`, không thêm thư viện); phần thuần nằm ở `src/lib/ingest.ts` và có test. Thư mục `inbox/` đã được gitignore.

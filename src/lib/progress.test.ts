@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { isPermutation, PICTURE_TILES, revealedTiles, TILES_PER_PASS } from './pictures.ts'
 import {
+  advancePicture,
+  albumPictures,
   ensureActivePicture,
   levelOf,
   loadProgress,
@@ -26,6 +28,7 @@ const progress = (over: Partial<Progress> = {}): Progress => ({
   lessonsDone: {},
   picture: null,
   picturesDone: [],
+  album: [],
   ...over,
 })
 
@@ -495,5 +498,159 @@ describe('recordPicturePass: tiles per pass', () => {
     expect(recordPicturePass(progress(), [A], 80, seq(0), 0).progress.picture?.opened).toBe(1)
     expect(recordPicturePass(progress(), [A], 80, seq(0), -3).progress.picture?.opened).toBe(1)
     expect(recordPicturePass(progress(), [A], 80, seq(0), 2.9).progress.picture?.opened).toBe(2)
+  })
+})
+
+describe('advancePicture', () => {
+  const complete = (id: string, extra: Partial<Progress> = {}) =>
+    progress({ picture: { id, opened: PICTURE_TILES, order: [3, 1, 5, 0, 2, 4] }, picturesDone: [id], ...extra })
+
+  it('replaces a completed picture with a new, covered one', () => {
+    const p = advancePicture(complete('met-1'), [A, B], seq(0))
+    expect(p.picture?.id).toBe('met-2') // not the one that was just finished
+    expect(p.picture?.opened).toBe(0)
+    expect(isPermutation(p.picture?.order, PICTURE_TILES)).toBe(true)
+    expect(revealedTiles(p.picture)).toEqual([])
+    expect(p.picturesDone).toEqual(['met-1'])
+  })
+
+  it('leaves a picture that is still being opened alone', () => {
+    const p = progress({ picture: { id: 'met-1', opened: 3, order: [0, 1, 2, 3, 4, 5] } })
+    expect(advancePicture(p, [A, B], seq(0))).toBe(p)
+  })
+
+  it('does nothing without a picture or without pictures', () => {
+    const none = progress()
+    expect(advancePicture(none, [A, B], seq(0))).toBe(none)
+    const done = complete('met-1')
+    expect(advancePicture(done, [], seq(0))).toBe(done)
+  })
+
+  it('leaves a picture that is no longer in the catalog to ensureActivePicture', () => {
+    const gone = complete('gone')
+    expect(advancePicture(gone, [A, B], seq(0))).toBe(gone)
+  })
+
+  it('starts a new cycle after the last picture, avoiding the one just completed', () => {
+    const p = advancePicture(complete('met-2', { picturesDone: ['met-1', 'met-2'] }), [A, B], seq(0))
+    expect(p.picture?.id).toBe('met-1')
+    expect(p.picturesDone).toEqual(['met-2'])
+  })
+
+  it('repeats the only picture when there is just one', () => {
+    const p = advancePicture(complete('met-1'), [A], seq(0))
+    expect(p.picture).toMatchObject({ id: 'met-1', opened: 0 })
+    expect(p.picturesDone).toEqual([])
+  })
+
+  it('does not mutate its input', () => {
+    const start = complete('met-1')
+    const copy = structuredClone(start)
+    advancePicture(start, [A, B], seq(0))
+    expect(start).toEqual(copy)
+  })
+
+  it('then the next pass opens tiles of the NEW picture, without a "started" notice', () => {
+    const fresh = advancePicture(complete('met-1'), [A, B], seq(0))
+    const r = recordPicturePass(fresh, [A, B], 80, seq(0), 1)
+    expect(r.progress.picture?.id).toBe('met-2')
+    expect(r.outcome).toMatchObject({ kind: 'opened', count: 1, started: false })
+  })
+})
+
+describe('album', () => {
+  const stored = (value: unknown) =>
+    vi.stubGlobal('localStorage', {
+      getItem: () => JSON.stringify(value),
+      setItem: () => {},
+    })
+  afterEach(() => vi.unstubAllGlobals())
+  const ORDER = [0, 1, 2, 3, 4, 5]
+
+  it('loadProgress keeps a valid album, unique and in order', () => {
+    stored({ album: ['met-2', 'met-1', 'met-2', '', 7, null], picturesDone: ['met-9'] })
+    expect(loadProgress().album).toEqual(['met-2', 'met-1'])
+  })
+
+  it('loadProgress starts the album from picturesDone for data saved before it existed', () => {
+    stored({ picturesDone: ['met-1', 'met-2'] })
+    expect(loadProgress().album).toEqual(['met-1', 'met-2'])
+  })
+
+  it('...and adds a finished current picture that is not listed yet', () => {
+    stored({ picturesDone: ['met-1'], picture: { id: 'met-2', opened: 6, order: ORDER } })
+    expect(loadProgress().album).toEqual(['met-1', 'met-2'])
+    stored({ picturesDone: ['met-1'], picture: { id: 'met-2', opened: 3, order: ORDER } })
+    expect(loadProgress().album).toEqual(['met-1']) // still being opened: not in the album
+    stored({ picturesDone: ['met-1'], picture: { id: 'met-1', opened: 6, order: ORDER } })
+    expect(loadProgress().album).toEqual(['met-1']) // no duplicate
+  })
+
+  it('loadProgress rebuilds a corrupted album from picturesDone instead of losing pictures', () => {
+    stored({ album: 'met-1', picturesDone: ['met-1'] })
+    expect(loadProgress().album).toEqual(['met-1'])
+    stored({ album: { a: 1 } })
+    expect(loadProgress().album).toEqual([]) // nothing known to rebuild from
+  })
+
+  it('a completed picture is added to the album, once', () => {
+    let p = progress()
+    for (let n = 0; n < PICTURE_TILES; n++) p = realPass(p, [A, B], 80, seq(0)).progress
+    expect(p.album).toEqual(['met-1'])
+    // replaying a bonus/other lesson later does not duplicate it
+    p = recordPicturePass(p, [A], 80, seq(0), 6).progress
+    expect(new Set(p.album).size).toBe(p.album.length)
+  })
+
+  it('a picture still being opened is not in the album', () => {
+    const p = realPass(progress(), [A, B], 80, seq(0)).progress
+    expect(p.album).toEqual([])
+  })
+
+  it('test mode (6 tiles per pass): one lesson puts the picture in the album', () => {
+    expect(recordPicturePass(progress(), [A, B], 80, seq(0)).progress.album).toEqual(['met-1'])
+  })
+
+  it('a failed pass adds nothing', () => {
+    const p = progress()
+    expect(recordPicturePass(p, [A, B], PASS_SCORE - 1, seq(0)).progress.album).toEqual([])
+  })
+
+  it('the album is never reset when a new cycle starts (picturesDone is)', () => {
+    let p = progress()
+    const rnd = seq(0)
+    for (let n = 0; n < PICTURE_TILES * 2; n++) p = realPass(p, [A, B], 80, rnd).progress
+    expect(p.album).toEqual(['met-1', 'met-2'])
+    // third picture: a new cycle begins, picturesDone is reset to the last one, the album keeps both
+    p = advancePicture(p, [A, B], rnd)
+    expect(p.picturesDone).toEqual(['met-2'])
+    expect(p.album).toEqual(['met-1', 'met-2'])
+    for (let n = 0; n < PICTURE_TILES; n++) p = realPass(p, [A, B], 80, rnd).progress
+    expect(p.album).toEqual(['met-1', 'met-2']) // met-1 again: already collected, no duplicate
+  })
+
+  it('advancePicture and ensureActivePicture keep the album', () => {
+    const done = progress({
+      picture: { id: 'met-1', opened: 6, order: ORDER },
+      picturesDone: ['met-1'],
+      album: ['met-1'],
+    })
+    expect(advancePicture(done, [A, B], seq(0)).album).toEqual(['met-1'])
+    expect(ensureActivePicture(progress({ album: ['met-9'] }), [A, B], seq(0)).album).toEqual(['met-9'])
+  })
+
+  it('albumPictures returns the collected pictures that are still in the catalog, oldest first', () => {
+    expect(albumPictures({ album: ['met-3', 'met-1'] }, [A, B, C]).map((p) => p.id)).toEqual(['met-3', 'met-1'])
+    expect(albumPictures({ album: ['met-2', 'gone', 'met-1'] }, [A, B]).map((p) => p.id)).toEqual(['met-2', 'met-1'])
+    expect(albumPictures({ album: [] }, [A, B])).toEqual([])
+    expect(albumPictures({ album: ['met-1'] }, [])).toEqual([])
+  })
+
+  it('does not mutate its input', () => {
+    const p = progress({ album: ['met-9'] })
+    const copy = structuredClone(p)
+    for (let n = 0; n < 3; n++) realPass(p, [A], 80, seq(0))
+    recordPicturePass(p, [A], 80, seq(0))
+    expect(p).toEqual(copy)
   })
 })
