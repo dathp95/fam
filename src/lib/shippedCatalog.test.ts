@@ -46,10 +46,12 @@ describe('shipped catalog (public/lessons/index.json)', () => {
     }
   })
 
-  it('opens exactly one tile when only the lesson in the catalog is passed', () => {
+  it('opens one tile per pass of lesson 1, and the whole picture after 10 passes', () => {
     const nature = catalog.series.find((s) => s.id === 'nature')
     if (!nature) throw new Error('nature series missing')
-    const only = { lessonsDone: { 'voa-l01-welcome': { best: 90, at: 1 } } }
-    expect(revealedTiles(nature, only)).toEqual(nature.revealOrder.slice(0, 1))
+    const passes = (n: number) => ({ lessonsDone: { 'voa-l01-welcome': { best: 90, at: 1, passes: n } } })
+    expect(revealedTiles(nature, passes(1))).toEqual(nature.revealOrder.slice(0, 1))
+    expect(revealedTiles(nature, passes(2))).toEqual(nature.revealOrder.slice(0, 2))
+    expect(revealedTiles(nature, passes(10))).toEqual(nature.revealOrder)
   })
 })

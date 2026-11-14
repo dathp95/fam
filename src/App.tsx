@@ -142,10 +142,10 @@ export default function App() {
   /** Record the lesson as passed (average ≥ PASS_SCORE) and work out what the picture shows. */
   function finishLesson(lesson: Lesson, scores: number[]): RevealOutcome | null {
     const avg = averageScore(scores)
-    const { progress: next, firstPass } = recordLessonDone(progress, lesson.id, avg)
+    const { progress: next } = recordLessonDone(progress, lesson.id, avg)
     setProgress(next)
     const series = catalog ? findSeriesForLesson(catalog.series, lesson.id) : undefined
-    return series ? revealOutcome(series, next, lesson.id, avg, firstPass) : null
+    return series ? revealOutcome(series, progress, next, avg) : null
   }
 
   return (

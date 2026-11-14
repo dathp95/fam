@@ -32,8 +32,8 @@ const empty = (): Progress => ({ xp: 0, streak: 0, last: '', sentences: 0, lesso
 
 /** Finish a lesson the way App does and return the outcome for it. */
 function finish(p: Progress, s: Series, id: string, avg: number) {
-  const { progress, firstPass } = recordLessonDone(p, id, avg)
-  return { progress, outcome: revealOutcome(s, progress, id, avg, firstPass) }
+  const { progress } = recordLessonDone(p, id, avg)
+  return { progress, outcome: revealOutcome(s, p, progress, avg) }
 }
 
 describe('findSeriesForLesson', () => {
@@ -51,7 +51,7 @@ describe('findSeriesForLesson', () => {
 })
 
 describe('isSeriesComplete', () => {
-  it('is true only when every lesson has been passed', () => {
+  it('is true once every tile is open', () => {
     const s = series()
     let p = empty()
     expect(isSeriesComplete(s, p)).toBe(false)
@@ -59,6 +59,15 @@ describe('isSeriesComplete', () => {
     p = recordLessonDone(p, 'b', 90).progress
     expect(isSeriesComplete(s, p)).toBe(false)
     p = recordLessonDone(p, 'c', 90).progress
+    expect(isSeriesComplete(s, p)).toBe(true)
+  })
+
+  it('is also true after replaying a single lesson enough times', () => {
+    const s = series()
+    let p = empty()
+    for (let i = 0; i < 2; i++) p = recordLessonDone(p, 'a', 90).progress
+    expect(isSeriesComplete(s, p)).toBe(false)
+    p = recordLessonDone(p, 'a', 90).progress
     expect(isSeriesComplete(s, p)).toBe(true)
   })
 
@@ -90,7 +99,7 @@ describe('buildBonusLesson', () => {
 describe('revealOutcome', () => {
   const s = series()
 
-  it('opens the next tile in revealOrder on a first pass', () => {
+  it('opens the next tile in revealOrder on each pass', () => {
     const r1 = finish(empty(), s, 'a', 80)
     expect(r1.outcome).toMatchObject({ kind: 'opened', fresh: 2, count: 1, revealed: [2], complete: false })
     const r2 = finish(r1.progress, s, 'b', 60)
@@ -105,11 +114,31 @@ describe('revealOutcome', () => {
     expect(last.outcome).toMatchObject({ kind: 'opened', fresh: 1, count: 3, complete: true })
   })
 
-  it('opens nothing when a passed lesson is replayed', () => {
+  it('opens another tile when a passed lesson is replayed', () => {
     const first = finish(empty(), s, 'a', 70)
     const replay = finish(first.progress, s, 'a', 100)
-    expect(replay.outcome).toEqual({ kind: 'already', series: s })
-    expect(replay.progress.lessonsDone.a.best).toBe(100)
+    expect(replay.outcome).toMatchObject({ kind: 'opened', fresh: 0, count: 2, revealed: [2, 0] })
+    expect(replay.progress.lessonsDone.a).toMatchObject({ best: 100, passes: 2 })
+  })
+
+  it('reveals the whole picture by replaying lesson 1 only', () => {
+    let p = empty()
+    const fresh: number[] = []
+    for (let i = 0; i < 3; i++) {
+      const r = finish(p, s, 'a', 80)
+      p = r.progress
+      if (r.outcome.kind === 'opened') fresh.push(r.outcome.fresh)
+    }
+    expect(fresh).toEqual([2, 0, 1]) // follows revealOrder
+    expect(isSeriesComplete(s, p)).toBe(true)
+  })
+
+  it('reports "full" for a pass once every tile is open, without changing the tiles', () => {
+    let p = empty()
+    for (let i = 0; i < 3; i++) p = finish(p, s, 'a', 80).progress
+    const extra = finish(p, s, 'a', 90)
+    expect(extra.outcome).toEqual({ kind: 'full', series: s })
+    expect(extra.progress.lessonsDone.a.best).toBe(90) // the score is still recorded
   })
 
   it('reports a failure below the pass mark and records nothing', () => {
@@ -118,9 +147,11 @@ describe('revealOutcome', () => {
     expect(r.progress.lessonsDone).toEqual({})
   })
 
-  it('treats a low replay of an already passed lesson as "already", not a failure', () => {
+  it('reports a failure for a low replay and opens no tile', () => {
     const first = finish(empty(), s, 'a', 90)
-    expect(finish(first.progress, s, 'a', 10).outcome).toEqual({ kind: 'already', series: s })
+    const low = finish(first.progress, s, 'a', 10)
+    expect(low.outcome).toEqual({ kind: 'failed', series: s })
+    expect(low.progress).toBe(first.progress)
   })
 
   it('opens a tile at exactly the pass mark', () => {

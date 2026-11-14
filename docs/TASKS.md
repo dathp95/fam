@@ -15,6 +15,7 @@ Dự án: Vite + React + TypeScript (xem `CLAUDE.md` và `README.md`). Đọc to
 2. Ngưỡng mở một mảnh tranh: điểm trung bình bài học **>= 60** (hằng số `PASS_SCORE = 60`).
 3. **Có** bài thưởng cuối chuỗi: luyện chính các câu giới thiệu bức tranh (đọc bằng giọng TTS).
 4. Nguồn audio A1: VOA "Let's Learn English – Level 1" (public domain). Ghi nguồn trong app. ELLLO chưa gắn sẵn (chưa rõ điều khoản dùng lại), chỉ dùng qua chế độ tải file của người dùng.
+5. **Mỗi lần qua bài (điểm trung bình >= 60) đều mở thêm một mảnh, kể cả luyện lại bài cũ**, tối đa bằng số ô. Vì vậy tranh có thể lộ hết sau 10 lần qua bài, kể cả chỉ luyện một bài. (Quy tắc ban đầu "luyện lại không mở thêm" đã bị thay thế.)
 
 ---
 
@@ -134,19 +135,19 @@ export interface Series {
 - **Ảnh tạm để phát triển**: tạo `public/series/nature/placeholder.svg` (khoảng 1600×1000, nền gradient đơn giản, chữ "Ảnh tạm – thay bằng ảnh Met Open Access"), credit `license: "placeholder"`, `intro` có 3 câu mẫu ghi rõ là nội dung tạm. Khi người dùng có ảnh thật, chỉ cần thay `image` và `intro` trong JSON.
 
 ### C2. Tiến độ (`src/lib/progress.ts`)
-- Mở rộng `Progress` với `lessonsDone: Record<string, { best: number; at: number }>`.
-- `loadProgress` phải đọc được dữ liệu cũ không có trường này (mặc định `{}`) và kiểm tra kiểu từng phần tử.
+- Mở rộng `Progress` với `lessonsDone: Record<string, { best: number; at: number; passes: number }>` (`passes` = số lần qua bài).
+- `loadProgress` phải đọc được dữ liệu cũ không có trường này (mặc định `{}`), mục cũ không có `passes` tính là 1 lần, và kiểm tra kiểu từng phần tử.
 - Hằng số `PASS_SCORE = 60`.
 - Hàm thuần `recordLessonDone(p, lessonId, avgScore, now?)` trả về `{ progress, firstPass: boolean }`:
-  - `avgScore >= PASS_SCORE`: lưu/cập nhật `best` (giữ điểm cao hơn); `firstPass = true` chỉ khi trước đó chưa có mục cho `lessonId`.
+  - `avgScore >= PASS_SCORE`: `passes` tăng thêm 1 (kể cả luyện lại); `best` giữ điểm cao hơn (`at` là thời điểm đạt `best`); `firstPass = true` chỉ khi trước đó chưa có mục cho `lessonId`.
   - `avgScore < PASS_SCORE`: không ghi gì, `firstPass = false`.
-- Hàm thuần `revealedTiles(series, progress): number[]`: các chỉ số ô đã mở = `revealOrder.slice(0, soBàiĐãQua)`, trong đó số bài đã qua đếm các `lessonIds` có trong `lessonsDone`. Luyện lại bài cũ không mở thêm ô.
-- Test: dữ liệu cũ, ngưỡng đúng 60 / 59, bài đã qua rồi luyện lại, `revealedTiles` với 0, 3, 10 bài.
+- Hàm thuần `revealedTiles(series, progress): number[]`: các chỉ số ô đã mở = `revealOrder.slice(0, tổngSốLầnQua)`, trong đó tổng số lần qua cộng `passes` của các `lessonIds` có trong `lessonsDone`. Luyện lại bài cũ mở thêm ô; không bao giờ quá số ô.
+- Test: dữ liệu cũ (không có `passes`), ngưỡng đúng 60 / 59, luyện lại cộng dồn `passes`, `revealedTiles` với 0, 3, 10 lần qua và vượt quá số ô.
 
 ### C3. Giao diện
 - `PictureCard` (trên Home, một thẻ cho mỗi chuỗi): ảnh nằm dưới, lưới ô phủ lên (CSS grid, tỉ lệ khung theo `width/height`), ô đã mở trong suốt, ô chưa mở che bằng màu của giao diện; chú thích "Đã mở 3/10 mảnh". Ảnh đặt `role="img"` với `aria-label` từ `alt`; các ô che có `aria-hidden`.
 - Khi mở đủ ô: hiện ảnh đầy đủ, danh sách `intro`, và dòng nguồn ảnh (tên tác phẩm, tác giả, năm, link Met, giấy phép).
-- Màn hình `Result` khi `firstPass` và bài thuộc một chuỗi: hiện ảnh với ô vừa mở làm nổi (hiệu ứng mờ dần ~600 ms) và dòng "Bạn vừa mở mảnh thứ 4/10". Tắt hiệu ứng khi `prefers-reduced-motion`. Nếu điểm < `PASS_SCORE`: dòng "Cần điểm trung bình từ 60 để mở mảnh tranh" và nút "Luyện lại".
+- Màn hình `Result` khi qua bài (điểm trung bình >= `PASS_SCORE`) và bài thuộc một chuỗi: hiện ảnh với ô vừa mở làm nổi (hiệu ứng mờ dần ~600 ms) và dòng "Bạn vừa mở mảnh thứ 4/10". Tắt hiệu ứng khi `prefers-reduced-motion`. Nếu điểm < `PASS_SCORE`: dòng "Cần điểm trung bình từ 60 để mở mảnh tranh" và nút "Luyện lại".
 - Bài chưa có trong catalog (người dùng chưa thêm): trong thẻ chuỗi ghi "Chưa có bài", không báo lỗi.
 
 ### C4. Bài thưởng

@@ -7,6 +7,8 @@ export interface LessonDone {
   best: number
   /** Timestamp (ms) of the attempt that set `best`. */
   at: number
+  /** How many times the lesson was passed (≥ PASS_SCORE). Each pass opens one picture tile. */
+  passes: number
 }
 
 export interface Progress {
@@ -31,15 +33,19 @@ const dayString = (d: Date) => d.toLocaleDateString('en-CA')
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
-/** Keep only well-formed entries; data saved before lessonsDone existed gives {}. */
+/**
+ * Keep only well-formed entries; data saved before lessonsDone existed gives {}.
+ * Entries saved before `passes` existed count as one pass.
+ */
 function parseLessonsDone(raw: unknown): Record<string, LessonDone> {
   const out: Record<string, LessonDone> = {}
   if (!isRecord(raw)) return out
   for (const [id, v] of Object.entries(raw)) {
     if (!isRecord(v)) continue
-    const { best, at } = v
+    const { best, at, passes } = v
     if (typeof best === 'number' && Number.isFinite(best) && typeof at === 'number' && Number.isFinite(at)) {
-      out[id] = { best, at }
+      const valid = typeof passes === 'number' && Number.isInteger(passes) && passes >= 1
+      out[id] = { best, at, passes: valid ? passes : 1 }
     }
   }
   return out
@@ -87,9 +93,9 @@ export function recordAnswer(p: Progress, xp: number, now = new Date()): Progres
 }
 
 /**
- * Record a finished lesson. Below PASS_SCORE nothing is stored. At or above it, the best score is
- * kept; `firstPass` is true only when the lesson had no entry before (so it opens a new tile once).
- * Pure.
+ * Record a finished lesson. Below PASS_SCORE nothing is stored. At or above it, `passes` goes up
+ * by one (every pass counts, including replays) and the best score is kept. `firstPass` is true
+ * only when the lesson had no entry before. Pure.
  */
 export function recordLessonDone(
   p: Progress,
@@ -99,24 +105,29 @@ export function recordLessonDone(
 ): { progress: Progress; firstPass: boolean } {
   if (avgScore < PASS_SCORE) return { progress: p, firstPass: false }
   const previous = Object.hasOwn(p.lessonsDone, lessonId) ? p.lessonsDone[lessonId] : undefined
-  if (previous && avgScore <= previous.best) return { progress: p, firstPass: false }
+  const improved = !previous || avgScore > previous.best
+  const entry: LessonDone = {
+    best: improved ? avgScore : previous.best,
+    at: improved ? now.getTime() : previous.at,
+    passes: (previous?.passes ?? 0) + 1,
+  }
   return {
-    progress: {
-      ...p,
-      lessonsDone: { ...p.lessonsDone, [lessonId]: { best: avgScore, at: now.getTime() } },
-    },
+    progress: { ...p, lessonsDone: { ...p.lessonsDone, [lessonId]: entry } },
     firstPass: previous === undefined,
   }
 }
 
 /**
- * Indexes of the tiles that are open: the first N entries of revealOrder, where N is the number
- * of the series' lessons that have been passed. Replaying a lesson never opens more tiles.
+ * Indexes of the tiles that are open: the first N entries of revealOrder, where N is the total
+ * number of passes of the series' lessons (a replay opens another tile). Never more than all tiles.
  */
 export function revealedTiles(
   series: Pick<Series, 'lessonIds' | 'revealOrder'>,
   progress: Pick<Progress, 'lessonsDone'>,
 ): number[] {
-  const passed = series.lessonIds.filter((id) => Object.hasOwn(progress.lessonsDone, id)).length
-  return series.revealOrder.slice(0, passed)
+  const passes = series.lessonIds.reduce(
+    (sum, id) => sum + (Object.hasOwn(progress.lessonsDone, id) ? progress.lessonsDone[id].passes : 0),
+    0,
+  )
+  return series.revealOrder.slice(0, passes)
 }

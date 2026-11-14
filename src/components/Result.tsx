@@ -41,8 +41,8 @@ export function Result({ scores, gained, outcome, onAgain, onHome }: Props) {
             )}
           </div>
         )}
-        {outcome?.kind === 'already' && (
-          <p className="muted">Bài này đã mở mảnh tranh trước đó nên lần này không mở thêm.</p>
+        {outcome?.kind === 'full' && (
+          <p className="muted">Bạn đã mở hết bức tranh rồi. Về trang chính để làm bài thưởng.</p>
         )}
         {outcome?.kind === 'failed' && (
           <p className="muted" role="status">

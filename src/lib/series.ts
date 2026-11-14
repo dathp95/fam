@@ -41,25 +41,18 @@ export type RevealOutcome =
       count: number
       complete: boolean
     }
-  | { kind: 'already'; series: Series } // passed before, replaying opens nothing
+  | { kind: 'full'; series: Series } // passed, but every tile was already open
   | { kind: 'failed'; series: Series } // average below PASS_SCORE
 
 /**
- * `after` is the progress after recording the lesson; `firstPass` comes from recordLessonDone.
- * A low score on a lesson that was passed earlier is reported as 'already' (nothing to unlock).
+ * `before` and `after` are the progress around recording the lesson. Every pass opens the next
+ * tile until the picture is complete; a score below PASS_SCORE opens nothing.
  */
-export function revealOutcome(
-  series: Series,
-  after: Progress,
-  lessonId: string,
-  avgScore: number,
-  firstPass: boolean,
-): RevealOutcome {
-  if (avgScore < PASS_SCORE) {
-    return Object.hasOwn(after.lessonsDone, lessonId) ? { kind: 'already', series } : { kind: 'failed', series }
-  }
+export function revealOutcome(series: Series, before: Progress, after: Progress, avgScore: number): RevealOutcome {
+  if (avgScore < PASS_SCORE) return { kind: 'failed', series }
+  const wasOpen = revealedTiles(series, before).length
   const revealed = revealedTiles(series, after)
-  if (!firstPass || revealed.length === 0) return { kind: 'already', series }
+  if (revealed.length <= wasOpen) return { kind: 'full', series }
   return {
     kind: 'opened',
     series,
