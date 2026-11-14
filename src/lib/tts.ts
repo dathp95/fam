@@ -1,4 +1,4 @@
-/** speechSynthesis helpers (used for the built-in sample lesson). */
+/** speechSynthesis helpers (used by TTS lessons such as the picture bonus lesson). */
 
 export const ttsSupported = () => typeof window !== 'undefined' && 'speechSynthesis' in window
 

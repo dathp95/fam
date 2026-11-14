@@ -92,9 +92,9 @@ export const LESSON_SOURCES: LessonSourceOption[] = [...]
 - Home hiện nhóm "Chọn nguồn bài" gồm các thẻ này. Thêm nguồn mới sau này chỉ cần thêm một phần tử vào mảng và một nhánh xử lý.
 
 ### B5. Home
-- Nhóm "Bài có sẵn": nhóm theo `seriesId` (hoặc "Khác"), sắp theo `order`; mỗi bài có nhãn `level`, chủ đề, số câu và dòng nguồn ("Nguồn: Voice of America · public domain") lấy từ `source`.
+- Nhóm "Bài có sẵn" nằm trên cùng (dưới "Chọn nguồn bài" nếu đang hiện): một danh sách phẳng, không có tiêu đề nhóm, sắp theo `seriesId` rồi `order`; mỗi bài có nhãn `level`, chủ đề, số câu và dòng nguồn ("Nguồn: Voice of America · public domain") lấy từ `source`. Bài đã qua (có điểm trong `lessonsDone`) có nền xanh nhẹ (`--ok-bg`) và nhãn "Đã qua · điểm".
 - Nhóm "Bài của bạn": bài `media` như hiện nay (Chỉnh sửa/Xóa).
-- Bài mẫu TTS vẫn hiện.
+- Không còn bài mẫu TTS trên Home (đã bỏ).
 - Khi catalog rỗng hoặc lỗi: dòng thông báo trung tính, không chặn các phần khác.
 
 ### B6. Xuất JSON từ màn hình Review (`Review.tsx`)

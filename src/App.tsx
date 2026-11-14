@@ -8,6 +8,7 @@ import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { averageScore } from './lib/diff.ts'
+import { isSourcePickerVisible } from './lib/features.ts'
 import { isBonusLesson, revealedTiles } from './lib/pictures.ts'
 import {
   ensureActivePicture,
@@ -19,7 +20,6 @@ import {
   type PictureOutcome,
   type Progress,
 } from './lib/progress.ts'
-import { SAMPLE_LESSON } from './lib/samples.ts'
 import { deleteLesson, getMedia, listLessons, requestPersistence, saveLesson } from './lib/storage.ts'
 import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
 
@@ -176,6 +176,7 @@ export default function App() {
         key={view.run}
         lesson={view.lesson}
         source={view.source}
+        progress={progress}
         picture={active ?? null}
         revealed={revealedTiles(progress.picture)}
         onAnswered={onAnswered}
@@ -193,8 +194,8 @@ export default function App() {
       {view.name === 'home' && (
         <Home
           progress={progress}
-          sample={SAMPLE_LESSON}
           userLessons={saved}
+          showSources={isSourcePickerVisible(window.location.search)}
           catalog={catalog}
           loading={loading}
           message={message}

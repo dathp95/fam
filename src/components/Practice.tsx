@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { useSegmentPlayer } from '../hooks/useSegmentPlayer.ts'
 import { useVisualViewport } from '../hooks/useVisualViewport.ts'
 import { HINT_PENALTY, maskHint, scoreAnswer, type ScoreResult } from '../lib/diff.ts'
@@ -15,16 +15,19 @@ import {
   type Speed,
   type Tally,
 } from '../lib/practice.ts'
-import { formatShortcut, loadShortcut, matchesShortcut, saveShortcut, type Shortcut } from '../lib/shortcut.ts'
+import { formatShortcut, loadShortcut, matchesShortcut } from '../lib/shortcut.ts'
+import type { Progress } from '../lib/progress.ts'
 import { speak, stopSpeaking } from '../lib/tts.ts'
 import type { Lesson, Picture as PictureData, PlaybackSource } from '../lib/types.ts'
 import { Picture } from './Picture.tsx'
-import { ShortcutSetting } from './ShortcutSetting.tsx'
+import { ProgressStats } from './ProgressStats.tsx'
 
 interface Props {
   lesson: Lesson
   /** Stored file (media lessons), resolved URL (static lessons), or null for the TTS sample. */
   source: PlaybackSource
+  /** XP, level and streak, shown in the "⋯" menu (live: it grows while you answer). */
+  progress: Progress
   /** The picture being uncovered, as it was BEFORE this attempt (tiles open only at the end). */
   picture?: PictureData | null
   /** Indexes of the open tiles of `picture`. */
@@ -43,7 +46,7 @@ interface Shown {
 
 const NO_TILES: number[] = []
 
-export function Practice({ lesson, source, picture = null, revealed = NO_TILES, onAnswered, onFinish, onQuit }: Props) {
+export function Practice({ lesson, source, progress, picture = null, revealed = NO_TILES, onAnswered, onFinish, onQuit }: Props) {
   const lang = getLanguage(lesson.langId)
   const player = useSegmentPlayer(source)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -59,7 +62,8 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
   /** The current sentence already has a score (its first attempt was checked). */
   const [counted, setCounted] = useState(false)
   const [speed, setSpeed] = useState<Speed>(1)
-  const [shortcut, setShortcut] = useState<Shortcut>(loadShortcut)
+  // The shortcut (default Alt+R, or one saved earlier) is no longer editable on this screen.
+  const [shortcut] = useState(loadShortcut)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const n = lesson.sentences.length
@@ -153,11 +157,6 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
     advance(t)
   }
 
-  const changeShortcut = useCallback((s: Shortcut) => {
-    setShortcut(s)
-    saveShortcut(s)
-  }, [])
-
   // Keyboard shortcut for "Nghe lại" (works before and after checking).
   const playRef = useRef(play)
   const replayRef = useRef(replay)
@@ -205,7 +204,7 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
     return () => document.removeEventListener('keydown', onKey)
   }, [checked])
 
-  // The "⋯" menu closes with Escape (recording a new shortcut handles Escape itself first).
+  // The "⋯" menu (progress summary) closes with Escape.
   useEffect(() => {
     if (!menuOpen) return
     const onKey = (e: KeyboardEvent) => {
@@ -245,7 +244,7 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
         <button
           ref={menuButtonRef}
           className="icon-btn"
-          aria-label="Cài đặt phím tắt"
+          aria-label="Xem tiến độ"
           aria-haspopup="dialog"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((o) => !o)}
@@ -255,8 +254,8 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
         {menuOpen && (
           <>
             <div className="practice-backdrop" onClick={() => setMenuOpen(false)} />
-            <div className="practice-menu" role="dialog" aria-label="Cài đặt phím tắt">
-              <ShortcutSetting value={shortcut} onChange={changeShortcut} />
+            <div className="practice-menu" role="dialog" aria-label="Tiến độ của bạn">
+              <ProgressStats progress={progress} />
             </div>
           </>
         )}
