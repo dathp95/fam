@@ -1,1 +1,93 @@
-{ "version": 1, "lessons": [], "series": [] }
+{ "version": 1, "lessons": [{
+  "id": "voa-l01-welcome",
+  "kind": "static",
+  "title": "voa-l01-welcome",
+  "langId": "en",
+  "createdAt": 1794644769656,
+  "audioUrl": "lessons/voa/voa-l01-welcome.mp3",
+  "duration": 29.545556,
+  "sentences": [
+    {
+      "id": "smwg55qpkar70gr",
+      "text": "Hi, are you Anna?",
+      "start": 0,
+      "end": 2.28
+    },
+    {
+      "id": "smwg55qpk718ivb",
+      "text": "Yes, hi there, are you Pete?",
+      "start": 2.4,
+      "end": 4.2
+    },
+    {
+      "id": "smwg55qpkcw557c",
+      "text": "I am Pete.",
+      "start": 4.2,
+      "end": 5.5
+    },
+    {
+      "id": "smwg55qpkp06tqi",
+      "text": "Nice to meet you.",
+      "start": 5.5,
+      "end": 6.6
+    },
+    {
+      "id": "smwg55qpkp19ac7",
+      "text": "Let's try that again.",
+      "start": 8.4,
+      "end": 9.9
+    },
+    {
+      "id": "smwg55qpklucxx3",
+      "text": "I'm Anna, nice to meet you.",
+      "start": 9.8,
+      "end": 13
+    },
+    {
+      "id": "smwg55qpk4snvzi",
+      "text": "I'm Pete.",
+      "start": 13.1,
+      "end": 14.4
+    },
+    {
+      "id": "smwg55qpkwgc9wd",
+      "text": "Anna, is that A-N-A?",
+      "start": 14.3,
+      "end": 17
+    },
+    {
+      "id": "smwg55qpkrkxwow",
+      "text": "No, A-N-N-A.",
+      "start": 17,
+      "end": 20.1
+    },
+    {
+      "id": "smwg55qpkcwf532",
+      "text": "Well, Anna with two Ns.",
+      "start": 20.16,
+      "end": 21.8
+    },
+    {
+      "id": "smwg55qpkwybfxg",
+      "text": "Welcome to 1400 Irving Street!",
+      "start": 22.5,
+      "end": 26.8
+    },
+    {
+      "id": "smwg55qpkms7ukc",
+      "text": "My new apartment,",
+      "start": 26.79,
+      "end": 29.5
+    }
+  ],
+  "level": "A1",
+  "topic": "Meeting people",
+  "source": {
+    "name": "Voice of America",
+    "url": "https://learningenglish.voanews.com/a/lets-learn-english-level-1-lesson-1/5184882.html",
+    "license": "public domain"
+  },
+  "seriesId": "cats",
+  "order": 1
+}
+], "series": [] }
