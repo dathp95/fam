@@ -84,6 +84,11 @@ export default function App() {
     saveProgress(progress)
   }, [progress])
 
+  // A new screen always starts at the top (iOS may leave the page scrolled after the keyboard closes).
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [view.name])
+
   const goHome = () => setView({ name: 'home' })
 
   /** Resolve where audio comes from: nothing (TTS), a URL (static) or a stored Blob (media). */
@@ -197,9 +202,16 @@ export default function App() {
         revealed={bonusId ? ALL_TILES : revealedTiles(progress.picture)}
         onAnswered={onAnswered}
         onQuit={goHome}
-        onFinish={(scores, gained) =>
-          setView({ ...view, name: 'result', scores, gained, outcome: finishLesson(view.lesson, scores) })
-        }
+        onFinish={(scores, gained) => {
+          // Even if the picture bookkeeping fails, still show the result screen.
+          let outcome: PictureOutcome | null = null
+          try {
+            outcome = finishLesson(view.lesson, scores)
+          } catch (e) {
+            console.error('Could not record the finished lesson:', e)
+          }
+          setView({ ...view, name: 'result', scores, gained, outcome })
+        }}
       />
     )
   }

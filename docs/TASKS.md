@@ -172,6 +172,7 @@ interface Progress {
 - Hàm thuần `albumPictures(progress, pictures)` trả về các tranh trong album còn tồn tại trong catalog, theo thứ tự đã sưu tập.
 - **Home**: mục "Album" (hiện khi catalog có tranh) với dòng "Đã sưu tập n/N tranh" và tối đa 3 ảnh thu nhỏ; bấm vào để mở màn Album.
 - **Màn Album** (`Album.tsx`): lưới 2 cột các tranh đã sưu tập (ảnh đầy đủ, không che, kèm tên); chưa có tranh thì hiện câu hướng dẫn. Bấm một tranh để xem chi tiết (dùng `PictureCard` với `inAlbum`): tên, ảnh đầy đủ, mô tả tiếng Việt, nguồn ảnh và nút "Bài thưởng". Bài thưởng bắt đầu từ album hiện đúng tranh đó (đã mở đủ 6 mảnh), không đổi tranh đang mở và không mở mảnh.
+- **Chuyển giữa các tranh trong màn chi tiết**: nút ‹ › (44px) kèm số thứ tự "2 / 3", phím ← →, và vuốt ngang trên điện thoại. Không quay vòng: nút bị vô hiệu ở tranh đầu/cuối. Hàm thuần `stepIndex` và `swipeDirection` trong `src/lib/album.ts` (vuốt tối thiểu 60px và phải ngang rõ rệt hơn dọc, để cuộn trang không đổi tranh). Màn chi tiết đặt `touch-action: pan-y` để vuốt ngang không kích hoạt cử chỉ "vuốt để quay lại" của trình duyệt.
 - Khi bắt đầu một bài, tranh hoàn chỉnh trên Home được thay bằng tranh mới (`advancePicture`), nhưng tranh cũ vẫn nằm trong album.
 
 ### E4. Công cụ nạp tranh (`npm run ingest:pictures`)

@@ -174,3 +174,9 @@ body:has(.practice) { overflow: hidden; overscroll-behavior: none; }
 .album-entry:hover { border-color: var(--accent); }
 .album-thumbs { display: flex; gap: 6px; }
 .album-thumbs img { width: 44px; height: 33px; object-fit: cover; border-radius: 6px; }
+.album-arrows { gap: 8px; flex-wrap: nowrap; }
+.album-arrows .btn { width: 44px; padding: 0; font-size: 22px; line-height: 1; }
+.album-arrows span { min-width: 3.5em; text-align: center; font-variant-numeric: tabular-nums; }
+/* Horizontal swipes belong to the app here (previous/next picture), not to the browser (history swipe). */
+.album-detail { touch-action: pan-y; }
+body:has(.album-detail) { overscroll-behavior-x: none; }

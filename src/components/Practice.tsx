@@ -144,6 +144,7 @@ export function Practice({ lesson, source, progress, picture = null, revealed = 
       setMsg('')
       setCounted(false)
     } else {
+      inputRef.current?.blur() // close the keyboard before leaving this screen
       onFinish(t.scores, t.gained)
     }
   }
@@ -232,6 +233,7 @@ export function Practice({ lesson, source, progress, picture = null, revealed = 
           aria-label="Thoát"
           onClick={() => {
             stopAll()
+            inputRef.current?.blur()
             onQuit()
           }}
         >
