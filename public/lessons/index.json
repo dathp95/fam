@@ -92,6 +92,170 @@
       },
       "seriesId": "nature",
       "order": 1
+    },
+    
+    {
+      "id": "voa-l02-hello-im-anna",
+      "kind": "static",
+      "title": "Lesson 2: Hello, I'm Anna!",
+      "langId": "en",
+      "createdAt": 1794672131108,
+      "audioUrl": "lessons/voa/voa-l02-hello-im-anna.mp3",
+      "duration": 48.014127,
+      "sentences": [
+        {
+          "id": "voa-l02-hello-im-anna-1",
+          "text": "Hey, Pete!",
+          "start": 0.0,
+          "end": 0.88
+        },
+        {
+          "id": "voa-l02-hello-im-anna-2",
+          "text": "Who's your friend?",
+          "start": 0.73,
+          "end": 3.9
+        },
+        {
+          "id": "voa-l02-hello-im-anna-3",
+          "text": "She is Anna.",
+          "start": 3.75,
+          "end": 5.13
+        },
+        {
+          "id": "voa-l02-hello-im-anna-4",
+          "text": "She is new to D.C.",
+          "start": 4.98,
+          "end": 5.53
+        },
+        {
+          "id": "voa-l02-hello-im-anna-5",
+          "text": "Where are you from?",
+          "start": 5.38,
+          "end": 9.21
+        },
+        {
+          "id": "voa-l02-hello-im-anna-6",
+          "text": "I am from a small town.",
+          "start": 9.06,
+          "end": 11.92
+        },
+        {
+          "id": "voa-l02-hello-im-anna-7",
+          "text": "Well, welcome to D.C.",
+          "start": 11.77,
+          "end": 14.39
+        },
+        {
+          "id": "voa-l02-hello-im-anna-8",
+          "text": "Thank you.",
+          "start": 14.24,
+          "end": 15.57
+        },
+        {
+          "id": "voa-l02-hello-im-anna-9",
+          "text": "I am Jonathan.",
+          "start": 15.42,
+          "end": 17.21
+        },
+        {
+          "id": "voa-l02-hello-im-anna-10",
+          "text": "I am in apartment B4.",
+          "start": 17.06,
+          "end": 19.69
+        },
+        {
+          "id": "voa-l02-hello-im-anna-11",
+          "text": "I am in apartment C2.",
+          "start": 19.54,
+          "end": 23.23
+        },
+        {
+          "id": "voa-l02-hello-im-anna-12",
+          "text": "Marsha is my roommate.",
+          "start": 23.08,
+          "end": 23.63
+        },
+        {
+          "id": "voa-l02-hello-im-anna-13",
+          "text": "I know Marsha.",
+          "start": 23.48,
+          "end": 26.39
+        },
+        {
+          "id": "voa-l02-hello-im-anna-14",
+          "text": "She is nice.",
+          "start": 26.24,
+          "end": 28.45
+        },
+        {
+          "id": "voa-l02-hello-im-anna-15",
+          "text": "And I am in apartment D7.",
+          "start": 28.3,
+          "end": 30.2
+        },
+        {
+          "id": "voa-l02-hello-im-anna-16",
+          "text": "I have to go now.",
+          "start": 30.05,
+          "end": 33.8
+        },
+        {
+          "id": "voa-l02-hello-im-anna-17",
+          "text": "Oh!",
+          "start": 33.65,
+          "end": 34.2
+        },
+        {
+          "id": "voa-l02-hello-im-anna-18",
+          "text": "Remember to call Marsha at work.",
+          "start": 34.05,
+          "end": 35.65
+        },
+        {
+          "id": "voa-l02-hello-im-anna-19",
+          "text": "Tell her you're here.",
+          "start": 35.5,
+          "end": 38.93
+        },
+        {
+          "id": "voa-l02-hello-im-anna-20",
+          "text": "Right, thanks, Pete.",
+          "start": 38.78,
+          "end": 40.8
+        },
+        {
+          "id": "voa-l02-hello-im-anna-21",
+          "text": "Nice to meet you!",
+          "start": 40.65,
+          "end": 43.69
+        },
+        {
+          "id": "voa-l02-hello-im-anna-22",
+          "text": "You too.",
+          "start": 43.54,
+          "end": 44.63
+        },
+        {
+          "id": "voa-l02-hello-im-anna-23",
+          "text": "Bye.",
+          "start": 44.48,
+          "end": 45.1
+        },
+        {
+          "id": "voa-l02-hello-im-anna-24",
+          "text": "Apartment C2, here I come!",
+          "start": 44.95,
+          "end": 48.01
+        }
+      ],
+      "level": "A1",
+      "topic": "Meeting people",
+      "source": {
+        "name": "Voice of America",
+        "url": "https://learningenglish.voanews.com/a/3185254.html",
+        "license": "public domain"
+      },
+      "order": 2
     }
   ],
   "pictures": [
