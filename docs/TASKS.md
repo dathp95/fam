@@ -11,7 +11,7 @@ Dự án: Vite + React + TypeScript (xem `CLAUDE.md` và `README.md`). Đọc to
 - Không thêm thư viện mới nếu không thật cần; nếu thêm thì nói rõ lý do.
 
 ## Quyết định đã chốt
-1. Chủ đề ảnh đầu tiên: **mèo** (bộ sưu tập "Cats" của Met Museum Open Access, CC0).
+1. Chủ đề ảnh đầu tiên: **thiên nhiên** (bộ sưu tập "nature" của Met Museum Open Access, CC0).
 2. Ngưỡng mở một mảnh tranh: điểm trung bình bài học **>= 60** (hằng số `PASS_SCORE = 60`).
 3. **Có** bài thưởng cuối chuỗi: luyện chính các câu giới thiệu bức tranh (đọc bằng giọng TTS).
 4. Nguồn audio A1: VOA "Let's Learn English – Level 1" (public domain). Ghi nguồn trong app. ELLLO chưa gắn sẵn (chưa rõ điều khoản dùng lại), chỉ dùng qua chế độ tải file của người dùng.
@@ -128,10 +128,10 @@ export interface Series {
 }
 ```
 - Kiểm tra ở runtime trong `parseCatalog`: `grid.cols*grid.rows === lessonIds.length`, `revealOrder` là hoán vị hợp lệ, `intro` không rỗng. Chuỗi sai bị bỏ qua kèm cảnh báo.
-- Chuỗi đầu tiên có `id: "cats"`, 10 bài (`grid` 5×2), `lessonIds` theo thứ tự:
+- Chuỗi đầu tiên có `id: "nature"`, 10 bài (`grid` 5×2), `lessonIds` theo thứ tự:
   `voa-l01-welcome`, `voa-l05-where-are-you`, `voa-l07-what-are-you-doing`, `voa-l09-is-it-cold`, `voa-l11-neighborhood`, `voa-l12-family`, `voa-l16-where-from`, `voa-l17-free-on-friday`, `voa-l22-next-summer`, `voa-l35-make-dinner`.
 - Số câu dự kiến của 10 bài: 6, 8, 10, 13, 15, 18, 21, 23, 26, 29 (mỗi bài hơn bài trước 2–3 câu). Đây là mục tiêu khi người dùng cắt nội dung, không phải ràng buộc của code.
-- **Ảnh tạm để phát triển**: tạo `public/series/cats/placeholder.svg` (khoảng 1600×1000, nền gradient đơn giản, chữ "Ảnh tạm – thay bằng ảnh Met Open Access"), credit `license: "placeholder"`, `intro` có 3 câu mẫu ghi rõ là nội dung tạm. Khi người dùng có ảnh thật, chỉ cần thay `image` và `intro` trong JSON.
+- **Ảnh tạm để phát triển**: tạo `public/series/nature/placeholder.svg` (khoảng 1600×1000, nền gradient đơn giản, chữ "Ảnh tạm – thay bằng ảnh Met Open Access"), credit `license: "placeholder"`, `intro` có 3 câu mẫu ghi rõ là nội dung tạm. Khi người dùng có ảnh thật, chỉ cần thay `image` và `intro` trong JSON.
 
 ### C2. Tiến độ (`src/lib/progress.ts`)
 - Mở rộng `Progress` với `lessonsDone: Record<string, { best: number; at: number }>`.
@@ -161,7 +161,7 @@ export interface Series {
 ---
 
 ## Việc người dùng tự làm (Claude Code không làm thay)
-1. **Chọn ảnh mèo** ở https://www.metmuseum.org: tìm trong bộ sưu tập "Cats", bật lọc Open Access (biểu tượng CC0), chọn tranh ngang, mèo rõ nét, độ rộng >= 1600 px. Ghi lại objectId, tên tác phẩm, tác giả, năm và link trang. Thu nhỏ: `ffmpeg -i goc.jpg -vf scale=1600:-2 -q:v 80 cats.webp`, đặt vào `public/series/cats/`.
+1. **Chọn ảnh thiên nhiên** ở https://www.metmuseum.org: tìm trong bộ sưu tập "nature", bật lọc Open Access (biểu tượng CC0), chọn tranh ngang, thiên nhiên rõ nét, độ rộng >= 1600 px. Ghi lại objectId, tên tác phẩm, tác giả, năm và link trang. Thu nhỏ: `ffmpeg -i goc.jpg -vf scale=1600:-2 -q:v 80 nature.webp`, đặt vào `public/series/nature/`.
 2. **Viết `intro`**: 3–5 câu tiếng Anh A1 (mỗi câu <= 10 từ, thì hiện tại đơn), chỉ dùng thông tin trên trang của Met (tên, tác giả, năm, chất liệu). Nhờ Claude trong cuộc trò chuyện soạn giúp rồi kiểm tra lại.
 3. **Cắt audio VOA** cho 10 bài: `ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn -ac 1 -b:a 48k l01.mp3`, đặt vào `public/lessons/voa/`. Đối chiếu transcript trên trang VOA, nạp vào màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi thêm vào `public/lessons/index.json`.
 4. Chỉ lấy chữ và audio VOA, không lấy ảnh của họ. Giữ dòng ghi nguồn "Voice of America · public domain".
