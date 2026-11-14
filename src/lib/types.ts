@@ -32,7 +32,34 @@ export interface MediaLesson extends LessonBase {
   sentences: TimedSentence[]
 }
 
-export type Lesson = SampleLesson | MediaLesson
+export type Level = 'A1' | 'A2'
+export const LEVELS: readonly Level[] = ['A1', 'A2']
+
+export interface SourceInfo {
+  name: string
+  url: string
+  license: string
+}
+
+/** Lesson shipped with the app (public/lessons/index.json); audio is fetched by URL. */
+export interface StaticLesson extends LessonBase {
+  kind: 'static'
+  /** Path relative to BASE_URL, e.g. "lessons/voa/l01.mp3". */
+  audioUrl: string
+  duration: number
+  sentences: TimedSentence[]
+  level: Level
+  topic: string
+  source: SourceInfo
+  seriesId?: string
+  /** Position inside the series (starts at 1). */
+  order?: number
+}
+
+export type Lesson = SampleLesson | MediaLesson | StaticLesson
+
+/** Where practice audio comes from: a stored file, a URL, or nothing (TTS). */
+export type PlaybackSource = Blob | string | null
 
 /** A lesson being created/edited in the review screen, before it is saved. */
 export interface Draft {

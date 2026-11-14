@@ -5,12 +5,12 @@ import { getLanguage } from '../lib/languages.ts'
 import { loadShortcut, matchesShortcut, saveShortcut, formatShortcut, type Shortcut } from '../lib/shortcut.ts'
 import { speak, stopSpeaking } from '../lib/tts.ts'
 import { ShortcutSetting } from './ShortcutSetting.tsx'
-import type { Lesson } from '../lib/types.ts'
+import type { Lesson, PlaybackSource } from '../lib/types.ts'
 
 interface Props {
   lesson: Lesson
-  /** Audio/video file for media lessons; null for the TTS sample. */
-  media: Blob | null
+  /** Stored file (media lessons), resolved URL (static lessons), or null for the TTS sample. */
+  source: PlaybackSource
   onAnswered: (xp: number) => void
   onFinish: (scores: number[], gained: number) => void
   onQuit: () => void
@@ -23,9 +23,9 @@ const feedback = (score: number) =>
       ? 'Rất tốt, gần đúng rồi.'
       : 'Nghe lại và thử câu tiếp theo nhé.'
 
-export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props) {
+export function Practice({ lesson, source, onAnswered, onFinish, onQuit }: Props) {
   const lang = getLanguage(lesson.langId)
-  const player = useSegmentPlayer(media)
+  const player = useSegmentPlayer(source)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [i, setI] = useState(0)

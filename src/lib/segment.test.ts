@@ -107,8 +107,20 @@ describe('splitSentences with abbreviations', () => {
   })
 
   it('never leaks the placeholder character', () => {
-    const out = splitSentences('Mr. Lee lives in the U.S. now.  odd char.')
-    expect(out.join(' ')).not.toMatch(//)
+    const placeholder = String.fromCharCode(0xe000)
+    const out = splitSentences(`Mr. Lee lives in the U.S. now. ${placeholder} odd char. It costs 5.5 dollars.`)
+    expect(out.join(' ').includes(placeholder)).toBe(false)
+    expect(out.join(' ')).toContain('5.5')
+  })
+
+  it('does not split decimal numbers, prices or times', () => {
+    expect(splitSentences('The ticket costs 5.5 dollars.')).toEqual(['The ticket costs 5.5 dollars.'])
+    expect(splitSentences('It is $3.50. We leave at 9.30 sharp.')).toEqual(['It is $3.50.', 'We leave at 9.30 sharp.'])
+    expect(splitSentences('Pi is 3.14159. It is long.')).toEqual(['Pi is 3.14159.', 'It is long.'])
+  })
+
+  it('still splits after a number that ends a sentence', () => {
+    expect(splitSentences('I am 25. You are 30.')).toEqual(['I am 25.', 'You are 30.'])
   })
 })
 

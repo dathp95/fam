@@ -6,22 +6,24 @@ import { Result } from './components/Result.tsx'
 import { Review } from './components/Review.tsx'
 import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
+import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { loadProgress, recordAnswer, saveProgress, type Progress } from './lib/progress.ts'
 import { SAMPLE_LESSON } from './lib/samples.ts'
 import { deleteLesson, getMedia, listLessons, requestPersistence, saveLesson } from './lib/storage.ts'
-import type { Draft, Lesson, MediaLesson } from './lib/types.ts'
+import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
 
 type View =
   | { name: 'home' }
   | { name: 'new' }
   | { name: 'review'; draft: Draft }
-  | { name: 'practice'; lesson: Lesson; media: Blob | null; run: number }
-  | { name: 'result'; lesson: Lesson; media: Blob | null; run: number; scores: number[]; gained: number }
+  | { name: 'practice'; lesson: Lesson; source: PlaybackSource; run: number }
+  | { name: 'result'; lesson: Lesson; source: PlaybackSource; run: number; scores: number[]; gained: number }
 
 export default function App() {
   const { theme, toggle } = useTheme()
   const [progress, setProgress] = useState<Progress>(loadProgress)
   const [saved, setSaved] = useState<MediaLesson[]>([])
+  const [catalog, setCatalog] = useState<LoadedCatalog | null>(null)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [view, setView] = useState<View>({ name: 'home' })
@@ -42,35 +44,56 @@ export default function App() {
   }, [refresh])
 
   useEffect(() => {
+    let cancelled = false
+    void loadCatalog().then((c) => {
+      if (cancelled) return
+      for (const w of c.warnings) console.warn(`[catalog] ${w}`)
+      setCatalog(c)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
     saveProgress(progress)
   }, [progress])
 
   const goHome = () => setView({ name: 'home' })
 
-  async function loadMedia(lesson: Lesson): Promise<Blob | null | undefined> {
-    if (lesson.kind === 'tts') return null
-    try {
-      const blob = await getMedia(lesson.id)
-      if (!blob) setMessage('Không tìm thấy file audio của bài này.')
-      return blob
-    } catch {
-      setMessage('Không mở được file audio của bài này.')
-      return undefined
+  /** Resolve where audio comes from: nothing (TTS), a URL (static) or a stored Blob (media). */
+  async function loadSource(lesson: Lesson): Promise<PlaybackSource | undefined> {
+    switch (lesson.kind) {
+      case 'tts':
+        return null
+      case 'static':
+        return assetUrl(lesson.audioUrl)
+      case 'media':
+        try {
+          const blob = await getMedia(lesson.id)
+          if (!blob) {
+            setMessage('Không tìm thấy file audio của bài này.')
+            return undefined
+          }
+          return blob
+        } catch {
+          setMessage('Không mở được file audio của bài này.')
+          return undefined
+        }
     }
   }
 
   async function start(lesson: Lesson) {
     setMessage('')
-    const media = await loadMedia(lesson)
-    if (media === undefined) return
-    setView({ name: 'practice', lesson, media, run: 0 })
+    const source = await loadSource(lesson)
+    if (source === undefined) return
+    setView({ name: 'practice', lesson, source, run: 0 })
   }
 
-  async function edit(lesson: Lesson) {
-    if (lesson.kind !== 'media') return
+  async function edit(lesson: MediaLesson) {
     setMessage('')
-    const media = await loadMedia(lesson)
-    if (!media) return
+    const media = await loadSource(lesson)
+    if (!(media instanceof Blob)) return
     setView({
       name: 'review',
       draft: {
@@ -86,7 +109,7 @@ export default function App() {
     })
   }
 
-  async function remove(lesson: Lesson) {
+  async function remove(lesson: MediaLesson) {
     if (!window.confirm(`Xóa bài "${lesson.title}"?`)) return
     try {
       await deleteLesson(lesson.id)
@@ -111,7 +134,9 @@ export default function App() {
       <TopBar progress={progress} theme={theme} onToggleTheme={toggle} />
       {view.name === 'home' && (
         <Home
-          lessons={[SAMPLE_LESSON, ...saved]}
+          sample={SAMPLE_LESSON}
+          userLessons={saved}
+          catalog={catalog}
           loading={loading}
           message={message}
           onStart={start}
@@ -128,7 +153,7 @@ export default function App() {
         <Practice
           key={view.run}
           lesson={view.lesson}
-          media={view.media}
+          source={view.source}
           onAnswered={onAnswered}
           onQuit={goHome}
           onFinish={(scores, gained) => setView({ ...view, name: 'result', scores, gained })}
@@ -139,7 +164,7 @@ export default function App() {
           scores={view.scores}
           gained={view.gained}
           onAgain={() =>
-            setView({ name: 'practice', lesson: view.lesson, media: view.media, run: view.run + 1 })
+            setView({ name: 'practice', lesson: view.lesson, source: view.source, run: view.run + 1 })
           }
           onHome={goHome}
         />

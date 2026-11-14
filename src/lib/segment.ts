@@ -20,7 +20,8 @@ const PROTECTED_DOT = String.fromCharCode(0xe000)
 const SENTENCE_BREAK_AFTER = /^["')\]]*(?:\s+["'([]?[A-Z]|\s*$)/
 
 /**
- * Replace periods that are part of an abbreviation with PROTECTED_DOT:
+ * Replace periods that are part of a number or abbreviation with PROTECTED_DOT:
+ * - a period between two digits (5.5, $3.50) is a decimal point;
  * - titles (Mr. Mrs. Ms. Dr. St. Jr. Sr.) and "vs." never end a sentence;
  * - "etc." is protected only when followed by a lowercase word;
  * - multi-letter dotted abbreviations (U.S., D.C., a.m., e.g.): inner periods are always protected,
@@ -29,6 +30,8 @@ const SENTENCE_BREAK_AFTER = /^["')\]]*(?:\s+["'([]?[A-Z]|\s*$)/
  */
 function protectAbbreviations(text: string): string {
   return text
+    // Decimal numbers, prices and times written with a dot: 5.5, $3.50, 9.30.
+    .replace(/(?<=\d)\.(?=\d)/g, PROTECTED_DOT)
     .replace(/\b(?:Mr|Mrs|Ms|Dr|St|Jr|Sr|vs)\./g, (m) => m.slice(0, -1) + PROTECTED_DOT)
     .replace(/\betc\.(?=\s+[a-z])/g, 'etc' + PROTECTED_DOT)
     .replace(/(?<![A-Za-z])(?:[A-Za-z]\.){2,}/g, (m, offset: number, whole: string) => {

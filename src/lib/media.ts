@@ -2,6 +2,9 @@
 
 import { findSilences } from './segment.ts'
 
+/** True for video files (decided by extension when the source is a URL). */
+export const isVideoUrl = (url: string): boolean => /\.(?:mp4|webm)(?:[?#].*)?$/i.test(url)
+
 /** Hard limit for uploads (seconds). */
 export const MAX_DURATION_SEC = 600
 

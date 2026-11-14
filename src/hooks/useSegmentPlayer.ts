@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { isVideoUrl } from '../lib/media.ts'
+import type { PlaybackSource } from '../lib/types.ts'
 
-/** Plays [start, end) ranges of an audio/video Blob through a detached media element. */
-export function useSegmentPlayer(blob: Blob | null) {
+/**
+ * Plays [start, end) ranges of an audio/video source through a detached media element.
+ * A Blob is played through a temporary object URL; a string is used directly as `src`
+ * (the caller resolves BASE_URL) and nothing is created or revoked.
+ */
+export function useSegmentPlayer(source: PlaybackSource) {
   const elRef = useRef<HTMLMediaElement | null>(null)
   const timer = useRef<number | undefined>(undefined)
   /** Cancels a pending "wait for metadata" listener, if any. */
@@ -13,9 +19,11 @@ export function useSegmentPlayer(blob: Blob | null) {
   }, [])
 
   useEffect(() => {
-    if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const el = document.createElement(blob.type.startsWith('video') ? 'video' : 'audio')
+    if (!source) return
+    const isBlob = typeof source !== 'string'
+    const url = isBlob ? URL.createObjectURL(source) : source
+    const isVideo = isBlob ? source.type.startsWith('video') : isVideoUrl(source)
+    const el = document.createElement(isVideo ? 'video' : 'audio')
     el.preload = 'auto'
     if (el instanceof HTMLVideoElement) el.playsInline = true
     el.src = url
@@ -26,10 +34,10 @@ export function useSegmentPlayer(blob: Blob | null) {
       el.pause()
       el.removeAttribute('src')
       el.load()
-      URL.revokeObjectURL(url)
+      if (isBlob) URL.revokeObjectURL(url)
       elRef.current = null
     }
-  }, [blob, clearPending])
+  }, [source, clearPending])
 
   const stop = useCallback(() => {
     clearPending()
