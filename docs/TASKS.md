@@ -224,5 +224,19 @@ Bước 3, ghép (`npm run ingest:pictures -- --merge`):
 
 ## Việc người dùng tự làm (Claude Code không làm thay)
 1. **Chọn tranh** ở https://www.metmuseum.org: bật lọc Open Access, tải ảnh về, đổi tên thành `<objectId>.jpg` (số cuối link trang tác phẩm) và đặt vào `inbox/images/`. Chạy `npm run ingest:pictures`; nhờ Claude viết file nội dung từ các file `.draft.json`; đọc lại cho đúng rồi chạy `npm run ingest:pictures -- --merge`.
-2. **Cắt audio VOA**: `ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn -ac 1 -b:a 48k l01.mp3`, đặt vào `public/lessons/voa/`. Đối chiếu transcript trên trang VOA, nạp vào màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi thêm vào `public/lessons/index.json`.
+2. **Nạp bài VOA bằng Python** (xem mục "Nạp bài bằng Python" trong README): cắt audio nếu cần (`ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn l01.mp3`), đặt `<id>.mp3` và `<id>.txt` (transcript, có thể kèm phần đầu title/url/topic/level/order) vào `inbox/lessons/`, chạy `python process_lesson.py --id <id> --dry-run` để xem bảng câu rồi chạy không có `--dry-run`. Đối chiếu transcript với trang VOA, nghe thử từng câu và sửa mốc thời gian trong `public/lessons/index.json` nếu lệch. (Cách cũ vẫn dùng được: nạp ở màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi dán vào `index.json`; hiện mục "Tải file" ẩn trừ khi mở bằng `?admin`.)
 3. Chỉ lấy chữ và audio VOA, không lấy ảnh của họ. Giữ dòng ghi nguồn "Voice of America · public domain".
+
+---
+
+## Task H — Nạp bài bằng Python (`process_lesson.py`)
+
+Script độc lập ở thư mục gốc, Python 3.10+ chỉ dùng thư viện chuẩn, gọi ffmpeg/ffprobe qua `subprocess`; không đụng vào mã TypeScript của app.
+
+- **Đầu vào**: `inbox/lessons/<id>.(mp3|m4a|wav)` + `<id>.txt` cùng tên; `<id>` (chỉ `a-z`, `0-9`, `-`) là mã bài. Phần đầu tùy chọn `title`, `url`, `topic`, `level` (thuộc `LEVELS` trong `src/lib/types.ts`), `order`, kết thúc bằng dòng `---`. Mặc định: title = id, level A1, topic "Daily English", nguồn "Voice of America" / "public domain", url trang chung kèm CẢNH BÁO.
+- **Làm sạch transcript**: nháy cong thành nháy thẳng, bỏ nháy kép, "..." và "…" thành khoảng trắng, bỏ nhãn người nói ở đầu dòng (tối đa 2 từ), nối dòng bằng khoảng trắng; dòng không kết thúc bằng `. ! ?` được thêm dấu chấm (script liệt kê các dòng đó). Dòng kết thúc bằng `, ; :` coi như câu còn tiếp, trừ dòng cuối (đổi thành dấu chấm).
+- **Tách câu, im lặng, căn thời điểm**: bản port trung thực của `splitSentences`, `findSilences`, `alignSentences` trong `src/lib/segment.ts` (cùng hằng số; `round2` làm tròn nửa lên như `Math.round`). Audio được chuyển bằng `ffmpeg -ac 1 -b:a 48k -map_metadata -1` vào `public/lessons/voa/<id>.mp3`; độ dài đo bằng ffprobe trên file đã chuyển; quãng im lặng tìm trên bản giải mã mono 16 kHz.
+- **Bài tạo ra** đúng lược đồ `parseStaticLesson` (id, kind, title, langId, createdAt, audioUrl, duration, sentences với id `<id>-<n>`, level, topic, source, và `order` nếu có), được kiểm tra trong Python trước khi ghi.
+- **Ghi `index.json` an toàn**: giữ nguyên mọi thứ khác (kể cả `pictures`), chỉ thêm bài (thay bài cùng id khi `--force`, không thì bỏ qua); luôn sao lưu `index.json.bak`; ghi file tạm cùng thư mục rồi `os.replace`; thụt lề 2 dấu cách, UTF-8, có xuống dòng cuối. File gốc được chuyển sang `inbox/lessons/done/`; script không bao giờ xóa file người dùng.
+- **Cờ**: `--id`, `--force`, `--dry-run` (không chuyển audio, không ghi gì; đo từ file gốc), `--keep-inbox`. Mã thoát 1 nếu có bài lỗi. Mọi thông báo bằng tiếng Việt; sau mỗi bài in bảng `n, start, end, text` và cảnh báo (câu > 16 từ, câu < 0,6 giây, câu kết thúc bằng dấu phẩy, im lặng đầu/cuối > 2 giây, không tìm thấy quãng im lặng nào).
+- **Test**: `tests/test_process_lesson.py` (`npm run test:py`), đối chiếu với code TypeScript qua `tests/segment_vectors.json` (sinh bằng `node tests/gen_segment_vectors.mjs`); phần chạy thật với ffmpeg tự bỏ qua nếu máy không có ffmpeg.

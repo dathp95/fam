@@ -25,3 +25,6 @@ dist-ssr
 # Draft downloads (audio, transcripts, exported JSON)
 download/
 inbox/
+# Python (process_lesson.py and its tests)
+__pycache__/
+*.pyc

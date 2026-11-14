@@ -1,0 +1,759 @@
+{
+ "split": [
+  {
+   "text": "Hello there. How are you? I am fine!",
+   "out": [
+    "Hello there.",
+    "How are you?",
+    "I am fine!"
+   ]
+  },
+  {
+   "text": "  One   two.\n\nThree four  ",
+   "out": [
+    "One two.",
+    "Three four"
+   ]
+  },
+  {
+   "text": "",
+   "out": []
+  },
+  {
+   "text": "   \n ",
+   "out": []
+  },
+  {
+   "text": "When the morning sun finally rose over the quiet hills, the farmers walked slowly to the fields, and the children ran to school.",
+   "out": [
+    "When the morning sun finally rose over the quiet hills,",
+    "the farmers walked slowly to the fields,",
+    "and the children ran to school."
+   ]
+  },
+  {
+   "text": "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen.",
+   "out": [
+    "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen."
+   ]
+  },
+  {
+   "text": "I live in Washington, D.C. and I like it very much.",
+   "out": [
+    "I live in Washington, D.C. and I like it very much."
+   ]
+  },
+  {
+   "text": "I live in Washington, D.C. Anna lives there too.",
+   "out": [
+    "I live in Washington, D.C.",
+    "Anna lives there too."
+   ]
+  },
+  {
+   "text": "Mr. Smith and Dr. Lee arrive at 9 a.m. today.",
+   "out": [
+    "Mr. Smith and Dr. Lee arrive at 9 a.m. today."
+   ]
+  },
+  {
+   "text": "It is 5 p.m. We go home.",
+   "out": [
+    "It is 5 p.m.",
+    "We go home."
+   ]
+  },
+  {
+   "text": "She works in the U.S.",
+   "out": [
+    "She works in the U.S."
+   ]
+  },
+  {
+   "text": "She works in the U.S. He works in the U.K.",
+   "out": [
+    "She works in the U.S.",
+    "He works in the U.K."
+   ]
+  },
+  {
+   "text": "Eat fruit, e.g. Apples are good.",
+   "out": [
+    "Eat fruit, e.g. Apples are good."
+   ]
+  },
+  {
+   "text": "It is cheap, i.e. Free.",
+   "out": [
+    "It is cheap, i.e. Free."
+   ]
+  },
+  {
+   "text": "Cats vs. Dogs is a game.",
+   "out": [
+    "Cats vs. Dogs is a game."
+   ]
+  },
+  {
+   "text": "Martin Luther King Jr. Was kind.",
+   "out": [
+    "Martin Luther King Jr. Was kind."
+   ]
+  },
+  {
+   "text": "We eat rice, fish, etc. and drink tea.",
+   "out": [
+    "We eat rice, fish, etc. and drink tea."
+   ]
+  },
+  {
+   "text": "We eat rice, fish, etc. Then we sleep.",
+   "out": [
+    "We eat rice, fish, etc.",
+    "Then we sleep."
+   ]
+  },
+  {
+   "text": "He said \"I live in D.C.\" Then he left.",
+   "out": [
+    "He said \"I live in D.C.\"",
+    "Then he left."
+   ]
+  },
+  {
+   "text": "[He is in the U.S. now.] She is here.",
+   "out": [
+    "[He is in the U.S. now.]",
+    "She is here."
+   ]
+  },
+  {
+   "text": "Is it 5 p.m.? Yes! Mr. Lee is late.",
+   "out": [
+    "Is it 5 p.m.?",
+    "Yes!",
+    "Mr. Lee is late."
+   ]
+  },
+  {
+   "text": "When Dr. Lee arrived at the old station in Washington, D.C. at nine a.m. today, the tired workers were already waiting, and the children ran to school.",
+   "out": [
+    "When Dr. Lee arrived at the old station in Washington,",
+    "D.C. at nine a.m. today, the tired workers were already waiting,",
+    "and the children ran to school."
+   ]
+  },
+  {
+   "text": "The ticket costs 5.5 dollars.",
+   "out": [
+    "The ticket costs 5.5 dollars."
+   ]
+  },
+  {
+   "text": "It is $3.50. We leave at 9.30 sharp.",
+   "out": [
+    "It is $3.50.",
+    "We leave at 9.30 sharp."
+   ]
+  },
+  {
+   "text": "Pi is 3.14159. It is long.",
+   "out": [
+    "Pi is 3.14159.",
+    "It is long."
+   ]
+  },
+  {
+   "text": "I am 25. You are 30.",
+   "out": [
+    "I am 25.",
+    "You are 30."
+   ]
+  },
+  {
+   "text": "My new apartment,",
+   "out": [
+    "My new apartment,"
+   ]
+  },
+  {
+   "text": "Well, Anna with two Ns. Welcome to 1400 Irving Street!",
+   "out": [
+    "Well, Anna with two Ns.",
+    "Welcome to 1400 Irving Street!"
+   ]
+  },
+  {
+   "text": "No ending punctuation here",
+   "out": [
+    "No ending punctuation here"
+   ]
+  },
+  {
+   "text": "A very long sentence, with several commas, and semicolons; and also colons: that goes on and on for many many words, until it ends.",
+   "out": [
+    "A very long sentence, with several commas,",
+    "and semicolons; and also colons: that goes on and on for many many words, until it ends."
+   ]
+  },
+  {
+   "text": "Hi, are you Anna? Yes, hi there, are you Pete? I am Pete. Nice to meet you.",
+   "out": [
+    "Hi, are you Anna?",
+    "Yes, hi there, are you Pete?",
+    "I am Pete.",
+    "Nice to meet you."
+   ]
+  },
+  {
+   "text": "First: one thing; second: another thing, third: yet another thing that is long enough to be chunked into pieces for sure.",
+   "out": [
+    "First: one thing; second: another thing,",
+    "third: yet another thing that is long enough to be chunked into pieces for sure."
+   ]
+  },
+  {
+   "text": "Wait... what? Really!? Yes.",
+   "out": [
+    "Wait...",
+    "what?",
+    "Really!?",
+    "Yes."
+   ]
+  },
+  {
+   "text": "He is Jr. and she is Sr. but they are both Dr. Smith.",
+   "out": [
+    "He is Jr. and she is Sr. but they are both Dr. Smith."
+   ]
+  },
+  {
+   "text": "The U.S.A. is big. The U.K. is small.",
+   "out": [
+    "The U.S.A. is big.",
+    "The U.K. is small."
+   ]
+  },
+  {
+   "text": "a.m. is morning. p.m. is evening.",
+   "out": [
+    "a.m. is morning.",
+    "p.m. is evening."
+   ]
+  },
+  {
+   "text": "Dr. Who? Mrs. Who? Ms. Who?",
+   "out": [
+    "Dr. Who?",
+    "Mrs. Who?",
+    "Ms. Who?"
+   ]
+  }
+ ],
+ "align": [
+  {
+   "texts": [
+    "First sentence here.",
+    "Second one.",
+    "A third, rather longer sentence.",
+    "End."
+   ],
+   "duration": 20,
+   "silences": [],
+   "out": [
+    {
+     "text": "First sentence here.",
+     "start": 0,
+     "end": 6.12
+    },
+    {
+     "text": "Second one.",
+     "start": 5.97,
+     "end": 9.4
+    },
+    {
+     "text": "A third, rather longer sentence.",
+     "start": 9.25,
+     "end": 18.96
+    },
+    {
+     "text": "End.",
+     "start": 18.81,
+     "end": 20
+    }
+   ]
+  },
+  {
+   "texts": [
+    "First sentence here.",
+    "Second one.",
+    "A third, rather longer sentence.",
+    "End."
+   ],
+   "duration": 20,
+   "silences": [
+    3.1,
+    6,
+    12.5,
+    15
+   ],
+   "out": [
+    {
+     "text": "First sentence here.",
+     "start": 0,
+     "end": 6.15
+    },
+    {
+     "text": "Second one.",
+     "start": 6,
+     "end": 9.4
+    },
+    {
+     "text": "A third, rather longer sentence.",
+     "start": 9.25,
+     "end": 18.96
+    },
+    {
+     "text": "End.",
+     "start": 18.81,
+     "end": 20
+    }
+   ]
+  },
+  {
+   "texts": [
+    "Sentence number 0.",
+    "Sentence number 1.",
+    "Sentence number 2.",
+    "Sentence number 3.",
+    "Sentence number 4.",
+    "Sentence number 5.",
+    "Sentence number 6.",
+    "Sentence number 7."
+   ],
+   "duration": 3.6,
+   "silences": [
+    0.1,
+    0.2,
+    3.5
+   ],
+   "out": [
+    {
+     "text": "Sentence number 0.",
+     "start": 0,
+     "end": 0.55
+    },
+    {
+     "text": "Sentence number 1.",
+     "start": 0.4,
+     "end": 0.95
+    },
+    {
+     "text": "Sentence number 2.",
+     "start": 0.8,
+     "end": 1.35
+    },
+    {
+     "text": "Sentence number 3.",
+     "start": 1.2,
+     "end": 1.75
+    },
+    {
+     "text": "Sentence number 4.",
+     "start": 1.6,
+     "end": 2.55
+    },
+    {
+     "text": "Sentence number 5.",
+     "start": 2.4,
+     "end": 2.95
+    },
+    {
+     "text": "Sentence number 6.",
+     "start": 2.8,
+     "end": 3.35
+    },
+    {
+     "text": "Sentence number 7.",
+     "start": 3.2,
+     "end": 3.6
+    }
+   ]
+  },
+  {
+   "texts": [
+    "Sentence 0.",
+    "Sentence 1.",
+    "Sentence 2.",
+    "Sentence 3.",
+    "Sentence 4.",
+    "Sentence 5.",
+    "Sentence 6.",
+    "Sentence 7.",
+    "Sentence 8.",
+    "Sentence 9."
+   ],
+   "duration": 2,
+   "silences": [],
+   "out": [
+    {
+     "text": "Sentence 0.",
+     "start": 0,
+     "end": 0.35
+    },
+    {
+     "text": "Sentence 1.",
+     "start": 0.2,
+     "end": 0.55
+    },
+    {
+     "text": "Sentence 2.",
+     "start": 0.4,
+     "end": 0.75
+    },
+    {
+     "text": "Sentence 3.",
+     "start": 0.6,
+     "end": 0.95
+    },
+    {
+     "text": "Sentence 4.",
+     "start": 0.8,
+     "end": 1.15
+    },
+    {
+     "text": "Sentence 5.",
+     "start": 1,
+     "end": 1.35
+    },
+    {
+     "text": "Sentence 6.",
+     "start": 1.2,
+     "end": 1.55
+    },
+    {
+     "text": "Sentence 7.",
+     "start": 1.4,
+     "end": 1.75
+    },
+    {
+     "text": "Sentence 8.",
+     "start": 1.6,
+     "end": 1.95
+    },
+    {
+     "text": "Sentence 9.",
+     "start": 1.8,
+     "end": 2
+    }
+   ]
+  },
+  {
+   "texts": [
+    "Only one."
+   ],
+   "duration": 5,
+   "silences": [],
+   "out": [
+    {
+     "text": "Only one.",
+     "start": 0,
+     "end": 5
+    }
+   ]
+  },
+  {
+   "texts": [],
+   "duration": 5,
+   "silences": [],
+   "out": []
+  },
+  {
+   "texts": [
+    "Hi, are you Anna?",
+    "Yes, hi there, are you Pete?",
+    "I am Pete.",
+    "Nice to meet you.",
+    "Let's try that again."
+   ],
+   "duration": 29.545556,
+   "silences": [
+    2.31,
+    4.3,
+    5.52,
+    6.9,
+    8.1,
+    9.95,
+    14.2,
+    20.15
+   ],
+   "out": [
+    {
+     "text": "Hi, are you Anna?",
+     "start": 0,
+     "end": 5.67
+    },
+    {
+     "text": "Yes, hi there, are you Pete?",
+     "start": 5.52,
+     "end": 14.35
+    },
+    {
+     "text": "I am Pete.",
+     "start": 14.2,
+     "end": 17.62
+    },
+    {
+     "text": "Nice to meet you.",
+     "start": 17.47,
+     "end": 23.02
+    },
+    {
+     "text": "Let's try that again.",
+     "start": 22.87,
+     "end": 29.55
+    }
+   ]
+  },
+  {
+   "texts": [
+    "A.",
+    "B.",
+    "C."
+   ],
+   "duration": 1.2,
+   "silences": [
+    0.4,
+    0.8
+   ],
+   "out": [
+    {
+     "text": "A.",
+     "start": 0,
+     "end": 0.55
+    },
+    {
+     "text": "B.",
+     "start": 0.4,
+     "end": 0.95
+    },
+    {
+     "text": "C.",
+     "start": 0.8,
+     "end": 1.2
+    }
+   ]
+  },
+  {
+   "texts": [
+    "Aaa bbb.",
+    "Ccc ddd eee.",
+    "Fff."
+   ],
+   "duration": 7.777,
+   "silences": [
+    1.234,
+    5.678
+   ],
+   "out": [
+    {
+     "text": "Aaa bbb.",
+     "start": 0,
+     "end": 1.38
+    },
+    {
+     "text": "Ccc ddd eee.",
+     "start": 1.23,
+     "end": 5.83
+    },
+    {
+     "text": "Fff.",
+     "start": 5.68,
+     "end": 7.78
+    }
+   ]
+  },
+  {
+   "texts": [
+    "Long one here with many words in it.",
+    "Short.",
+    "Medium length sentence."
+   ],
+   "duration": 12.3456,
+   "silences": [
+    0.05,
+    11.9
+   ],
+   "out": [
+    {
+     "text": "Long one here with many words in it.",
+     "start": 0,
+     "end": 6.99
+    },
+    {
+     "text": "Short.",
+     "start": 6.84,
+     "end": 8.13
+    },
+    {
+     "text": "Medium length sentence.",
+     "start": 7.98,
+     "end": 12.35
+    }
+   ]
+  },
+  {
+   "texts": [
+    "xxxxxxxxxxxxx",
+    "yyyyyyy",
+    "zzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    "www"
+   ],
+   "duration": 10.005,
+   "silences": [],
+   "out": [
+    {
+     "text": "xxxxxxxxxxxxx",
+     "start": 0,
+     "end": 2.65
+    },
+    {
+     "text": "yyyyyyy",
+     "start": 2.5,
+     "end": 4
+    },
+    {
+     "text": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+     "start": 3.85,
+     "end": 9.58
+    },
+    {
+     "text": "www",
+     "start": 9.43,
+     "end": 10.01
+    }
+   ]
+  }
+ ],
+ "silences": [
+  {
+   "sr": 1000,
+   "segments": [
+    [
+     1,
+     0.3
+    ],
+    [
+     0.5,
+     0.001
+    ],
+    [
+     2,
+     0.3
+    ],
+    [
+     0.2,
+     0.001
+    ],
+    [
+     1,
+     0.3
+    ],
+    [
+     0.35,
+     0
+    ],
+    [
+     1.5,
+     0.25
+    ],
+    [
+     0.8,
+     0.001
+    ]
+   ],
+   "out": [
+    1.25,
+    4.875
+   ]
+  },
+  {
+   "sr": 16000,
+   "segments": [
+    [
+     0.5,
+     0.2
+    ],
+    [
+     0.4,
+     0.0005
+    ],
+    [
+     0.5,
+     0.2
+    ],
+    [
+     0.3,
+     0.0005
+    ],
+    [
+     0.3,
+     0.2
+    ]
+   ],
+   "out": [
+    0.7000000000000001,
+    1.55
+   ]
+  },
+  {
+   "sr": 1000,
+   "segments": [
+    [
+     3,
+     0.2
+    ]
+   ],
+   "out": []
+  },
+  {
+   "sr": 1000,
+   "segments": [
+    [
+     0.5,
+     0.001
+    ]
+   ],
+   "out": []
+  },
+  {
+   "sr": 1000,
+   "segments": [
+    [
+     1,
+     0.01
+    ],
+    [
+     0.5,
+     0.0008
+    ],
+    [
+     1,
+     0.01
+    ],
+    [
+     0.4,
+     0.0008
+    ],
+    [
+     1,
+     0.01
+    ]
+   ],
+   "out": [
+    1.25,
+    2.7
+   ]
+  }
+ ]
+}
