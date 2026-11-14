@@ -1,12 +1,19 @@
+import { averageScore } from '../lib/diff.ts'
+import { PASS_SCORE } from '../lib/progress.ts'
+import type { RevealOutcome } from '../lib/series.ts'
+import { Picture } from './Picture.tsx'
+
 interface Props {
   scores: number[]
   gained: number
+  /** Picture-reveal result when the lesson belongs to a series, otherwise null. */
+  outcome: RevealOutcome | null
   onAgain: () => void
   onHome: () => void
 }
 
-export function Result({ scores, gained, onAgain, onHome }: Props) {
-  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+export function Result({ scores, gained, outcome, onAgain, onHome }: Props) {
+  const avg = averageScore(scores)
   const perfect = scores.filter((x) => x === 100).length
   return (
     <div className="stack">
@@ -22,6 +29,27 @@ export function Result({ scores, gained, onAgain, onHome }: Props) {
         <p className="muted">
           {perfect}/{scores.length} câu chính xác hoàn toàn.
         </p>
+
+        {outcome?.kind === 'opened' && (
+          <div className="stack" role="status">
+            <p className="gain">
+              Bạn vừa mở mảnh thứ {outcome.count}/{outcome.series.grid.cols * outcome.series.grid.rows}
+            </p>
+            <Picture series={outcome.series} revealed={outcome.revealed} fresh={outcome.fresh} />
+            {outcome.complete && (
+              <p className="muted">Bạn đã mở hết bức tranh! Về trang chính để làm bài thưởng.</p>
+            )}
+          </div>
+        )}
+        {outcome?.kind === 'already' && (
+          <p className="muted">Bài này đã mở mảnh tranh trước đó nên lần này không mở thêm.</p>
+        )}
+        {outcome?.kind === 'failed' && (
+          <p className="muted" role="status">
+            Cần điểm trung bình từ {PASS_SCORE} để mở mảnh tranh.
+          </p>
+        )}
+
         <div className="row">
           <button className="btn primary" onClick={onAgain}>
             Luyện lại

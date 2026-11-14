@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { diffWords, maskHint, scoreAnswer } from './diff.ts'
+import { averageScore, diffWords, maskHint, scoreAnswer } from './diff.ts'
 
 const w = (s: string) => s.split(' ')
+
+describe('averageScore', () => {
+  it('rounds the mean of the scores', () => {
+    expect(averageScore([100, 100, 50])).toBe(83)
+    expect(averageScore([59, 60])).toBe(60) // 59.5 rounds up: the same number the result screen shows
+    expect(averageScore([60])).toBe(60)
+  })
+
+  it('is 0 for no scores', () => {
+    expect(averageScore([])).toBe(0)
+  })
+})
 
 describe('scoreAnswer', () => {
   it('gives 100 and 10 + 5 bonus XP for a perfect answer', () => {

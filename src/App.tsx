@@ -7,8 +7,10 @@ import { Review } from './components/Review.tsx'
 import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
-import { loadProgress, recordAnswer, saveProgress, type Progress } from './lib/progress.ts'
+import { averageScore } from './lib/diff.ts'
+import { loadProgress, recordAnswer, recordLessonDone, saveProgress, type Progress } from './lib/progress.ts'
 import { SAMPLE_LESSON } from './lib/samples.ts'
+import { findSeriesForLesson, revealOutcome, type RevealOutcome } from './lib/series.ts'
 import { deleteLesson, getMedia, listLessons, requestPersistence, saveLesson } from './lib/storage.ts'
 import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
 
@@ -17,7 +19,15 @@ type View =
   | { name: 'new' }
   | { name: 'review'; draft: Draft }
   | { name: 'practice'; lesson: Lesson; source: PlaybackSource; run: number }
-  | { name: 'result'; lesson: Lesson; source: PlaybackSource; run: number; scores: number[]; gained: number }
+  | {
+      name: 'result'
+      lesson: Lesson
+      source: PlaybackSource
+      run: number
+      scores: number[]
+      gained: number
+      outcome: RevealOutcome | null
+    }
 
 export default function App() {
   const { theme, toggle } = useTheme()
@@ -129,11 +139,21 @@ export default function App() {
     setProgress((p) => recordAnswer(p, xp))
   }
 
+  /** Record the lesson as passed (average ≥ PASS_SCORE) and work out what the picture shows. */
+  function finishLesson(lesson: Lesson, scores: number[]): RevealOutcome | null {
+    const avg = averageScore(scores)
+    const { progress: next, firstPass } = recordLessonDone(progress, lesson.id, avg)
+    setProgress(next)
+    const series = catalog ? findSeriesForLesson(catalog.series, lesson.id) : undefined
+    return series ? revealOutcome(series, next, lesson.id, avg, firstPass) : null
+  }
+
   return (
     <div className="wrap">
       <TopBar progress={progress} theme={theme} onToggleTheme={toggle} />
       {view.name === 'home' && (
         <Home
+          progress={progress}
           sample={SAMPLE_LESSON}
           userLessons={saved}
           catalog={catalog}
@@ -156,13 +176,16 @@ export default function App() {
           source={view.source}
           onAnswered={onAnswered}
           onQuit={goHome}
-          onFinish={(scores, gained) => setView({ ...view, name: 'result', scores, gained })}
+          onFinish={(scores, gained) =>
+            setView({ ...view, name: 'result', scores, gained, outcome: finishLesson(view.lesson, scores) })
+          }
         />
       )}
       {view.name === 'result' && (
         <Result
           scores={view.scores}
           gained={view.gained}
+          outcome={view.outcome}
           onAgain={() =>
             setView({ name: 'practice', lesson: view.lesson, source: view.source, run: view.run + 1 })
           }

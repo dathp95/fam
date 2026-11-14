@@ -1,9 +1,13 @@
 import type { LoadedCatalog } from '../lib/catalog.ts'
 import { groupStaticLessons, OTHER_GROUP_KEY } from '../lib/lessonGroups.ts'
+import type { LessonDone, Progress } from '../lib/progress.ts'
+import { buildBonusLesson } from '../lib/series.ts'
 import { LESSON_SOURCES, type LessonSourceId } from '../lib/sources.ts'
 import type { Lesson, MediaLesson, SampleLesson, StaticLesson } from '../lib/types.ts'
+import { PictureCard } from './PictureCard.tsx'
 
 interface Props {
+  progress: Progress
   sample: SampleLesson
   /** Lessons the user created from their own files. */
   userLessons: MediaLesson[]
@@ -21,7 +25,7 @@ const CATALOG_SECTION_ID = 'catalog-section'
 
 const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
 
-export function Home({ sample, userLessons, catalog, loading, message, onStart, onEdit, onDelete, onNew }: Props) {
+export function Home({ progress, sample, userLessons, catalog, loading, message, onStart, onEdit, onDelete, onNew }: Props) {
   function pickSource(id: LessonSourceId) {
     switch (id) {
       case 'catalog':
@@ -38,6 +42,7 @@ export function Home({ sample, userLessons, catalog, loading, message, onStart, 
 
   const groups = catalog ? groupStaticLessons(catalog.lessons) : []
   const hasSeries = groups.some((g) => g.key !== OTHER_GROUP_KEY)
+  const seriesTitle = (seriesId: string) => catalog?.series.find((s) => s.id === seriesId)?.title ?? seriesId
 
   return (
     <div className="stack">
@@ -82,13 +87,27 @@ export function Home({ sample, userLessons, catalog, loading, message, onStart, 
         {catalog && !catalog.error && catalog.lessons.length === 0 && (
           <p className="muted">Chưa có bài có sẵn.</p>
         )}
+        {catalog?.series.map((s) => (
+          <PictureCard
+            key={s.id}
+            series={s}
+            lessons={catalog.lessons}
+            progress={progress}
+            onStartBonus={() => onStart(buildBonusLesson(s))}
+          />
+        ))}
         {groups.map((g) => (
           <div className="stack" key={g.key}>
             {(hasSeries || g.key !== OTHER_GROUP_KEY) && (
-              <h3 className="group-title">{g.seriesId === null ? 'Khác' : `Chuỗi: ${g.seriesId}`}</h3>
+              <h3 className="group-title">{g.seriesId === null ? 'Khác' : `Chuỗi: ${seriesTitle(g.seriesId)}`}</h3>
             )}
             {g.lessons.map((l) => (
-              <StaticLessonCard key={l.id} lesson={l} onStart={() => onStart(l)} />
+              <StaticLessonCard
+                key={l.id}
+                lesson={l}
+                done={Object.hasOwn(progress.lessonsDone, l.id) ? progress.lessonsDone[l.id] : undefined}
+                onStart={() => onStart(l)}
+              />
             ))}
           </div>
         ))}
@@ -130,7 +149,15 @@ export function Home({ sample, userLessons, catalog, loading, message, onStart, 
   )
 }
 
-function StaticLessonCard({ lesson: l, onStart }: { lesson: StaticLesson; onStart: () => void }) {
+function StaticLessonCard({
+  lesson: l,
+  done,
+  onStart,
+}: {
+  lesson: StaticLesson
+  done: LessonDone | undefined
+  onStart: () => void
+}) {
   return (
     <div className="card lesson">
       <div>
@@ -139,6 +166,7 @@ function StaticLessonCard({ lesson: l, onStart }: { lesson: StaticLesson; onStar
           <span className="tag">{l.level}</span>
           <span className="tag">{l.topic}</span>
           <span className="muted">{l.sentences.length} câu</span>
+          {done && <span className="tag">Đã qua · {done.best}</span>}
         </div>
         <div className="muted">
           Nguồn:{' '}

@@ -58,6 +58,28 @@ export interface StaticLesson extends LessonBase {
 
 export type Lesson = SampleLesson | MediaLesson | StaticLesson
 
+/** Where a picture comes from. `text` is shown as-is (Vietnamese); `url` is the museum page. */
+export interface PictureCredit {
+  text: string
+  url: string
+}
+
+/** A picture revealed tile by tile as the lessons in `lessonIds` are completed. */
+export interface Series {
+  id: string
+  title: string
+  level: Level
+  image: { src: string; width: number; height: number; alt: string; credit: PictureCredit }
+  /** cols * rows === lessonIds.length */
+  grid: { cols: number; rows: number }
+  /** Fixed permutation of 0..(cols*rows-1): the n-th passed lesson opens tile revealOrder[n-1]. */
+  revealOrder: number[]
+  /** Lessons of the series in study order. Some may not exist in the catalog yet. */
+  lessonIds: string[]
+  /** English A1 sentences about the picture (also the bonus lesson). */
+  intro: string[]
+}
+
 /** Where practice audio comes from: a stored file, a URL, or nothing (TTS). */
 export type PlaybackSource = Blob | string | null
 

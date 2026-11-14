@@ -1,9 +1,10 @@
 /** Catalog of built-in lessons (public/lessons/index.json): loading and runtime validation. */
 
-import { LEVELS, type StaticLesson, type TimedSentence } from './types.ts'
+import { LEVELS, type Series, type StaticLesson, type TimedSentence } from './types.ts'
 
 export interface Catalog {
   lessons: StaticLesson[]
+  series: Series[]
   /** Human-readable notes about entries that were skipped. */
   warnings: string[]
 }
@@ -113,15 +114,112 @@ export function parseStaticLesson(raw: unknown): ParseResult<StaticLesson> {
   }
 }
 
-/** Validate the whole catalog; invalid or duplicate lessons are skipped and listed in warnings. */
+const positiveInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 1
+
+/** True when `order` holds each of 0..n-1 exactly once. */
+function isPermutation(order: unknown, n: number): order is number[] {
+  if (!Array.isArray(order) || order.length !== n) return false
+  const seen = new Set<number>()
+  for (const v of order as unknown[]) {
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v >= n || seen.has(v)) return false
+    seen.add(v)
+  }
+  return true
+}
+
+/** Validate one picture series from JSON (grid, reveal order, lessons, intro, image). */
+export function parseSeries(raw: unknown): ParseResult<Series> {
+  if (!isRecord(raw)) return fail('không phải một đối tượng.')
+  const id = text(raw.id)
+  if (!id) return fail('thiếu id.')
+  const title = text(raw.title)
+  if (!title) return fail('thiếu title.')
+  const level = LEVELS.find((l) => l === raw.level)
+  if (!level) return fail(`level phải là ${LEVELS.join(' hoặc ')}.`)
+
+  if (!isRecord(raw.image)) return fail('thiếu image.')
+  const { src: rawSrc, alt: rawAlt, width, height, credit } = raw.image
+  const src = text(rawSrc)
+  const alt = text(rawAlt)
+  if (!src) return fail('image.src bị thiếu.')
+  if (!alt) return fail('image.alt bị thiếu.')
+  if (!positiveInt(width) || !positiveInt(height)) return fail('image.width và image.height phải là số nguyên dương.')
+  if (!isRecord(credit)) return fail('thiếu image.credit.')
+  const creditText = text(credit.text)
+  const creditUrl = text(credit.url)
+  if (!creditText || !creditUrl) return fail('image.credit cần đủ text và url.')
+
+  if (!isRecord(raw.grid) || !positiveInt(raw.grid.cols) || !positiveInt(raw.grid.rows)) {
+    return fail('grid cần cols và rows là số nguyên dương.')
+  }
+  const { cols, rows } = raw.grid
+  const lessonIds = Array.isArray(raw.lessonIds) ? (raw.lessonIds as unknown[]).map(text) : null
+  if (!lessonIds || lessonIds.some((x) => x === null)) return fail('lessonIds phải là danh sách id không rỗng.')
+  const ids = lessonIds as string[]
+  if (new Set(ids).size !== ids.length) return fail('lessonIds có id bị lặp.')
+  if (cols * rows !== ids.length) {
+    return fail(`lưới ${cols}×${rows} cần ${cols * rows} bài nhưng lessonIds có ${ids.length}.`)
+  }
+  if (!isPermutation(raw.revealOrder, ids.length)) {
+    return fail(`revealOrder phải là hoán vị của 0..${ids.length - 1}.`)
+  }
+  const intro = Array.isArray(raw.intro) ? (raw.intro as unknown[]).map(text) : null
+  if (!intro || intro.length === 0 || intro.some((x) => x === null)) {
+    return fail('intro phải có ít nhất một câu không rỗng.')
+  }
+
+  return {
+    ok: true,
+    value: {
+      id,
+      title,
+      level,
+      image: { src, width, height, alt, credit: { text: creditText, url: creditUrl } },
+      grid: { cols, rows },
+      revealOrder: raw.revealOrder,
+      lessonIds: ids,
+      intro: intro as string[],
+    },
+  }
+}
+
+/** Validate the series list; invalid or duplicate series are skipped and listed in warnings. */
+function parseSeriesList(raw: unknown, warnings: string[]): Series[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    warnings.push('"series" phải là một mảng.')
+    return []
+  }
+  const out: Series[] = []
+  const ids = new Set<string>()
+  raw.forEach((item: unknown, i: number) => {
+    const label = `Chuỗi #${i + 1}${isRecord(item) && text(item.id) ? ` (${text(item.id)})` : ''}`
+    const parsed = parseSeries(item)
+    if (!parsed.ok) {
+      warnings.push(`${label}: ${parsed.error}`)
+    } else if (ids.has(parsed.value.id)) {
+      warnings.push(`${label}: trùng id, đã bỏ qua.`)
+    } else {
+      ids.add(parsed.value.id)
+      out.push(parsed.value)
+    }
+  })
+  return out
+}
+
+/** Validate the whole catalog; invalid or duplicate lessons/series are skipped and listed in warnings. */
 export function parseCatalog(raw: unknown): Catalog {
-  if (!isRecord(raw)) return { lessons: [], warnings: ['Danh mục bài không đúng định dạng.'] }
+  if (!isRecord(raw)) return { lessons: [], series: [], warnings: ['Danh mục bài không đúng định dạng.'] }
   if (raw.version !== SUPPORTED_VERSION) {
-    return { lessons: [], warnings: [`Phiên bản danh mục không được hỗ trợ (cần version ${SUPPORTED_VERSION}).`] }
+    return {
+      lessons: [],
+      series: [],
+      warnings: [`Phiên bản danh mục không được hỗ trợ (cần version ${SUPPORTED_VERSION}).`],
+    }
   }
   const warnings: string[] = []
   if (!Array.isArray(raw.lessons)) {
-    return { lessons: [], warnings: ['Danh mục thiếu mảng "lessons".'] }
+    return { lessons: [], series: [], warnings: ['Danh mục thiếu mảng "lessons".'] }
   }
   const lessons: StaticLesson[] = []
   const ids = new Set<string>()
@@ -137,7 +235,8 @@ export function parseCatalog(raw: unknown): Catalog {
       lessons.push(parsed.value)
     }
   })
-  return { lessons, warnings }
+  const series = parseSeriesList(raw.series, warnings)
+  return { lessons, series, warnings }
 }
 
 const LOAD_ERROR = 'Không tải được danh sách bài có sẵn. Bạn vẫn có thể dùng bài mẫu hoặc tải file của bạn.'
@@ -150,6 +249,6 @@ export async function loadCatalog(): Promise<LoadedCatalog> {
     const raw: unknown = await res.json()
     return { ...parseCatalog(raw), error: null }
   } catch {
-    return { lessons: [], warnings: [], error: LOAD_ERROR }
+    return { lessons: [], series: [], warnings: [], error: LOAD_ERROR }
   }
 }

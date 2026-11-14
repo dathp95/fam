@@ -1,7 +1,7 @@
 { "version": 1, "lessons": [{
   "id": "voa-l01-welcome",
   "kind": "static",
-  "title": "voa-l01-welcome",
+  "title": "Lesson 1: Welcome!",
   "langId": "en",
   "createdAt": 1794644769656,
   "audioUrl": "lessons/voa/voa-l01-welcome.mp3",
@@ -87,7 +87,42 @@
     "url": "https://learningenglish.voanews.com/a/lets-learn-english-level-1-lesson-1/5184882.html",
     "license": "public domain"
   },
-  "seriesId": "cats",
+  "seriesId": "nature",
   "order": 1
 }
-], "series": [] }
+], "series": [{
+  "id": "nature",
+  "title": "Bức tranh thiên nhiên",
+  "level": "A1",
+  "image": {
+    "src": "series/nature/nature.webp",
+    "width": 1600,
+    "height": 1094,
+    "alt": "Bức tranh khắc gỗ Nhật Bản: một con sóng lớn cuộn cao, những chiếc thuyền nhỏ bên dưới và núi Phú Sĩ nhỏ ở phía xa.",
+    "credit": {
+      "text": "Katsushika Hokusai, \"Under the Wave off Kanagawa\" (The Great Wave), khoảng 1830–32. Bảo tàng Nghệ thuật Metropolitan (The Metropolitan Museum of Art), Bộ sưu tập Howard Mansfield, mua bằng Quỹ Rogers, 1936. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+      "url": "https://www.metmuseum.org/art/collection/search/39799"
+    }
+  },
+  "grid": { "cols": 5, "rows": 2 },
+  "revealOrder": [4, 7, 1, 9, 0, 6, 3, 8, 2, 5],
+  "lessonIds": [
+    "voa-l01-welcome",
+    "voa-l05-where-are-you",
+    "voa-l07-what-are-you-doing",
+    "voa-l09-is-it-cold",
+    "voa-l11-neighborhood",
+    "voa-l12-family",
+    "voa-l16-where-from",
+    "voa-l17-free-on-friday",
+    "voa-l22-next-summer",
+    "voa-l35-make-dinner"
+  ],
+  "intro": [
+    "This picture is called The Great Wave.",
+    "Hokusai is a Japanese artist.",
+    "It is a woodblock print.",
+    "It is from about 1830.",
+    "Mount Fuji is small in the wave."
+  ]
+}] }

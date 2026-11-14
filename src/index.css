@@ -110,3 +110,22 @@ kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--line)
 @media (max-width: 480px) {
   .sources, .publish .form { grid-template-columns: 1fr; }
 }
+
+/* Picture reveal */
+.picture { position: relative; width: 100%; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+.picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tiles { position: absolute; inset: 0; display: grid; }
+.tile { background-color: var(--card); border: 1px solid var(--line); }
+.tile.open { background-color: transparent; border-color: transparent; }
+.tile.fresh { outline: 3px solid var(--xp); outline-offset: -3px; animation: tile-reveal 600ms ease-out; }
+@keyframes tile-reveal {
+  from { background-color: var(--card); border-color: var(--line); }
+  to { background-color: transparent; border-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .tile.fresh { animation: none; } }
+.picture-card h3 { margin: 0; font-family: var(--display); font-size: 17px; }
+.intro { margin: 0; padding-left: 20px; }
+.series-lessons summary { cursor: pointer; font-weight: 600; }
+.series-lessons ol { margin: 8px 0 0; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; }
+.series-lessons .tag { margin-left: 8px; }
+.picture-card a, .muted a { color: var(--accent); }

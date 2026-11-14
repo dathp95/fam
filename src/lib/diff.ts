@@ -58,6 +58,11 @@ export function scoreAnswer(ref: string[], user: string[], hints: number): Score
   return { ops, score, xp }
 }
 
+/** Rounded mean of the sentence scores (0 for none). This is the number shown on the result screen. */
+export function averageScore(scores: number[]): number {
+  return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+}
+
 /** Reveal the first `revealed` words, mask the rest as "f___". */
 export function maskHint(words: string[], revealed: number): string {
   return words
