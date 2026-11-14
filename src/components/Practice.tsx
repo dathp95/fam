@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { useSegmentPlayer } from '../hooks/useSegmentPlayer.ts'
-import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight.ts'
+import { useVisualViewport } from '../hooks/useVisualViewport.ts'
 import { HINT_PENALTY, maskHint, scoreAnswer, type ScoreResult } from '../lib/diff.ts'
 import { getLanguage } from '../lib/languages.ts'
 import { PICTURE_TILES } from '../lib/pictures.ts'
@@ -9,6 +9,7 @@ import {
   applySkip,
   EMPTY_TALLY,
   isSlow,
+  scoreVerdict,
   speedLabel,
   toggleSpeed,
   type Speed,
@@ -47,7 +48,7 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
   const player = useSegmentPlayer(source)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
-  const viewportHeight = useVisualViewportHeight()
+  const viewport = useVisualViewport()
 
   const [i, setI] = useState(0)
   const [answer, setAnswer] = useState('')
@@ -74,8 +75,10 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
   // Stop any playback when leaving the screen.
   useEffect(() => stopAll, []) // stopAll only uses stable callbacks
 
+  // Keep the (possibly hidden) textarea focused in both states: the on-screen keyboard then stays open
+  // after "Kiểm tra" and the button row never moves.
   useEffect(() => {
-    if (!checked) inputRef.current?.focus()
+    inputRef.current?.focus()
   }, [i, checked, hints])
 
   // Grow the textarea with its content (it has a max-height in CSS).
@@ -96,7 +99,10 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
   }
 
   /** Play the current sentence at the chosen speed (▶, "Nghe lại" and the shortcut). */
-  const replay = () => play(isSlow(speed))
+  const replay = () => {
+    play(isSlow(speed))
+    inputRef.current?.focus()
+  }
 
   function check() {
     const user = lang.tokenize(answer)
@@ -213,10 +219,14 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
 
   const hintLabel = `Gợi ý (trừ ${HINT_PENALTY} điểm)`
   const shortcutHint = `Phím tắt: ${formatShortcut(shortcut)}`
-  const style = viewportHeight ? ({ '--vvh': `${viewportHeight}px` } as CSSProperties) : undefined
+  const style = viewport
+    ? ({ '--vvh': `${viewport.height}px`, '--vv-top': `${viewport.top}px` } as CSSProperties)
+    : undefined
+  const verdict = shown ? scoreVerdict(shown.res.score) : null
+  const last = i + 1 >= n
 
   return (
-    <div className="practice" style={style}>
+    <div className={`practice${viewport?.keyboard ? ' practice--kb' : ''}`} style={style}>
       <header className="practice-top">
         <button
           className="icon-btn"
@@ -269,14 +279,23 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
         )}
       </div>
 
-      <div className="practice-bottom">
+      {/* Pressing a button must not take focus from the textarea (that would close the keyboard). */}
+      <div
+        className="practice-bottom"
+        onPointerDown={(e) => {
+          if (e.target instanceof Element && e.target.closest('button')) e.preventDefault()
+        }}
+      >
         <div className="practice-controls">
           <button className="btn primary play-btn" onClick={replay} aria-label="Phát câu" title={shortcutHint}>
             ▶
           </button>
           <button
             className="btn speed"
-            onClick={() => setSpeed(toggleSpeed)}
+            onClick={() => {
+              setSpeed(toggleSpeed)
+              inputRef.current?.focus()
+            }}
             aria-label={`Tốc độ phát ${speedLabel(speed)}, bấm để đổi`}
           >
             {speedLabel(speed)}
@@ -297,76 +316,69 @@ export function Practice({ lesson, source, picture = null, revealed = NO_TILES, 
           </p>
         )}
 
-        {!shown ? (
-          <>
-            <textarea
-              ref={inputRef}
-              rows={2}
-              aria-label="Gõ lại câu bạn nghe được"
-              placeholder="Gõ những gì bạn nghe được…"
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              enterKeyHint="done"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              onKeyDown={(e) => {
-                // Enter checks, Shift+Enter inserts a newline.
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault()
-                  check()
-                }
-              }}
-            />
-            {msg && (
-              <p className="status" role="status">
-                {msg}
-              </p>
-            )}
-            <div className="practice-buttons">
-              <button className="btn" onClick={skip}>
-                Bỏ qua
-              </button>
-              <button className="btn" onClick={replay} title={shortcutHint}>
-                Nghe lại
-              </button>
-              <button className="btn primary" onClick={check}>
-                Kiểm tra
-              </button>
+        {/* The textarea always stays mounted; once checked it is only visually hidden. */}
+        <textarea
+          ref={inputRef}
+          className={checked ? 'is-hidden' : undefined}
+          rows={2}
+          aria-label="Gõ lại câu bạn nghe được"
+          placeholder="Gõ những gì bạn nghe được…"
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="done"
+          value={answer}
+          onChange={(e) => {
+            if (!checked) setAnswer(e.target.value)
+          }}
+          onKeyDown={(e) => {
+            if (checked) return // Enter then moves on (see the document listener above)
+            // Enter checks, Shift+Enter inserts a newline.
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              check()
+            }
+          }}
+        />
+        {shown && verdict && (
+          <div
+            className="practice-result"
+            role="group"
+            aria-label={`Kết quả: ${shown.res.score} điểm, cộng ${shown.xp} XP`}
+          >
+            <div className={`practice-score${verdict.pass ? '' : ' low'}`}>
+              <b>{shown.res.score}</b>
+              <span>
+                {verdict.label} · <strong>+{shown.xp} XP</strong>
+              </span>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="practice-result" role="group" aria-label="So sánh từng từ">
-              <div className="diff">
-                {shown.res.ops.map(([kind, word], k) => (
-                  <span key={k} className={`w ${kind}`}>
-                    {word}
-                  </span>
-                ))}
-              </div>
-              <p className="muted">
-                {shown.res.score} điểm · +{shown.xp} XP
-              </p>
+            <div className="diff" aria-label="So sánh từng từ">
+              {shown.res.ops.map(([kind, word], k) => (
+                <span key={k} className={`w ${kind}`}>
+                  {word}
+                </span>
+              ))}
             </div>
-            {msg && (
-              <p className="status" role="status">
-                {msg}
-              </p>
-            )}
-            <div className="practice-buttons">
-              <button className="btn" onClick={retry}>
-                Làm lại
-              </button>
-              <button className="btn" onClick={replay} title={shortcutHint}>
-                Nghe lại
-              </button>
-              <button className="btn primary" onClick={next} autoFocus>
-                {i + 1 < n ? 'Tiếp' : 'Hoàn thành'}
-              </button>
-            </div>
-          </>
+          </div>
         )}
+        {msg && (
+          <p className="status" role="status">
+            {msg}
+          </p>
+        )}
+
+        {/* One button row for both states: same buttons, same place; only the labels and actions change. */}
+        <div className="practice-buttons">
+          <button className="btn" onClick={checked ? retry : skip}>
+            {checked ? 'Làm lại' : 'Bỏ qua'}
+          </button>
+          <button className="btn" onClick={replay} title={shortcutHint}>
+            Nghe lại
+          </button>
+          <button className="btn primary" onClick={checked ? next : check}>
+            {checked ? (last ? 'Hoàn thành' : 'Tiếp') : 'Kiểm tra'}
+          </button>
+        </div>
       </div>
     </div>
   )

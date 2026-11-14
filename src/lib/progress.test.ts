@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isPermutation, PICTURE_TILES, revealedTiles } from './pictures.ts'
+import { isPermutation, PICTURE_TILES, revealedTiles, TILES_PER_PASS } from './pictures.ts'
 import {
   ensureActivePicture,
   levelOf,
@@ -13,6 +13,10 @@ import {
   type Progress,
 } from './progress.ts'
 import type { Picture } from './types.ts'
+
+/** Real mode: one tile per passed lesson (the shipped default is test mode, see TILES_PER_PASS). */
+const realPass = (p: Progress, pictures: Picture[], avg: number, random: () => number) =>
+  recordPicturePass(p, pictures, avg, random, 1)
 
 const progress = (over: Partial<Progress> = {}): Progress => ({
   xp: 0,
@@ -315,38 +319,38 @@ describe('ensureActivePicture', () => {
 describe('recordPicturePass', () => {
   it('does nothing without pictures', () => {
     const p = progress()
-    expect(recordPicturePass(p, [], 100, seq(0))).toEqual({ progress: p, outcome: null })
+    expect(realPass(p, [], 100, seq(0))).toEqual({ progress: p, outcome: null })
   })
 
   it('opens nothing below the pass mark', () => {
     const p = progress({ picture: { id: 'met-1', opened: 2, order: [0, 1, 2, 3, 4, 5] } })
-    const r = recordPicturePass(p, [A, B], PASS_SCORE - 1, seq(0))
+    const r = realPass(p, [A, B], PASS_SCORE - 1, seq(0))
     expect(r.progress).toBe(p)
     expect(r.outcome).toEqual({ kind: 'failed' })
   })
 
   it('opens a tile at exactly the pass mark', () => {
-    const r = recordPicturePass(progress(), [A, B], PASS_SCORE, seq(0))
+    const r = realPass(progress(), [A, B], PASS_SCORE, seq(0))
     expect(r.outcome).toMatchObject({ kind: 'opened', count: 1, complete: false, started: false })
   })
 
   it('starts a picture on the first pass and opens order[0]', () => {
-    const r = recordPicturePass(progress(), [A, B], 80, seq(0))
+    const r = realPass(progress(), [A, B], 80, seq(0))
     expect(r.progress.picture?.id).toBe('met-1')
     expect(r.progress.picture?.opened).toBe(1)
-    expect(r.outcome).toMatchObject({ kind: 'opened', fresh: r.progress.picture?.order[0], revealed: [r.progress.picture?.order[0]] })
+    expect(r.outcome).toMatchObject({ kind: 'opened', fresh: [r.progress.picture?.order[0]], revealed: [r.progress.picture?.order[0]] })
   })
 
   it('opens one more tile per pass, following the random order, and completes at 6', () => {
     let p = ensureActivePicture(progress(), [A, B], seq(0))
     const order = p.picture?.order ?? []
     for (let n = 1; n <= PICTURE_TILES; n++) {
-      const r = recordPicturePass(p, [A, B], 70, seq(0))
+      const r = realPass(p, [A, B], 70, seq(0))
       p = r.progress
       expect(r.outcome).toMatchObject({
         kind: 'opened',
         count: n,
-        fresh: order[n - 1],
+        fresh: [order[n - 1]],
         revealed: order.slice(0, n),
         complete: n === PICTURE_TILES,
         started: false,
@@ -358,15 +362,15 @@ describe('recordPicturePass', () => {
 
   it('counts replays: every pass opens a tile, whichever lesson it was', () => {
     let p = progress()
-    for (let n = 1; n <= 3; n++) p = recordPicturePass(p, [A, B], 100, seq(0)).progress
+    for (let n = 1; n <= 3; n++) p = realPass(p, [A, B], 100, seq(0)).progress
     expect(p.picture?.opened).toBe(3)
   })
 
   it('starts a new picture on the pass after a completed one', () => {
     let p = progress()
-    for (let n = 0; n < PICTURE_TILES; n++) p = recordPicturePass(p, [A, B], 100, seq(0)).progress
+    for (let n = 0; n < PICTURE_TILES; n++) p = realPass(p, [A, B], 100, seq(0)).progress
     expect(p.picture?.id).toBe('met-1')
-    const next = recordPicturePass(p, [A, B], 100, seq(0))
+    const next = realPass(p, [A, B], 100, seq(0))
     expect(next.progress.picture).toMatchObject({ id: 'met-2', opened: 1 })
     expect(next.outcome).toMatchObject({ kind: 'opened', count: 1, started: true })
     expect(next.progress.picturesDone).toEqual(['met-1'])
@@ -374,8 +378,8 @@ describe('recordPicturePass', () => {
 
   it('does not start a new picture on a failed pass after completion', () => {
     let p = progress()
-    for (let n = 0; n < PICTURE_TILES; n++) p = recordPicturePass(p, [A, B], 100, seq(0)).progress
-    const r = recordPicturePass(p, [A, B], 10, seq(0))
+    for (let n = 0; n < PICTURE_TILES; n++) p = realPass(p, [A, B], 100, seq(0)).progress
+    const r = realPass(p, [A, B], 10, seq(0))
     expect(r.progress).toBe(p)
     expect(r.progress.picture?.opened).toBe(6)
   })
@@ -385,7 +389,7 @@ describe('recordPicturePass', () => {
     let p = progress()
     const completed: string[] = []
     for (let n = 0; n < PICTURE_TILES * 5; n++) {
-      p = recordPicturePass(p, [A, B, C], 100, rnd).progress
+      p = realPass(p, [A, B, C], 100, rnd).progress
       if (p.picture?.opened === PICTURE_TILES) completed.push(p.picture.id)
     }
     expect(completed).toHaveLength(5)
@@ -395,21 +399,21 @@ describe('recordPicturePass', () => {
 
   it('keeps picturesDone free of duplicates', () => {
     let p = progress()
-    for (let n = 0; n < PICTURE_TILES * 4; n++) p = recordPicturePass(p, [A, B], 100, seq(0.3, 0.7)).progress
+    for (let n = 0; n < PICTURE_TILES * 4; n++) p = realPass(p, [A, B], 100, seq(0.3, 0.7)).progress
     expect(new Set(p.picturesDone).size).toBe(p.picturesDone.length)
   })
 
   it('works with a single picture: it restarts the same one', () => {
     let p = progress()
-    for (let n = 0; n < PICTURE_TILES; n++) p = recordPicturePass(p, [A], 100, seq(0)).progress
-    const next = recordPicturePass(p, [A], 100, seq(0))
+    for (let n = 0; n < PICTURE_TILES; n++) p = realPass(p, [A], 100, seq(0)).progress
+    const next = realPass(p, [A], 100, seq(0))
     expect(next.progress.picture).toMatchObject({ id: 'met-1', opened: 1 })
     expect(next.outcome).toMatchObject({ started: true })
   })
 
   it('starts over when the current picture was removed from the catalog', () => {
     const p = progress({ picture: { id: 'gone', opened: 4, order: [0, 1, 2, 3, 4, 5] } })
-    const r = recordPicturePass(p, [A, B], 100, seq(0))
+    const r = realPass(p, [A, B], 100, seq(0))
     expect(r.progress.picture).toMatchObject({ id: 'met-1', opened: 1 })
     expect(r.outcome).toMatchObject({ started: true })
   })
@@ -417,12 +421,79 @@ describe('recordPicturePass', () => {
   it('does not mutate the input progress', () => {
     const p = progress({ picture: { id: 'met-1', opened: 5, order: [0, 1, 2, 3, 4, 5] } })
     const copy = structuredClone(p)
-    recordPicturePass(p, [A, B], 100, seq(0))
+    realPass(p, [A, B], 100, seq(0))
     expect(p).toEqual(copy)
   })
 
   it('reveals consistent tiles via revealedTiles', () => {
-    const r = recordPicturePass(progress(), [A], 90, seq(0))
+    const r = realPass(progress(), [A], 90, seq(0))
     expect(revealedTiles(r.progress.picture)).toHaveLength(1)
+  })
+})
+
+describe('recordPicturePass: tiles per pass', () => {
+  it('defaults to test mode: one passed lesson opens the whole picture', () => {
+    expect(TILES_PER_PASS).toBe(PICTURE_TILES)
+    const r = recordPicturePass(progress(), [A, B], 80, seq(0))
+    const state = r.progress.picture
+    expect(state?.opened).toBe(PICTURE_TILES)
+    expect(r.progress.picturesDone).toEqual([state?.id])
+    expect(r.outcome).toMatchObject({ kind: 'opened', count: PICTURE_TILES, complete: true, started: false })
+    if (r.outcome?.kind === 'opened') {
+      expect([...r.outcome.fresh].sort()).toEqual([0, 1, 2, 3, 4, 5]) // all six tiles are new
+      expect(r.outcome.fresh).toEqual(state?.order)
+      expect(r.outcome.revealed).toEqual(state?.order)
+    }
+  })
+
+  it('test mode: the next pass starts a new picture, which is opened at once as well', () => {
+    const first = recordPicturePass(progress(), [A, B], 80, seq(0))
+    const second = recordPicturePass(first.progress, [A, B], 80, seq(0))
+    expect(second.progress.picture?.id).not.toBe(first.progress.picture?.id)
+    expect(second.outcome).toMatchObject({ kind: 'opened', complete: true, started: true })
+    expect(second.progress.picturesDone).toHaveLength(2)
+  })
+
+  it('test mode: below the pass mark still opens nothing', () => {
+    const p = progress()
+    expect(recordPicturePass(p, [A, B], PASS_SCORE - 1, seq(0))).toEqual({ progress: p, outcome: { kind: 'failed' } })
+  })
+
+  it('real mode (1 per pass) needs six passes', () => {
+    let p = progress()
+    for (let n = 1; n <= PICTURE_TILES; n++) {
+      const r = recordPicturePass(p, [A, B], 80, seq(0), 1)
+      p = r.progress
+      expect(p.picture?.opened).toBe(n)
+      if (r.outcome?.kind === 'opened') expect(r.outcome.fresh).toHaveLength(1)
+    }
+    expect(p.picturesDone).toHaveLength(1)
+  })
+
+  it('opens exactly N tiles per pass for N = 2 and 4, and never more than the picture has', () => {
+    let p = progress()
+    const counts: number[] = []
+    for (let n = 0; n < 3; n++) {
+      p = recordPicturePass(p, [A], 80, seq(0), 4).progress
+      counts.push(p.picture?.opened ?? -1)
+    }
+    expect(counts).toEqual([4, 6, 4]) // 4, capped at 6 (complete), then a new picture with 4
+
+    const two = recordPicturePass(progress(), [A, B], 80, seq(0), 2)
+    expect(two.outcome).toMatchObject({ count: 2, complete: false })
+    if (two.outcome?.kind === 'opened') expect(two.outcome.fresh).toEqual(two.progress.picture?.order.slice(0, 2))
+  })
+
+  it('only reports the tiles of this pass as fresh', () => {
+    const a = recordPicturePass(progress(), [A, B], 80, seq(0), 2)
+    const b = recordPicturePass(a.progress, [A, B], 80, seq(0), 2)
+    const order = b.progress.picture?.order ?? []
+    expect(b.outcome).toMatchObject({ kind: 'opened', count: 4, fresh: order.slice(2, 4), revealed: order.slice(0, 4) })
+  })
+
+  it('ignores a nonsensical tilesPerPass (0, negative, fractional): at least one tile, whole numbers', () => {
+    expect(recordPicturePass(progress(), [A], 80, seq(0), 0).progress.picture?.opened).toBe(1)
+    expect(recordPicturePass(progress(), [A], 80, seq(0), -3).progress.picture?.opened).toBe(1)
+    expect(recordPicturePass(progress(), [A], 80, seq(0), 2.9).progress.picture?.opened).toBe(2)
   })
 })

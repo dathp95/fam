@@ -121,33 +121,45 @@ kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--line)
 .picture-card h3 { margin: 0; font-family: var(--display); font-size: 17px; }
 .picture-card a, .muted a { color: var(--accent); }
 
-/* Practice screen: mobile first, one centered column. All rules are scoped under .practice. */
-.practice { width: 100%; max-width: 480px; min-height: var(--vvh, 100dvh); margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
-.practice-top { position: relative; display: flex; align-items: center; gap: 4px; }
+/* Practice screen: mobile first, one centered column. All rules are scoped under .practice.
+   The screen is fixed to the VISIBLE part of the page (--vv-top / --vvh come from visualViewport), so
+   the on-screen keyboard never covers the button row: the picture area is what shrinks. */
+body:has(.practice) { overflow: hidden; overscroll-behavior: none; }
+.practice { position: fixed; top: var(--vv-top, 0px); left: 0; right: 0; height: var(--vvh, 100dvh); width: 100%; max-width: 480px; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; background: var(--bg); }
+.practice-top { position: relative; display: flex; align-items: center; gap: 4px; flex: none; }
 .practice-title { flex: 1; min-width: 0; text-align: center; color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .practice-count { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .practice .icon-btn { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
 .practice .icon-btn:hover { background: var(--card); }
-.practice .prog { height: 4px; }
-/* The picture area takes the free height and shrinks first (e.g. when the keyboard opens). The picture
-   and its caption form one group, centered; the group is sized from the area's own width/height so the
-   picture keeps its aspect ratio (--ar) and is never cropped. 26px = caption (19.5px) + gap (6px). */
-.practice-picture { flex: 1 1 0; min-height: 120px; display: flex; align-items: center; justify-content: center; container-type: size; }
+.practice .prog { flex: none; height: 4px; }
+/* The picture area takes the free height and shrinks first. The picture and its caption form one
+   group, centered; the group is sized from the area itself so the picture keeps its aspect ratio
+   (--ar) and is never cropped. 26px = caption (19.5px) + gap (6px). Too little room: it is hidden. */
+.practice-picture { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; container-type: size; }
 .practice-picture-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 @supports (width: 1cqw) {
-  .practice-picture-group { width: min(100cqw, calc((100cqh - 26px) * var(--ar, 1.5))); }
+  .practice-picture-group { width: min(100cqw, max(0px, calc((100cqh - 26px) * var(--ar, 1.5)))); }
 }
+@container (max-height: 70px) { .practice-picture-group { display: none; } }
 .practice .picture { width: 100%; border-radius: 10px; }
 .practice-caption { margin: 0; font-size: 13px; line-height: 1.5; }
-.practice-bottom { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px 0 max(12px, env(safe-area-inset-bottom)); background: var(--bg); }
+/* Everything below the picture is docked at the bottom of the visible area (just above the keyboard). */
+.practice-bottom { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 8px 0 max(12px, env(safe-area-inset-bottom)); background: var(--bg); }
+.practice--kb .practice-bottom { padding-bottom: 8px; }
 .practice-controls { display: flex; align-items: center; gap: 8px; }
 .practice .play-btn { width: 44px; padding: 0; flex: none; }
 .practice .speed { min-width: 64px; padding: 10px 12px; border-radius: 99px; font-variant-numeric: tabular-nums; }
 .practice .hint-btn { margin-left: auto; padding: 10px 8px; border-color: transparent; background: none; color: var(--muted); }
 .practice .hint { margin: 0; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.04em; color: var(--muted); overflow-wrap: anywhere; }
 .practice textarea { min-height: 0; max-height: 9em; font-size: 16px; line-height: 1.4; background: var(--card); resize: none; }
-.practice-result { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--ok); border-radius: 10px; background: var(--ok-bg); }
-.practice-result p { margin: 0; }
+/* After checking, the textarea stays mounted and focused (so the keyboard stays open) but is invisible. */
+.practice textarea.is-hidden { position: absolute; width: 1px !important; height: 1px !important; min-height: 0; padding: 0; border: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+.practice-result { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 14px; padding: 10px 12px; border: 1px solid var(--ok); border-radius: 10px; background: var(--ok-bg); max-height: 9em; overflow: auto; }
+.practice-score { display: flex; flex-direction: column; align-items: center; min-width: 84px; }
+.practice-score b { font-family: var(--display); font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.practice-score span { margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--ok); white-space: nowrap; }
+.practice-score strong { font-weight: 700; }
+.practice-score.low span { color: var(--bad); }
 .practice-buttons { display: flex; gap: 8px; }
 .practice-buttons .btn { flex: 1 1 0; padding: 10px 8px; }
 .practice-buttons .btn.primary { flex: 2 1 0; }

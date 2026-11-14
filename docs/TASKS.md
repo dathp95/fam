@@ -13,7 +13,7 @@ Dự án: Vite + React + TypeScript (xem `CLAUDE.md` và `README.md`). Đọc to
 ## Quyết định đã chốt
 1. Ngưỡng để một lần hoàn thành bài được tính là "qua bài": điểm trung bình **>= 60** (hằng số `PASS_SCORE = 60`).
 2. Nguồn audio A1: VOA "Let's Learn English – Level 1" (public domain). Ghi nguồn trong app. ELLLO chưa gắn sẵn (chưa rõ điều khoản dùng lại), chỉ dùng qua chế độ tải file của người dùng.
-3. **Bộ sưu tập tranh ngẫu nhiên (Task E)**: mỗi tranh là một tác phẩm public domain của Met (Open Access), lưới cố định 3×2 (6 mảnh), thứ tự mở ngẫu nhiên. **Mỗi lần qua bài (kể cả luyện lại) mở thêm một mảnh.** Mở đủ 6 mảnh thì hiện mô tả tiếng Việt, nguồn ảnh và bài thưởng; lần qua bài tiếp theo bắt đầu một tranh mới. Quyết định này thay thế các quyết định cũ về chuỗi tranh "thiên nhiên" 10 bài (lưới 5×2, mở theo `lessonIds`).
+3. **Bộ sưu tập tranh ngẫu nhiên (Task E)**: mỗi tranh là một tác phẩm public domain của Met (Open Access), lưới cố định 3×2 (6 mảnh), thứ tự mở ngẫu nhiên. **Mỗi lần qua bài (kể cả luyện lại) mở thêm `TILES_PER_PASS` mảnh: chế độ thật là 1 (cần 6 bài), chế độ thử nghiệm hiện tại là 6 (một bài mở cả bức tranh).** Mở đủ 6 mảnh thì hiện mô tả tiếng Việt, nguồn ảnh và bài thưởng; lần qua bài tiếp theo bắt đầu một tranh mới. Quyết định này thay thế các quyết định cũ về chuỗi tranh "thiên nhiên" 10 bài (lưới 5×2, mở theo `lessonIds`).
 
 ---
 
@@ -152,9 +152,10 @@ interface Progress {
 - Mọi hàm ngẫu nhiên nhận tham số `random: Random = Math.random` (`() => number` trong [0, 1)) để test xác định được. `shuffle(n, random)` là Fisher–Yates trong `pictures.ts`.
 - `pickNextPicture(pictures, picturesDone, random)`: chọn ngẫu nhiên một tranh **chưa** có trong `picturesDone`. Nếu đã hoàn thành hết thì bắt đầu vòng mới: chọn trong các tranh khác tranh hoàn thành gần nhất (`picturesDone` còn lại đúng tranh đó); chỉ có một tranh thì lặp lại chính nó. Id đã xong nhưng không còn trong catalog bị bỏ qua.
 - `ensureActivePicture(p, pictures, random)`: nếu chưa có tranh đang mở (hoặc tranh đó không còn trong catalog) thì chọn tranh mới, `opened = 0`, `order = shuffle(6)`. Tranh đang mở, kể cả đã hoàn chỉnh, được giữ nguyên. Gọi khi catalog tải xong để Home luôn có tranh để hiện.
-- `recordPicturePass(p, pictures, avgScore, random)` → `{ progress, outcome }`:
+- `recordPicturePass(p, pictures, avgScore, random, tilesPerPass = TILES_PER_PASS)` → `{ progress, outcome }`. `TILES_PER_PASS` là hằng số trong `src/lib/pictures.ts` (hiện **6 = chế độ thử nghiệm**; đặt về **1** để chuyển sang chế độ thật, 6 bài mỗi tranh; không cần sửa gì khác):
   - `avgScore < PASS_SCORE`: không đổi, `outcome = { kind: 'failed' }`.
   - Ngược lại: nếu chưa có tranh, tranh đã hoàn chỉnh hoặc không còn trong catalog thì bắt đầu tranh mới trước (`started = true` khi trước đó đã có tranh); sau đó `opened + 1` (kể cả luyện lại bài cũ). Khi `opened` chạm 6 thì tranh hoàn chỉnh và thêm vào `picturesDone` (không trùng). `outcome = { kind: 'opened', picture, revealed, fresh: order[opened-1], count, complete, started }`.
+  - Mỗi lần qua bài mở `tilesPerPass` mảnh kế tiếp (tối thiểu 1, không vượt quá 6); `fresh` là danh sách các ô vừa mở. Màn Kết quả ghi "Bạn vừa mở k mảnh (n/6)" khi mở nhiều ô cùng lúc, "Bạn vừa mở mảnh thứ n/6" khi mở một ô.
   - Không có tranh nào trong catalog: `outcome = null`.
 - Mọi bài hoàn thành đều tính (bài có sẵn, bài của người dùng, bài mẫu) **trừ bài thưởng** (`bonus:<pictureId>`), vì bài thưởng chỉ dành cho tranh đã hoàn chỉnh. Việc ghi điểm cao nhất của bài vào `lessonsDone` do `recordLessonDone` đảm nhiệm, tách khỏi việc mở mảnh.
 

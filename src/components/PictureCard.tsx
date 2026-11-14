@@ -1,4 +1,4 @@
-import { isPictureComplete, PICTURE_TILES, revealedTiles } from '../lib/pictures.ts'
+import { isPictureComplete, PICTURE_TILES, revealedTiles, TILES_PER_PASS } from '../lib/pictures.ts'
 import { PASS_SCORE } from '../lib/progress.ts'
 import type { Picture as PictureData, PictureProgress } from '../lib/types.ts'
 import { Picture } from './Picture.tsx'
@@ -28,7 +28,11 @@ export function PictureCard({ picture, state, bonusDone, onStartBonus }: Props) 
 
       {!complete && (
         <p className="muted">
-          Mỗi lần hoàn thành một bài với điểm trung bình từ {PASS_SCORE} trở lên sẽ mở thêm một mảnh.
+          {TILES_PER_PASS >= PICTURE_TILES
+            ? `Hoàn thành một bài với điểm trung bình từ ${PASS_SCORE} trở lên để mở bức tranh.`
+            : `Mỗi lần hoàn thành một bài với điểm trung bình từ ${PASS_SCORE} trở lên sẽ mở thêm ${
+                TILES_PER_PASS === 1 ? 'một' : TILES_PER_PASS
+              } mảnh.`}
         </p>
       )}
 

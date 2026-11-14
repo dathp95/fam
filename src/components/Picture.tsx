@@ -6,14 +6,15 @@ interface Props {
   picture: PictureData
   /** Indexes of open tiles (see revealedTiles). */
   revealed: number[]
-  /** A tile that was just opened: outlined and faded in (unless the user prefers reduced motion). */
-  fresh?: number | null
+  /** Tiles that were just opened: outlined and faded in (unless the user prefers reduced motion). */
+  fresh?: number[]
 }
 
 /** The picture with a 3×2 grid of cover tiles on top; open tiles are transparent. */
-export function Picture({ picture, revealed, fresh = null }: Props) {
+export function Picture({ picture, revealed, fresh = [] }: Props) {
   const { image } = picture
   const open = new Set(revealed)
+  const justOpened = new Set(fresh)
   return (
     <div className="picture" role="img" aria-label={image.alt} style={{ aspectRatio: `${image.width} / ${image.height}` }}>
       <img src={assetUrl(image.src)} alt="" width={image.width} height={image.height} />
@@ -26,7 +27,7 @@ export function Picture({ picture, revealed, fresh = null }: Props) {
         }}
       >
         {Array.from({ length: PICTURE_TILES }, (_, i) => (
-          <div key={i} className={`tile${open.has(i) ? ' open' : ''}${i === fresh ? ' fresh' : ''}`} />
+          <div key={i} className={`tile${open.has(i) ? ' open' : ''}${justOpened.has(i) ? ' fresh' : ''}`} />
         ))}
       </div>
     </div>

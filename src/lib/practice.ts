@@ -40,3 +40,12 @@ export function applyCheck(
 export function applySkip(tally: Tally, counted: boolean): Tally {
   return counted ? tally : { scores: [...tally.scores, 0], gained: tally.gained }
 }
+
+/** Average score from which a sentence (or lesson) counts as passed: same mark as PASS_SCORE. */
+export const SENTENCE_PASS_SCORE = 60
+
+/** "Đạt" / "Chưa đạt" label shown next to the score of a checked answer. */
+export function scoreVerdict(score: number): { label: string; pass: boolean } {
+  const pass = score >= SENTENCE_PASS_SCORE
+  return { label: pass ? 'Đạt' : 'Chưa đạt', pass }
+}

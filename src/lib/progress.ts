@@ -1,6 +1,14 @@
 /** XP, level, streak, passed lessons and the picture being uncovered, persisted in localStorage. */
 
-import { isPermutation, PICTURE_TILES, randomIndex, revealedTiles, shuffle, type Random } from './pictures.ts'
+import {
+  isPermutation,
+  PICTURE_TILES,
+  randomIndex,
+  revealedTiles,
+  shuffle,
+  TILES_PER_PASS,
+  type Random,
+} from './pictures.ts'
 import type { Picture, PictureProgress } from './types.ts'
 
 export interface LessonDone {
@@ -180,9 +188,9 @@ export type PictureOutcome =
       picture: Picture
       /** All open tiles after this pass. */
       revealed: number[]
-      /** The tile this pass just opened. */
-      fresh: number
-      /** How many tiles are open now (1-based position of the fresh tile). */
+      /** The tiles this pass just opened (one in real mode, several in test mode). */
+      fresh: number[]
+      /** How many tiles are open now. */
       count: number
       complete: boolean
       /** A new picture was started by this pass (the previous one was already complete). */
@@ -192,8 +200,9 @@ export type PictureOutcome =
 
 /**
  * Apply one finished lesson to the picture: every pass (average ≥ PASS_SCORE, replays included)
- * opens the next tile; the 6th tile completes the picture and adds it to `picturesDone`. A pass
- * after a completed picture starts a new random one first. Nothing happens below PASS_SCORE.
+ * opens the next `tilesPerPass` tiles (never more than the picture has). Opening the 6th tile
+ * completes the picture and adds it to `picturesDone`. A pass after a completed picture starts a
+ * new random one first. Nothing happens below PASS_SCORE.
  * Without pictures the outcome is null. Pure.
  */
 export function recordPicturePass(
@@ -201,6 +210,7 @@ export function recordPicturePass(
   pictures: Picture[],
   avgScore: number,
   random: Random = Math.random,
+  tilesPerPass: number = TILES_PER_PASS,
 ): { progress: Progress; outcome: PictureOutcome | null } {
   if (pictures.length === 0) return { progress: p, outcome: null }
   if (avgScore < PASS_SCORE) return { progress: p, outcome: { kind: 'failed' } }
@@ -218,7 +228,7 @@ export function recordPicturePass(
     done = next.picturesDone
   }
 
-  const opened = state.opened + 1
+  const opened = Math.min(PICTURE_TILES, state.opened + Math.max(1, Math.floor(tilesPerPass)))
   const picture: PictureProgress = { ...state, opened }
   if (opened === PICTURE_TILES && !done.includes(picture.id)) done = [...done, picture.id]
   const shown = pictures.find((x) => x.id === picture.id)
@@ -229,7 +239,7 @@ export function recordPicturePass(
       kind: 'opened',
       picture: shown,
       revealed: revealedTiles(picture),
-      fresh: picture.order[opened - 1],
+      fresh: picture.order.slice(state.opened, opened),
       count: opened,
       complete: opened === PICTURE_TILES,
       started,

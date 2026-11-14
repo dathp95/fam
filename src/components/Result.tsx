@@ -34,7 +34,9 @@ export function Result({ scores, gained, outcome, onAgain, onHome }: Props) {
           <div className="stack" role="status">
             {outcome.started && <p className="muted">Một bức tranh mới bắt đầu!</p>}
             <p className="gain">
-              Bạn vừa mở mảnh thứ {outcome.count}/{PICTURE_TILES}
+              {outcome.fresh.length > 1
+                ? `Bạn vừa mở ${outcome.fresh.length} mảnh (${outcome.count}/${PICTURE_TILES})`
+                : `Bạn vừa mở mảnh thứ ${outcome.count}/${PICTURE_TILES}`}
             </p>
             <Picture picture={outcome.picture} revealed={outcome.revealed} fresh={outcome.fresh} />
             {outcome.complete && (

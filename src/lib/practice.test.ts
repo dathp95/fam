@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { averageScore } from './diff.ts'
-import { applyCheck, applySkip, EMPTY_TALLY, isSlow, speedLabel, toggleSpeed, type Speed, type Tally } from './practice.ts'
+import { PASS_SCORE } from './progress.ts'
+import {
+  applyCheck,
+  applySkip,
+  EMPTY_TALLY,
+  isSlow,
+  scoreVerdict,
+  SENTENCE_PASS_SCORE,
+  speedLabel,
+  toggleSpeed,
+  type Speed,
+  type Tally,
+} from './practice.ts'
 
 describe('playback speed', () => {
   it('toggles between 1x and 0.75x', () => {
@@ -109,5 +121,18 @@ describe('a whole lesson', () => {
     const first = applyCheck(EMPTY_TALLY, false, { score: 30, xp: 3 }).tally
     const afterRedo = applyCheck(first, true, { score: 100, xp: 15 }).tally
     expect(averageScore(afterRedo.scores)).toBe(averageScore(first.scores))
+  })
+})
+
+describe('scoreVerdict', () => {
+  it('passes from 60, like the lesson pass mark', () => {
+    expect(SENTENCE_PASS_SCORE).toBe(PASS_SCORE)
+    expect(scoreVerdict(60)).toEqual({ label: 'Đạt', pass: true })
+    expect(scoreVerdict(59)).toEqual({ label: 'Chưa đạt', pass: false })
+  })
+
+  it('handles the extremes', () => {
+    expect(scoreVerdict(100).pass).toBe(true)
+    expect(scoreVerdict(0)).toEqual({ label: 'Chưa đạt', pass: false })
   })
 })
