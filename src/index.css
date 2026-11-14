@@ -124,8 +124,4 @@ kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--line)
 }
 @media (prefers-reduced-motion: reduce) { .tile.fresh { animation: none; } }
 .picture-card h3 { margin: 0; font-family: var(--display); font-size: 17px; }
-.intro { margin: 0; padding-left: 20px; }
-.series-lessons summary { cursor: pointer; font-weight: 600; }
-.series-lessons ol { margin: 8px 0 0; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; }
-.series-lessons .tag { margin-left: 8px; }
 .picture-card a, .muted a { color: var(--accent); }

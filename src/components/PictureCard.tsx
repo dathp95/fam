@@ -1,46 +1,43 @@
-import { isSeriesComplete, bonusLessonId } from '../lib/series.ts'
-import { revealedTiles, type Progress } from '../lib/progress.ts'
-import type { Series, StaticLesson } from '../lib/types.ts'
+import { isPictureComplete, PICTURE_TILES, revealedTiles } from '../lib/pictures.ts'
+import { PASS_SCORE } from '../lib/progress.ts'
+import type { Picture as PictureData, PictureProgress } from '../lib/types.ts'
 import { Picture } from './Picture.tsx'
 
 interface Props {
-  series: Series
-  /** Lessons currently in the catalog; some of series.lessonIds may be missing. */
-  lessons: StaticLesson[]
-  progress: Progress
+  picture: PictureData
+  state: PictureProgress
+  /** The bonus lesson of this picture was passed before. */
+  bonusDone: boolean
   onStartBonus: () => void
 }
 
 const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
 
-export function PictureCard({ series, lessons, progress, onStartBonus }: Props) {
-  const revealed = revealedTiles(series, progress)
-  const total = series.grid.cols * series.grid.rows
-  const complete = isSeriesComplete(series, progress)
-  const byId = new Map(lessons.map((l) => [l.id, l]))
-  const bonusDone = Object.hasOwn(progress.lessonsDone, bonusLessonId(series.id))
-  const { credit } = series.image
+/** The picture being uncovered; once complete it also shows the description, credit and bonus. */
+export function PictureCard({ picture, state, bonusDone, onStartBonus }: Props) {
+  const complete = isPictureComplete(state)
+  const { credit } = picture.image
 
   return (
     <div className="card stack picture-card">
-      <div className="row between">
-        <h3>{series.title}</h3>
-        <span className="tag">{series.level}</span>
-      </div>
-      <Picture series={series} revealed={revealed} />
+      <h3>{complete ? picture.title : 'Bức tranh bí ẩn'}</h3>
+      <Picture picture={picture} revealed={revealedTiles(state)} />
       <p className="muted" role="status">
-        Đã mở {revealed.length}/{total} mảnh
+        Đã mở {state.opened}/{PICTURE_TILES} mảnh
       </p>
+
+      {!complete && (
+        <p className="muted">
+          Mỗi lần hoàn thành một bài với điểm trung bình từ {PASS_SCORE} trở lên sẽ mở thêm một mảnh.
+        </p>
+      )}
 
       {complete && (
         <div className="stack">
-          <div>
-            <h3 className="group-title">Giới thiệu bức tranh</h3>
-            <ul className="intro">
-              {series.intro.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ul>
+          <div className="stack">
+            {picture.description.map((s) => (
+              <p key={s}>{s}</p>
+            ))}
           </div>
           <p className="muted">
             Nguồn ảnh: {credit.text}
@@ -55,28 +52,13 @@ export function PictureCard({ series, lessons, progress, onStartBonus }: Props) 
           </p>
           <div className="row">
             <button className="btn primary" onClick={onStartBonus}>
-              Bài thưởng: đọc về bức tranh
+              Bài thưởng: chép chính tả về bức tranh
             </button>
             {bonusDone && <span className="tag">Đã hoàn thành</span>}
           </div>
+          <p className="muted">Hoàn thành thêm một bài nữa để bắt đầu bức tranh mới.</p>
         </div>
       )}
-
-      <details className="series-lessons">
-        <summary>Các bài trong chuỗi</summary>
-        <ol>
-          {series.lessonIds.map((id) => {
-            const lesson = byId.get(id)
-            const done = Object.hasOwn(progress.lessonsDone, id)
-            return (
-              <li key={id}>
-                {lesson ? lesson.title : <span className="muted">Chưa có bài</span>}
-                {done && <span className="tag">Đã qua</span>}
-              </li>
-            )
-          })}
-        </ol>
-      </details>
     </div>
   )
 }

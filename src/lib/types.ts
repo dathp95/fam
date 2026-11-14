@@ -64,20 +64,33 @@ export interface PictureCredit {
   url: string
 }
 
-/** A picture revealed tile by tile as the lessons in `lessonIds` are completed. */
-export interface Series {
+/** A public-domain artwork the learner uncovers tile by tile (public/lessons/index.json `pictures`). */
+export interface Picture {
+  /** "met-<objectId>" */
   id: string
   title: string
-  level: Level
-  image: { src: string; width: number; height: number; alt: string; credit: PictureCredit }
-  /** cols * rows === lessonIds.length */
-  grid: { cols: number; rows: number }
-  /** Fixed permutation of 0..(cols*rows-1): the n-th passed lesson opens tile revealOrder[n-1]. */
-  revealOrder: number[]
-  /** Lessons of the series in study order. Some may not exist in the catalog yet. */
-  lessonIds: string[]
-  /** English A1 sentences about the picture (also the bonus lesson). */
+  image: {
+    /** Path relative to BASE_URL, e.g. "pictures/met-39799.webp". */
+    src: string
+    width: number
+    height: number
+    /** Vietnamese description for screen readers. */
+    alt: string
+    credit: PictureCredit
+  }
+  /** Vietnamese sentences about the artwork, shown once the picture is complete. */
+  description: string[]
+  /** English A1 sentences (present simple, ≤ 10 words) used by the bonus dictation lesson. */
   intro: string[]
+}
+
+/** The picture the learner is uncovering now. */
+export interface PictureProgress {
+  id: string
+  /** Tiles opened so far, 0..PICTURE_TILES. */
+  opened: number
+  /** Random permutation of 0..PICTURE_TILES-1: the n-th pass opens tile order[n-1]. */
+  order: number[]
 }
 
 /** Where practice audio comes from: a stored file, a URL, or nothing (TTS). */

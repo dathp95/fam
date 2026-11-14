@@ -22,22 +22,29 @@ const lesson = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-const catalog = (lessons: unknown[]) => ({ version: 1, lessons, series: [] })
+const catalog = (lessons: unknown[]) => ({ version: 1, lessons, pictures: [] })
 
 describe('parseCatalog', () => {
   it('accepts an empty catalog', () => {
-    expect(parseCatalog({ version: 1, lessons: [], series: [] })).toEqual({ lessons: [], series: [], warnings: [] })
+    expect(parseCatalog({ version: 1, lessons: [], pictures: [] })).toEqual({ lessons: [], pictures: [], warnings: [] })
   })
 
-  it('treats a missing "series" key as no series', () => {
-    expect(parseCatalog({ version: 1, lessons: [] })).toEqual({ lessons: [], series: [], warnings: [] })
+  it('treats a missing "pictures" key as no pictures', () => {
+    expect(parseCatalog({ version: 1, lessons: [] })).toEqual({ lessons: [], pictures: [], warnings: [] })
   })
 
-  it('warns when "series" is not an array but keeps the lessons', () => {
-    const r = parseCatalog({ version: 1, lessons: [lesson()], series: {} })
+  it('warns when "pictures" is not an array but keeps the lessons', () => {
+    const r = parseCatalog({ version: 1, lessons: [lesson()], pictures: {} })
     expect(r.lessons).toHaveLength(1)
-    expect(r.series).toEqual([])
+    expect(r.pictures).toEqual([])
     expect(r.warnings).toHaveLength(1)
+  })
+
+  it('ignores a legacy "series" key without a warning', () => {
+    const r = parseCatalog({ version: 1, lessons: [lesson()], series: [{ id: 'old' }], pictures: [] })
+    expect(r.lessons).toHaveLength(1)
+    expect(r.pictures).toEqual([])
+    expect(r.warnings).toEqual([])
   })
 
   it('accepts valid lessons', () => {

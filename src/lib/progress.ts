@@ -1,14 +1,13 @@
-/** XP, level, streak and completed lessons, persisted in localStorage. */
+/** XP, level, streak, passed lessons and the picture being uncovered, persisted in localStorage. */
 
-import type { Series } from './types.ts'
+import { isPermutation, PICTURE_TILES, randomIndex, revealedTiles, shuffle, type Random } from './pictures.ts'
+import type { Picture, PictureProgress } from './types.ts'
 
 export interface LessonDone {
   /** Best average score (0-100) among passing attempts. */
   best: number
   /** Timestamp (ms) of the attempt that set `best`. */
   at: number
-  /** How many times the lesson was passed (≥ PASS_SCORE). Each pass opens one picture tile. */
-  passes: number
 }
 
 export interface Progress {
@@ -19,6 +18,10 @@ export interface Progress {
   sentences: number
   /** Lessons passed (average ≥ PASS_SCORE), keyed by lesson id. */
   lessonsDone: Record<string, LessonDone>
+  /** The picture being uncovered, or null before the first one is picked. */
+  picture: PictureProgress | null
+  /** Pictures completed in the current cycle (oldest first). */
+  picturesDone: string[]
 }
 
 const KEY = 'fam.prog'
@@ -26,27 +29,49 @@ export const XP_PER_LEVEL = 100
 /** Minimum average score for a lesson to count as passed (opens a picture tile). */
 export const PASS_SCORE = 60
 
-const EMPTY: Progress = { xp: 0, streak: 0, last: '', sentences: 0, lessonsDone: {} }
+const emptyProgress = (): Progress => ({
+  xp: 0,
+  streak: 0,
+  last: '',
+  sentences: 0,
+  lessonsDone: {},
+  picture: null,
+  picturesDone: [],
+})
 
 const dayString = (d: Date) => d.toLocaleDateString('en-CA')
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
-/**
- * Keep only well-formed entries; data saved before lessonsDone existed gives {}.
- * Entries saved before `passes` existed count as one pass.
- */
+const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+
+/** Keep only well-formed entries. Extra fields from older versions (e.g. `passes`) are dropped. */
 function parseLessonsDone(raw: unknown): Record<string, LessonDone> {
   const out: Record<string, LessonDone> = {}
   if (!isRecord(raw)) return out
   for (const [id, v] of Object.entries(raw)) {
-    if (!isRecord(v)) continue
-    const { best, at, passes } = v
-    if (typeof best === 'number' && Number.isFinite(best) && typeof at === 'number' && Number.isFinite(at)) {
-      const valid = typeof passes === 'number' && Number.isInteger(passes) && passes >= 1
-      out[id] = { best, at, passes: valid ? passes : 1 }
-    }
+    if (isRecord(v) && finite(v.best) && finite(v.at)) out[id] = { best: v.best, at: v.at }
+  }
+  return out
+}
+
+/** A valid picture state, or null (also for anything saved by older versions). */
+function parsePictureProgress(raw: unknown): PictureProgress | null {
+  if (!isRecord(raw)) return null
+  const { id, opened, order } = raw
+  if (typeof id !== 'string' || !id) return null
+  if (typeof opened !== 'number' || !Number.isInteger(opened) || opened < 0 || opened > PICTURE_TILES) return null
+  if (!isPermutation(order, PICTURE_TILES)) return null
+  return { id, opened, order: [...order] }
+}
+
+/** Unique, non-empty ids in their original order. */
+function parsePicturesDone(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const v of raw as unknown[]) {
+    if (typeof v === 'string' && v && !out.includes(v)) out.push(v)
   }
   return out
 }
@@ -55,19 +80,20 @@ export function loadProgress(): Progress {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null')
     if (isRecord(raw)) {
-      const p = raw as Partial<Progress>
       return {
-        xp: Number(p.xp) || 0,
-        streak: Number(p.streak) || 0,
-        last: typeof p.last === 'string' ? p.last : '',
-        sentences: Number(p.sentences) || 0,
-        lessonsDone: parseLessonsDone(p.lessonsDone),
+        xp: Number(raw.xp) || 0,
+        streak: Number(raw.streak) || 0,
+        last: typeof raw.last === 'string' ? raw.last : '',
+        sentences: Number(raw.sentences) || 0,
+        lessonsDone: parseLessonsDone(raw.lessonsDone),
+        picture: parsePictureProgress(raw.picture),
+        picturesDone: parsePicturesDone(raw.picturesDone),
       }
     }
   } catch {
     /* corrupted or unavailable storage: start fresh */
   }
-  return { ...EMPTY, lessonsDone: {} }
+  return emptyProgress()
 }
 
 export function saveProgress(p: Progress): void {
@@ -93,41 +119,120 @@ export function recordAnswer(p: Progress, xp: number, now = new Date()): Progres
 }
 
 /**
- * Record a finished lesson. Below PASS_SCORE nothing is stored. At or above it, `passes` goes up
- * by one (every pass counts, including replays) and the best score is kept. `firstPass` is true
- * only when the lesson had no entry before. Pure.
+ * Remember the best passing score of a lesson (shown as "Đã qua · 90"). Below PASS_SCORE, or not
+ * better than the stored score, the same object is returned. Pure.
  */
-export function recordLessonDone(
-  p: Progress,
-  lessonId: string,
-  avgScore: number,
-  now = new Date(),
-): { progress: Progress; firstPass: boolean } {
-  if (avgScore < PASS_SCORE) return { progress: p, firstPass: false }
+export function recordLessonDone(p: Progress, lessonId: string, avgScore: number, now = new Date()): Progress {
+  if (avgScore < PASS_SCORE) return p
   const previous = Object.hasOwn(p.lessonsDone, lessonId) ? p.lessonsDone[lessonId] : undefined
-  const improved = !previous || avgScore > previous.best
-  const entry: LessonDone = {
-    best: improved ? avgScore : previous.best,
-    at: improved ? now.getTime() : previous.at,
-    passes: (previous?.passes ?? 0) + 1,
-  }
-  return {
-    progress: { ...p, lessonsDone: { ...p.lessonsDone, [lessonId]: entry } },
-    firstPass: previous === undefined,
-  }
+  if (previous && avgScore <= previous.best) return p
+  return { ...p, lessonsDone: { ...p.lessonsDone, [lessonId]: { best: avgScore, at: now.getTime() } } }
 }
 
 /**
- * Indexes of the tiles that are open: the first N entries of revealOrder, where N is the total
- * number of passes of the series' lessons (a replay opens another tile). Never more than all tiles.
+ * Pick a random picture that is not in `picturesDone`. When every picture is done, a new cycle
+ * starts: choose among the others than the one completed last (`picturesDone` becomes just that
+ * one), or the same picture again when there is only one. Returns null without pictures. Pure.
  */
-export function revealedTiles(
-  series: Pick<Series, 'lessonIds' | 'revealOrder'>,
-  progress: Pick<Progress, 'lessonsDone'>,
-): number[] {
-  const passes = series.lessonIds.reduce(
-    (sum, id) => sum + (Object.hasOwn(progress.lessonsDone, id) ? progress.lessonsDone[id].passes : 0),
-    0,
-  )
-  return series.revealOrder.slice(0, passes)
+export function pickNextPicture(
+  pictures: Picture[],
+  picturesDone: string[],
+  random: Random = Math.random,
+): { picture: Picture; picturesDone: string[] } | null {
+  if (pictures.length === 0) return null
+  let candidates = pictures.filter((p) => !picturesDone.includes(p.id))
+  let done = picturesDone
+  if (candidates.length === 0) {
+    const last = picturesDone.at(-1)
+    const others = pictures.filter((p) => p.id !== last)
+    if (others.length > 0) {
+      candidates = others
+      done = last !== undefined && pictures.some((p) => p.id === last) ? [last] : []
+    } else {
+      candidates = pictures
+      done = []
+    }
+  }
+  return { picture: candidates[randomIndex(candidates.length, random)], picturesDone: done }
+}
+
+const startPicture = (picture: Picture, random: Random): PictureProgress => ({
+  id: picture.id,
+  opened: 0,
+  order: shuffle(PICTURE_TILES, random),
+})
+
+/**
+ * Make sure there is a picture to show: keeps the current one (even when complete) if it is still
+ * in the catalog, otherwise picks a new covered picture. No pictures: unchanged. Pure.
+ */
+export function ensureActivePicture(p: Progress, pictures: Picture[], random: Random = Math.random): Progress {
+  if (p.picture && pictures.some((x) => x.id === p.picture?.id)) return p
+  const next = pickNextPicture(pictures, p.picturesDone, random)
+  if (!next) return p
+  return { ...p, picture: startPicture(next.picture, random), picturesDone: next.picturesDone }
+}
+
+/** What the result screen should say about the picture after finishing a lesson. */
+export type PictureOutcome =
+  | {
+      kind: 'opened'
+      picture: Picture
+      /** All open tiles after this pass. */
+      revealed: number[]
+      /** The tile this pass just opened. */
+      fresh: number
+      /** How many tiles are open now (1-based position of the fresh tile). */
+      count: number
+      complete: boolean
+      /** A new picture was started by this pass (the previous one was already complete). */
+      started: boolean
+    }
+  | { kind: 'failed' } // average below PASS_SCORE
+
+/**
+ * Apply one finished lesson to the picture: every pass (average ≥ PASS_SCORE, replays included)
+ * opens the next tile; the 6th tile completes the picture and adds it to `picturesDone`. A pass
+ * after a completed picture starts a new random one first. Nothing happens below PASS_SCORE.
+ * Without pictures the outcome is null. Pure.
+ */
+export function recordPicturePass(
+  p: Progress,
+  pictures: Picture[],
+  avgScore: number,
+  random: Random = Math.random,
+): { progress: Progress; outcome: PictureOutcome | null } {
+  if (pictures.length === 0) return { progress: p, outcome: null }
+  if (avgScore < PASS_SCORE) return { progress: p, outcome: { kind: 'failed' } }
+
+  let state: PictureProgress | null = null
+  if (p.picture && p.picture.opened < PICTURE_TILES && pictures.some((x) => x.id === p.picture?.id)) {
+    state = p.picture
+  }
+  let done = p.picturesDone
+  const started = state === null && p.picture !== null
+  if (!state) {
+    const next = pickNextPicture(pictures, done, random)
+    if (!next) return { progress: p, outcome: null }
+    state = startPicture(next.picture, random)
+    done = next.picturesDone
+  }
+
+  const opened = state.opened + 1
+  const picture: PictureProgress = { ...state, opened }
+  if (opened === PICTURE_TILES && !done.includes(picture.id)) done = [...done, picture.id]
+  const shown = pictures.find((x) => x.id === picture.id)
+  if (!shown) return { progress: p, outcome: null }
+  return {
+    progress: { ...p, picture, picturesDone: done },
+    outcome: {
+      kind: 'opened',
+      picture: shown,
+      revealed: revealedTiles(picture),
+      fresh: picture.order[opened - 1],
+      count: opened,
+      complete: opened === PICTURE_TILES,
+      started,
+    },
+  }
 }

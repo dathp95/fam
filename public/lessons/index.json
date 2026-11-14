@@ -1,128 +1,261 @@
-{ "version": 1, "lessons": [{
-  "id": "voa-l01-welcome",
-  "kind": "static",
-  "title": "Lesson 1: Welcome!",
-  "langId": "en",
-  "createdAt": 1794644769656,
-  "audioUrl": "lessons/voa/voa-l01-welcome.mp3",
-  "duration": 29.545556,
-  "sentences": [
+{
+  "version": 1,
+  "lessons": [
     {
-      "id": "smwg55qpkar70gr",
-      "text": "Hi, are you Anna?",
-      "start": 0,
-      "end": 2.28
-    },
-    {
-      "id": "smwg55qpk718ivb",
-      "text": "Yes, hi there, are you Pete?",
-      "start": 2.4,
-      "end": 4.2
-    },
-    {
-      "id": "smwg55qpkcw557c",
-      "text": "I am Pete.",
-      "start": 4.2,
-      "end": 5.5
-    },
-    {
-      "id": "smwg55qpkp06tqi",
-      "text": "Nice to meet you.",
-      "start": 5.5,
-      "end": 6.6
-    },
-    {
-      "id": "smwg55qpkp19ac7",
-      "text": "Let's try that again.",
-      "start": 8.4,
-      "end": 9.9
-    },
-    {
-      "id": "smwg55qpklucxx3",
-      "text": "I'm Anna, nice to meet you.",
-      "start": 9.8,
-      "end": 13
-    },
-    {
-      "id": "smwg55qpk4snvzi",
-      "text": "I'm Pete.",
-      "start": 13.1,
-      "end": 14.4
-    },
-    {
-      "id": "smwg55qpkwgc9wd",
-      "text": "Anna, is that A-N-A?",
-      "start": 14.3,
-      "end": 17
-    },
-    {
-      "id": "smwg55qpkrkxwow",
-      "text": "No, A-N-N-A.",
-      "start": 17,
-      "end": 20.1
-    },
-    {
-      "id": "smwg55qpkcwf532",
-      "text": "Well, Anna with two Ns.",
-      "start": 20.16,
-      "end": 21.8
-    },
-    {
-      "id": "smwg55qpkwybfxg",
-      "text": "Welcome to 1400 Irving Street!",
-      "start": 22.5,
-      "end": 26.8
-    },
-    {
-      "id": "smwg55qpkms7ukc",
-      "text": "My new apartment,",
-      "start": 26.79,
-      "end": 29.5
+      "id": "voa-l01-welcome",
+      "kind": "static",
+      "title": "Lesson 1: Welcome!",
+      "langId": "en",
+      "createdAt": 1794644769656,
+      "audioUrl": "lessons/voa/voa-l01-welcome.mp3",
+      "duration": 29.545556,
+      "sentences": [
+        {
+          "id": "smwg55qpkar70gr",
+          "text": "Hi, are you Anna?",
+          "start": 0,
+          "end": 2.28
+        },
+        {
+          "id": "smwg55qpk718ivb",
+          "text": "Yes, hi there, are you Pete?",
+          "start": 2.4,
+          "end": 4.2
+        },
+        {
+          "id": "smwg55qpkcw557c",
+          "text": "I am Pete.",
+          "start": 4.2,
+          "end": 5.5
+        },
+        {
+          "id": "smwg55qpkp06tqi",
+          "text": "Nice to meet you.",
+          "start": 5.5,
+          "end": 6.6
+        },
+        {
+          "id": "smwg55qpkp19ac7",
+          "text": "Let's try that again.",
+          "start": 8.4,
+          "end": 9.9
+        },
+        {
+          "id": "smwg55qpklucxx3",
+          "text": "I'm Anna, nice to meet you.",
+          "start": 9.8,
+          "end": 13
+        },
+        {
+          "id": "smwg55qpk4snvzi",
+          "text": "I'm Pete.",
+          "start": 13.1,
+          "end": 14.4
+        },
+        {
+          "id": "smwg55qpkwgc9wd",
+          "text": "Anna, is that A-N-A?",
+          "start": 14.3,
+          "end": 17
+        },
+        {
+          "id": "smwg55qpkrkxwow",
+          "text": "No, A-N-N-A.",
+          "start": 17,
+          "end": 20.1
+        },
+        {
+          "id": "smwg55qpkcwf532",
+          "text": "Well, Anna with two Ns.",
+          "start": 20.16,
+          "end": 21.8
+        },
+        {
+          "id": "smwg55qpkwybfxg",
+          "text": "Welcome to 1400 Irving Street!",
+          "start": 22.5,
+          "end": 26.8
+        },
+        {
+          "id": "smwg55qpkms7ukc",
+          "text": "My new apartment,",
+          "start": 26.79,
+          "end": 29.5
+        }
+      ],
+      "level": "A1",
+      "topic": "Meeting people",
+      "source": {
+        "name": "Voice of America",
+        "url": "https://learningenglish.voanews.com/a/lets-learn-english-level-1-lesson-1/5184882.html",
+        "license": "public domain"
+      },
+      "seriesId": "nature",
+      "order": 1
     }
   ],
-  "level": "A1",
-  "topic": "Meeting people",
-  "source": {
-    "name": "Voice of America",
-    "url": "https://learningenglish.voanews.com/a/lets-learn-english-level-1-lesson-1/5184882.html",
-    "license": "public domain"
-  },
-  "seriesId": "nature",
-  "order": 1
-}
-], "series": [{
-  "id": "nature",
-  "title": "Bức tranh thiên nhiên",
-  "level": "A1",
-  "image": {
-    "src": "series/nature/nature.webp",
-    "width": 1600,
-    "height": 1094,
-    "alt": "Bức tranh khắc gỗ Nhật Bản: một con sóng lớn cuộn cao, những chiếc thuyền nhỏ bên dưới và núi Phú Sĩ nhỏ ở phía xa.",
-    "credit": {
-      "text": "Katsushika Hokusai, \"Under the Wave off Kanagawa\" (The Great Wave), khoảng 1830–32. Bảo tàng Nghệ thuật Metropolitan (The Metropolitan Museum of Art), Bộ sưu tập Howard Mansfield, mua bằng Quỹ Rogers, 1936. Ảnh thuộc phạm vi công cộng (Met Open Access).",
-      "url": "https://www.metmuseum.org/art/collection/search/39799"
+  "pictures": [
+    {
+      "id": "met-39799",
+      "title": "Under the Wave off Kanagawa (The Great Wave)",
+      "image": {
+        "src": "pictures/met-39799.webp",
+        "width": 1600,
+        "height": 1094,
+        "alt": "Bức tranh khắc gỗ Nhật Bản: một con sóng lớn cuộn cao, những chiếc thuyền nhỏ bên dưới và núi Phú Sĩ nhỏ ở phía xa.",
+        "credit": {
+          "text": "Katsushika Hokusai, \"Under the Wave off Kanagawa\" (The Great Wave), khoảng 1830–32. Bảo tàng Nghệ thuật Metropolitan (The Metropolitan Museum of Art), Bộ sưu tập Howard Mansfield, mua bằng Quỹ Rogers, 1936. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+          "url": "https://www.metmuseum.org/art/collection/search/39799"
+        }
+      },
+      "description": [
+        "Bức tranh này có tên Under the Wave off Kanagawa (The Great Wave), của họa sĩ Nhật Bản Katsushika Hokusai (1760–1849).",
+        "Đây là tranh khắc gỗ, được làm vào khoảng năm 1830–32, kích thước 25,4 × 38,1 cm.",
+        "Tranh thuộc loạt Thirty-six Views of Mount Fuji (Ba mươi sáu cảnh núi Phú Sĩ), và núi Phú Sĩ hiện lên nhỏ bé bên trong con sóng.",
+        "Tranh dùng màu xanh chàm và xanh Phổ (Prussian blue), và được cho là đã truyền cảm hứng cho bản nhạc La Mer của Debussy và tác phẩm Der Berg của Rilke."
+      ],
+      "intro": [
+        "This picture is called The Great Wave.",
+        "Hokusai is a Japanese artist.",
+        "It is a woodblock print.",
+        "It is from about 1830.",
+        "Mount Fuji is small in the wave."
+      ]
+    },
+    {
+      "id": "met-435809",
+      "title": "The Harvesters",
+      "image": {
+        "src": "pictures/met-435809.webp",
+        "width": 1600,
+        "height": 1178,
+        "alt": "Bức tranh sơn dầu trên gỗ sồi tên The Harvesters, vẽ những người gặt.",
+        "credit": {
+          "text": "Pieter Bruegel the Elder, \"The Harvesters\", 1565. The Metropolitan Museum of Art, Rogers Fund, 1919. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+          "url": "https://www.metmuseum.org/art/collection/search/435809"
+        }
+      },
+      "description": [
+        "Bức tranh này có tên The Harvesters (Những người gặt), của họa sĩ Pieter Bruegel the Elder.",
+        "Tranh được vẽ vào năm 1565.",
+        "Đây là tranh sơn dầu trên gỗ sồi (oil on oak).",
+        "Kích thước toàn bộ, tính cả các dải thêm vào ở trên, dưới và bên phải, là 119 x 162 cm; phần mặt tranh được vẽ ban đầu là 116,5 x 159,5 cm.",
+        "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
+      ],
+      "intro": [
+        "This picture is called The Harvesters.",
+        "The artist is Pieter Bruegel the Elder.",
+        "It is from 1565.",
+        "It is oil on oak.",
+        "It is 119 by 162 centimeters."
+      ]
+    },
+    {
+      "id": "met-435844",
+      "title": "The Musicians",
+      "image": {
+        "src": "pictures/met-435844.webp",
+        "width": 1600,
+        "height": 1242,
+        "alt": "Bức tranh sơn dầu trên vải tên The Musicians, vẽ các nhạc công.",
+        "credit": {
+          "text": "Caravaggio (Michelangelo Merisi), \"The Musicians\", 1597. The Metropolitan Museum of Art, Rogers Fund, 1952. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+          "url": "https://www.metmuseum.org/art/collection/search/435844"
+        }
+      },
+      "description": [
+        "Bức tranh này có tên The Musicians (Các nhạc công), của họa sĩ Caravaggio (Michelangelo Merisi).",
+        "Tranh được vẽ vào năm 1597.",
+        "Đây là tranh sơn dầu trên vải (oil on canvas).",
+        "Kích thước của tranh là 92,1 x 118,4 cm (36 1/4 x 46 5/8 inch).",
+        "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
+      ],
+      "intro": [
+        "This picture is called The Musicians.",
+        "The artist is Caravaggio.",
+        "It is from 1597.",
+        "It is oil on canvas."
+      ]
+    },
+    {
+      "id": "met-435962",
+      "title": "Hagar in the Wilderness",
+      "image": {
+        "src": "pictures/met-435962.webp",
+        "width": 1600,
+        "height": 1182,
+        "alt": "Bức tranh sơn dầu trên vải tên Hagar in the Wilderness, vẽ Hagar trong vùng hoang dã.",
+        "credit": {
+          "text": "Camille Corot, \"Hagar in the Wilderness\", 1835. The Metropolitan Museum of Art, Rogers Fund, 1938. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+          "url": "https://www.metmuseum.org/art/collection/search/435962"
+        }
+      },
+      "description": [
+        "Bức tranh này có tên Hagar in the Wilderness (Hagar trong vùng hoang dã), của họa sĩ Camille Corot.",
+        "Tranh được vẽ vào năm 1835.",
+        "Đây là tranh sơn dầu trên vải (oil on canvas).",
+        "Kích thước của tranh là 180,3 x 270,5 cm (71 x 106 1/2 inch).",
+        "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
+      ],
+      "intro": [
+        "This picture is called Hagar in the Wilderness.",
+        "The artist is Camille Corot.",
+        "It is from 1835.",
+        "It is oil on canvas."
+      ]
+    },
+    {
+      "id": "met-437549",
+      "title": "Wheat Fields",
+      "image": {
+        "src": "pictures/met-437549.webp",
+        "width": 1600,
+        "height": 1238,
+        "alt": "Bức tranh sơn dầu trên vải tên Wheat Fields, vẽ những cánh đồng lúa mì.",
+        "credit": {
+          "text": "Jacob van Ruisdael, \"Wheat Fields\", ca. 1670. The Metropolitan Museum of Art, Bequest of Benjamin Altman, 1913. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+          "url": "https://www.metmuseum.org/art/collection/search/437549"
+        }
+      },
+      "description": [
+        "Bức tranh này có tên Wheat Fields (Những cánh đồng lúa mì), của họa sĩ Jacob van Ruisdael.",
+        "Tranh được vẽ vào khoảng năm 1670.",
+        "Đây là tranh sơn dầu trên vải (oil on canvas).",
+        "Kích thước của tranh là 100 x 130,2 cm (39 3/8 x 51 1/4 inch).",
+        "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
+      ],
+      "intro": [
+        "This picture is called Wheat Fields.",
+        "The artist is Jacob van Ruisdael.",
+        "It is from about 1670.",
+        "It is oil on canvas."
+      ]
+    },
+    {
+      "id": "met-459092",
+      "title": "Trees and Houses Near the Jas de Bouffan",
+      "image": {
+        "src": "pictures/met-459092.webp",
+        "width": 1600,
+        "height": 1202,
+        "alt": "Bức tranh sơn dầu trên vải tên Trees and Houses Near the Jas de Bouffan, vẽ cây cối và những ngôi nhà gần Jas de Bouffan.",
+        "credit": {
+          "text": "Paul Cézanne, \"Trees and Houses Near the Jas de Bouffan\", 1885–86. The Metropolitan Museum of Art, Robert Lehman Collection, 1975. Ảnh thuộc phạm vi công cộng (Met Open Access).",
+          "url": "https://www.metmuseum.org/art/collection/search/459092"
+        }
+      },
+      "description": [
+        "Bức tranh này có tên Trees and Houses Near the Jas de Bouffan (Cây cối và những ngôi nhà gần Jas de Bouffan), của họa sĩ Paul Cézanne.",
+        "Tranh được vẽ vào năm 1885–86.",
+        "Đây là tranh sơn dầu trên vải (oil on canvas).",
+        "Kích thước của tranh là 67,9 × 92,1 cm (26 3/4 × 36 1/4 inch); tính cả khung là 98,7 × 121,3 cm (38 7/8 × 47 3/4 inch).",
+        "Tranh thuộc Bộ sưu tập Robert Lehman (Robert Lehman Collection)."
+      ],
+      "intro": [
+        "This picture shows trees and houses.",
+        "It is from 1885 to 1886.",
+        "It is oil on canvas."
+      ]
     }
-  },
-  "grid": { "cols": 5, "rows": 2 },
-  "revealOrder": [4, 7, 1, 9, 0, 6, 3, 8, 2, 5],
-  "lessonIds": [
-    "voa-l01-welcome",
-    "voa-l05-where-are-you",
-    "voa-l07-what-are-you-doing",
-    "voa-l09-is-it-cold",
-    "voa-l11-neighborhood",
-    "voa-l12-family",
-    "voa-l16-where-from",
-    "voa-l17-free-on-friday",
-    "voa-l22-next-summer",
-    "voa-l35-make-dinner"
-  ],
-  "intro": [
-    "This picture is called The Great Wave.",
-    "Hokusai is a Japanese artist.",
-    "It is a woodblock print.",
-    "It is from about 1830.",
-    "Mount Fuji is small in the wave."
   ]
-}] }
+}

@@ -1,6 +1,6 @@
 # FAM — Yêu cầu công việc cho Claude Code
 
-Dự án: Vite + React + TypeScript (xem `CLAUDE.md` và `README.md`). Đọc toàn bộ file này trước, rồi làm **từng Task theo thứ tự A → B → C**. Mỗi Task là một lần làm việc riêng và một commit riêng.
+Dự án: Vite + React + TypeScript (xem `CLAUDE.md` và `README.md`). Đọc toàn bộ file này trước, rồi làm **từng Task theo thứ tự A → B → C → E**. Mỗi Task là một lần làm việc riêng và một commit riêng. **Task E thay thế thiết kế chuỗi tranh (series) của Task C.**
 
 ## Quy tắc chung
 - Giữ nguyên hành vi và giao diện hiện có, trừ phần được nêu trong Task.
@@ -11,11 +11,9 @@ Dự án: Vite + React + TypeScript (xem `CLAUDE.md` và `README.md`). Đọc to
 - Không thêm thư viện mới nếu không thật cần; nếu thêm thì nói rõ lý do.
 
 ## Quyết định đã chốt
-1. Chủ đề ảnh đầu tiên: **thiên nhiên** (bộ sưu tập "nature" của Met Museum Open Access, CC0).
-2. Ngưỡng mở một mảnh tranh: điểm trung bình bài học **>= 60** (hằng số `PASS_SCORE = 60`).
-3. **Có** bài thưởng cuối chuỗi: luyện chính các câu giới thiệu bức tranh (đọc bằng giọng TTS).
-4. Nguồn audio A1: VOA "Let's Learn English – Level 1" (public domain). Ghi nguồn trong app. ELLLO chưa gắn sẵn (chưa rõ điều khoản dùng lại), chỉ dùng qua chế độ tải file của người dùng.
-5. **Mỗi lần qua bài (điểm trung bình >= 60) đều mở thêm một mảnh, kể cả luyện lại bài cũ**, tối đa bằng số ô. Vì vậy tranh có thể lộ hết sau 10 lần qua bài, kể cả chỉ luyện một bài. (Quy tắc ban đầu "luyện lại không mở thêm" đã bị thay thế.)
+1. Ngưỡng để một lần hoàn thành bài được tính là "qua bài": điểm trung bình **>= 60** (hằng số `PASS_SCORE = 60`).
+2. Nguồn audio A1: VOA "Let's Learn English – Level 1" (public domain). Ghi nguồn trong app. ELLLO chưa gắn sẵn (chưa rõ điều khoản dùng lại), chỉ dùng qua chế độ tải file của người dùng.
+3. **Bộ sưu tập tranh ngẫu nhiên (Task E)**: mỗi tranh là một tác phẩm public domain của Met (Open Access), lưới cố định 3×2 (6 mảnh), thứ tự mở ngẫu nhiên. **Mỗi lần qua bài (kể cả luyện lại) mở thêm một mảnh.** Mở đủ 6 mảnh thì hiện mô tả tiếng Việt, nguồn ảnh và bài thưởng; lần qua bài tiếp theo bắt đầu một tranh mới. Quyết định này thay thế các quyết định cũ về chuỗi tranh "thiên nhiên" 10 bài (lưới 5×2, mở theo `lessonIds`).
 
 ---
 
@@ -27,6 +25,7 @@ Lỗi hiện tại: "I live in Washington, D.C. and I like it." bị tách thàn
 Yêu cầu:
 - Không tách câu sau các chữ viết tắt chắc chắn không kết thúc câu: Mr., Mrs., Ms., Dr., St., Jr., Sr., vs., etc. (chỉ khi theo sau là chữ thường), e.g., i.e.
 - Với viết tắt nhiều chữ cái như U.S., U.K., D.C., a.m., p.m.: dấu chấm bên trong luôn là dấu chấm của từ. Dấu chấm cuối chỉ kết thúc câu khi sau đó là khoảng trắng + chữ in hoa hoặc hết văn bản.
+- Số thập phân, giá tiền, giờ (5.5, $3.50, 9.30) không bị tách.
 - Chữ viết tắt trong `[...]`, ngoặc kép, hoặc sau dấu `?`/`!` vẫn hoạt động đúng.
 - Triển khai gợi ý: thay các dấu chấm "được bảo vệ" bằng ký tự giữ chỗ trước khi tách, rồi khôi phục. Giữ nguyên quy tắc tách hiện có (câu > 16 từ tách tại `, ; :` thành đoạn >= 6 từ).
 
@@ -35,6 +34,7 @@ Test tối thiểu:
 - "I live in Washington, D.C. Anna lives there too." → 2 câu.
 - "Mr. Smith and Dr. Lee arrive at 9 a.m. today." → 1 câu.
 - "It is 5 p.m. We go home." → 2 câu.
+- "The ticket costs 5.5 dollars." → 1 câu.
 - Các test cũ vẫn qua.
 
 ---
@@ -61,15 +61,16 @@ export interface StaticLesson extends LessonBase {
 }
 // Lesson = SampleLesson | MediaLesson | StaticLesson
 ```
+`seriesId` và `order` của bài học chỉ còn dùng để nhóm và sắp xếp bài trên Home; chúng không liên quan đến tranh (xem Task E).
 
 ### B2. Danh mục bài (`public/lessons/index.json`)
 ```json
-{ "version": 1, "lessons": [], "series": [] }
+{ "version": 1, "lessons": [], "pictures": [] }
 ```
 - `lessons`: mảng `StaticLesson` (đã có `kind: "static"`).
-- `series`: dùng cho Task C (để `[]` trong Task B).
-- File dữ liệu thật để trống; người dùng sẽ thêm bài sau bằng nút xuất JSON.
-- Tạo `src/lib/catalog.ts`: `loadCatalog(): Promise<Catalog>` đọc `import.meta.env.BASE_URL + 'lessons/index.json'`, kiểm tra kiểu ở runtime (hàm `parseCatalog(raw: unknown)` thuần, có test). Bài sai định dạng bị bỏ qua và ghi vào danh sách cảnh báo; lỗi mạng/JSON hỏng trả về catalog rỗng kèm thông báo tiếng Việt, không làm app lỗi.
+- `pictures`: bộ sưu tập tranh của Task E. (Khóa `series` của Task C đã bỏ; nếu còn trong file cũ thì bị bỏ qua, không báo lỗi.)
+- Người dùng thêm bài bằng nút xuất JSON; thêm tranh bằng công cụ `npm run ingest:pictures` (Task E).
+- `src/lib/catalog.ts`: `loadCatalog(): Promise<Catalog>` đọc `import.meta.env.BASE_URL + 'lessons/index.json'`, kiểm tra kiểu ở runtime (hàm `parseCatalog(raw: unknown)` thuần, có test). Bài hoặc tranh sai định dạng bị bỏ qua và ghi vào danh sách cảnh báo; lỗi mạng/JSON hỏng trả về catalog rỗng kèm thông báo tiếng Việt, không làm app lỗi.
 
 ### B3. Phát audio từ URL
 - `useSegmentPlayer(source: Blob | string | null)`: nếu là `string` thì dùng thẳng làm `src` (nối `BASE_URL` ở nơi gọi), **không** tạo hay thu hồi object URL. Giữ nguyên logic chờ `loadedmetadata`, dọn dẹp, `stop()`.
@@ -109,60 +110,89 @@ export const LESSON_SOURCES: LessonSourceOption[] = [...]
 
 ---
 
-## Task C — Bức tranh mở dần
+## Task C — Chuỗi tranh mở dần (ĐÃ BỊ THAY THẾ bởi Task E)
 
-### C1. Dữ liệu chuỗi (series) trong `public/lessons/index.json`
+Thiết kế cũ: mỗi chuỗi (`series`) gắn với một danh sách `lessonIds`, lưới `cols × rows` bằng số bài, `revealOrder` cố định trong JSON, mở mảnh khi qua đúng các bài của chuỗi. **Không còn dùng.** Đã gỡ khỏi code: kiểu `Series`, `src/lib/series.ts`, khóa `series` trong `index.json`, `lessonIds`, `revealOrder`, `grid` theo từng tranh.
+
+Những gì được giữ lại trong Task E: `PASS_SCORE = 60`, lưới ô che phủ lên ảnh, hiệu ứng mờ dần ~600 ms và `prefers-reduced-motion`, bài thưởng đọc chính tả các câu giới thiệu bằng TTS, và bức tranh Hokusai (nay là `met-39799`). Chi tiết thiết kế cũ nằm trong lịch sử git.
+
+---
+
+## Task E — Bộ sưu tập tranh ngẫu nhiên
+
+### E1. Dữ liệu (`public/lessons/index.json` → `pictures`)
 ```ts
-export interface PictureCredit {
-  title: string; artist: string; date: string
-  objectId: string; url: string; license: 'CC0' | 'placeholder'
-}
-export interface Series {
-  id: string
+export interface PictureCredit { text: string; url: string }   // text tiếng Việt, hiển thị nguyên văn
+export interface Picture {
+  id: string                  // "met-<objectId>"
   title: string
-  level: Level
   image: { src: string; width: number; height: number; alt: string; credit: PictureCredit }
-  grid: { cols: number; rows: number }      // cols * rows === lessonIds.length
-  revealOrder: number[]                      // hoán vị cố định của 0..(cols*rows-1)
-  lessonIds: string[]                        // các bài của chuỗi, theo thứ tự học
-  intro: string[]                            // 3–5 câu tiếng Anh A1 giới thiệu bức tranh
+  description: string[]       // tiếng Việt, 3–5 câu, hiện cho người dùng khi tranh hoàn chỉnh
+  intro: string[]             // tiếng Anh A1, 3–5 câu, <= 10 từ/câu, thì hiện tại đơn; dùng cho bài thưởng
+}
+export interface PictureProgress { id: string; opened: number; order: number[] }
+```
+- `image.src` là đường dẫn tương đối `pictures/met-<objectId>.webp` (file nằm trong `public/pictures/`), `alt` tiếng Việt.
+- **Lưới là hằng số**, không lưu theo từng tranh: `PICTURE_COLS = 3`, `PICTURE_ROWS = 2`, `PICTURE_TILES = 6` (trong `src/lib/pictures.ts`). Không có `lessonIds`, `revealOrder`, `grid`, `level` trong tranh.
+- `parseCatalog` kiểm tra cấu trúc (id, title, image đủ trường, `description` và `intro` là danh sách chuỗi không rỗng, id không trùng). Tranh sai bị bỏ qua kèm cảnh báo, không làm hỏng bài học.
+- Quy tắc nội dung (hàm thuần `contentIssues` trong `src/lib/pictures.ts`, dùng ở công cụ ingest và test dữ liệu thật, **không** dùng ở parser để một câu dài không làm ẩn cả bức tranh): `description` và `intro` mỗi loại 3–5 câu; mỗi câu `intro` tối đa 10 từ. Nên tránh chữ có dấu trong `intro` (vd. "Cézanne"), vì trình chấm tiếng Anh chỉ giữ ký tự `a-z`, người học gõ "Cezanne" sẽ bị chấm sai.
+- Không dùng và không migrate dữ liệu cũ: khóa `series` bị bỏ qua.
+- Bức tranh có sẵn: `met-39799` (Hokusai, *Under the Wave off Kanagawa*), giữ nguyên ảnh, credit và `intro`; `description` gồm 4 câu tiếng Việt đã duyệt.
+
+### E2. Tiến độ (`src/lib/progress.ts`)
+```ts
+interface Progress {
+  xp; streak; last; sentences
+  lessonsDone: Record<string, { best: number; at: number }>   // chỉ để hiện "Đã qua · 90"
+  picture: PictureProgress | null     // tranh đang mở
+  picturesDone: string[]              // tranh đã hoàn thành trong vòng hiện tại (cũ → mới)
 }
 ```
-- Kiểm tra ở runtime trong `parseCatalog`: `grid.cols*grid.rows === lessonIds.length`, `revealOrder` là hoán vị hợp lệ, `intro` không rỗng. Chuỗi sai bị bỏ qua kèm cảnh báo.
-- Chuỗi đầu tiên có `id: "nature"`, 10 bài (`grid` 5×2), `lessonIds` theo thứ tự:
-  `voa-l01-welcome`, `voa-l05-where-are-you`, `voa-l07-what-are-you-doing`, `voa-l09-is-it-cold`, `voa-l11-neighborhood`, `voa-l12-family`, `voa-l16-where-from`, `voa-l17-free-on-friday`, `voa-l22-next-summer`, `voa-l35-make-dinner`.
-- Số câu dự kiến của 10 bài: 6, 8, 10, 13, 15, 18, 21, 23, 26, 29 (mỗi bài hơn bài trước 2–3 câu). Đây là mục tiêu khi người dùng cắt nội dung, không phải ràng buộc của code.
-- **Ảnh tạm để phát triển**: tạo `public/series/nature/placeholder.svg` (khoảng 1600×1000, nền gradient đơn giản, chữ "Ảnh tạm – thay bằng ảnh Met Open Access"), credit `license: "placeholder"`, `intro` có 3 câu mẫu ghi rõ là nội dung tạm. Khi người dùng có ảnh thật, chỉ cần thay `image` và `intro` trong JSON.
+- `loadProgress` kiểm tra các trường mới: `picture` phải có `id` không rỗng, `opened` nguyên 0..6, `order` là hoán vị của 0..5, nếu không thì `null`; `picturesDone` giữ chuỗi không rỗng, bỏ trùng. Dữ liệu cũ (không có trường mới, hoặc có `passes`/trường thừa) vẫn đọc được; trường thừa bị bỏ.
+- Mọi hàm ngẫu nhiên nhận tham số `random: Random = Math.random` (`() => number` trong [0, 1)) để test xác định được. `shuffle(n, random)` là Fisher–Yates trong `pictures.ts`.
+- `pickNextPicture(pictures, picturesDone, random)`: chọn ngẫu nhiên một tranh **chưa** có trong `picturesDone`. Nếu đã hoàn thành hết thì bắt đầu vòng mới: chọn trong các tranh khác tranh hoàn thành gần nhất (`picturesDone` còn lại đúng tranh đó); chỉ có một tranh thì lặp lại chính nó. Id đã xong nhưng không còn trong catalog bị bỏ qua.
+- `ensureActivePicture(p, pictures, random)`: nếu chưa có tranh đang mở (hoặc tranh đó không còn trong catalog) thì chọn tranh mới, `opened = 0`, `order = shuffle(6)`. Tranh đang mở, kể cả đã hoàn chỉnh, được giữ nguyên. Gọi khi catalog tải xong để Home luôn có tranh để hiện.
+- `recordPicturePass(p, pictures, avgScore, random)` → `{ progress, outcome }`:
+  - `avgScore < PASS_SCORE`: không đổi, `outcome = { kind: 'failed' }`.
+  - Ngược lại: nếu chưa có tranh, tranh đã hoàn chỉnh hoặc không còn trong catalog thì bắt đầu tranh mới trước (`started = true` khi trước đó đã có tranh); sau đó `opened + 1` (kể cả luyện lại bài cũ). Khi `opened` chạm 6 thì tranh hoàn chỉnh và thêm vào `picturesDone` (không trùng). `outcome = { kind: 'opened', picture, revealed, fresh: order[opened-1], count, complete, started }`.
+  - Không có tranh nào trong catalog: `outcome = null`.
+- Mọi bài hoàn thành đều tính (bài có sẵn, bài của người dùng, bài mẫu) **trừ bài thưởng** (`bonus:<pictureId>`), vì bài thưởng chỉ dành cho tranh đã hoàn chỉnh. Việc ghi điểm cao nhất của bài vào `lessonsDone` do `recordLessonDone` đảm nhiệm, tách khỏi việc mở mảnh.
 
-### C2. Tiến độ (`src/lib/progress.ts`)
-- Mở rộng `Progress` với `lessonsDone: Record<string, { best: number; at: number; passes: number }>` (`passes` = số lần qua bài).
-- `loadProgress` phải đọc được dữ liệu cũ không có trường này (mặc định `{}`), mục cũ không có `passes` tính là 1 lần, và kiểm tra kiểu từng phần tử.
-- Hằng số `PASS_SCORE = 60`.
-- Hàm thuần `recordLessonDone(p, lessonId, avgScore, now?)` trả về `{ progress, firstPass: boolean }`:
-  - `avgScore >= PASS_SCORE`: `passes` tăng thêm 1 (kể cả luyện lại); `best` giữ điểm cao hơn (`at` là thời điểm đạt `best`); `firstPass = true` chỉ khi trước đó chưa có mục cho `lessonId`.
-  - `avgScore < PASS_SCORE`: không ghi gì, `firstPass = false`.
-- Hàm thuần `revealedTiles(series, progress): number[]`: các chỉ số ô đã mở = `revealOrder.slice(0, tổngSốLầnQua)`, trong đó tổng số lần qua cộng `passes` của các `lessonIds` có trong `lessonsDone`. Luyện lại bài cũ mở thêm ô; không bao giờ quá số ô.
-- Test: dữ liệu cũ (không có `passes`), ngưỡng đúng 60 / 59, luyện lại cộng dồn `passes`, `revealedTiles` với 0, 3, 10 lần qua và vượt quá số ô.
+### E3. Giao diện
+- **Home**: mục "Bức tranh của bạn" hiện tranh đang mở (`PictureCard`): ảnh nằm dưới, 6 ô che phủ lên theo `opened`/`order` (ô đã mở trong suốt), chú thích "Đã mở x/6 mảnh". Khi chưa hoàn chỉnh, tiêu đề là "Bức tranh bí ẩn" kèm dòng hướng dẫn mở mảnh. Ảnh đặt `role="img"` với `aria-label` từ `alt`; ô che có `aria-hidden`.
+- **Khi hoàn chỉnh**: hiện tiêu đề tác phẩm, ảnh đầy đủ, `description` (tiếng Việt), dòng "Nguồn ảnh: <credit.text>" cùng link tới bảo tàng (chỉ khi là http/https), nút "Bài thưởng: chép chính tả về bức tranh". Lần qua bài tiếp theo bắt đầu tranh mới.
+- **Result** khi qua bài: "Bạn vừa mở mảnh thứ k/6" và ảnh với ô vừa mở được làm nổi (viền nhấn và hiệu ứng mờ dần ~600 ms; tắt hiệu ứng khi `prefers-reduced-motion`, viền vẫn giữ). Nếu vừa bắt đầu tranh mới: "Một bức tranh mới bắt đầu!". Khi vừa hoàn chỉnh: nhắc về trang chính để xem giới thiệu và làm bài thưởng. Điểm < `PASS_SCORE`: "Cần điểm trung bình từ 60 để mở mảnh tranh" và nút "Luyện lại".
+- **Bài thưởng**: bài `tts` dựng từ `picture.intro` (hàm thuần `buildBonusLesson` trong `pictures.ts`; id `bonus:<pictureId>`, `langId: 'en'`), chép chính tả các câu tiếng Anh. Hoàn thành thì ghi điểm vào `lessonsDone` với khóa `bonus:<pictureId>`, nhận XP như thường, không mở mảnh.
+- Toàn bộ chữ trên giao diện là tiếng Việt, trừ `intro`.
 
-### C3. Giao diện
-- `PictureCard` (trên Home, một thẻ cho mỗi chuỗi): ảnh nằm dưới, lưới ô phủ lên (CSS grid, tỉ lệ khung theo `width/height`), ô đã mở trong suốt, ô chưa mở che bằng màu của giao diện; chú thích "Đã mở 3/10 mảnh". Ảnh đặt `role="img"` với `aria-label` từ `alt`; các ô che có `aria-hidden`.
-- Khi mở đủ ô: hiện ảnh đầy đủ, danh sách `intro`, và dòng nguồn ảnh (tên tác phẩm, tác giả, năm, link Met, giấy phép).
-- Màn hình `Result` khi qua bài (điểm trung bình >= `PASS_SCORE`) và bài thuộc một chuỗi: hiện ảnh với ô vừa mở làm nổi (hiệu ứng mờ dần ~600 ms) và dòng "Bạn vừa mở mảnh thứ 4/10". Tắt hiệu ứng khi `prefers-reduced-motion`. Nếu điểm < `PASS_SCORE`: dòng "Cần điểm trung bình từ 60 để mở mảnh tranh" và nút "Luyện lại".
-- Bài chưa có trong catalog (người dùng chưa thêm): trong thẻ chuỗi ghi "Chưa có bài", không báo lỗi.
+### E4. Công cụ nạp tranh (`npm run ingest:pictures`)
+Mã: `scripts/ingest-pictures.ts` (chạy bằng `node`, không thêm thư viện); phần thuần nằm ở `src/lib/ingest.ts` và có test. Thư mục `inbox/` đã được gitignore.
 
-### C4. Bài thưởng
-- Khi chuỗi đã mở đủ ô, thẻ chuỗi hiện nút "Bài thưởng: đọc về bức tranh".
-- Bài thưởng là bài `tts` được dựng từ `series.intro` (id `bonus:<seriesId>`, `langId: 'en'`). Hoàn thành thì ghi vào `lessonsDone` với khóa `bonus:<seriesId>` (không ảnh hưởng số ô đã mở) và nhận XP như bình thường.
-- Hàm dựng bài thưởng là hàm thuần trong `src/lib/series.ts`, có test.
+Bước 1, chuyển ảnh (`npm run ingest:pictures`):
+- Đầu vào: `inbox/images/<objectId>.(jpg|jpeg|png)`, trong đó `<objectId>` là số ở cuối link Met.
+- Với mỗi file, gọi `https://collectionapi.metmuseum.org/public/collection/v1/objects/<objectId>` (không cần API key). **Nếu `isPublicDomain` không phải đúng `true` thì bỏ qua và báo bằng tiếng Việt; không bao giờ dùng ảnh đó** (kiểm tra xong mới chuyển ảnh).
+- Thu nhỏ về rộng 1600 px, định dạng webp bằng ffmpeg vào `public/pictures/met-<objectId>.webp`; đọc `width`/`height` bằng ffprobe. ffmpeg/ffprobe lấy từ biến `FFMPEG_PATH`/`FFPROBE_PATH`, rồi PATH, rồi thư mục cài WinGet (`Gyan.FFmpeg`).
+- Ghi `inbox/images/<objectId>.draft.json` chỉ gồm các trường API: `title`, `artistDisplayName`, `objectDate`, `medium`, `dimensions`, `department`, `culture`, `period`, `creditLine`, `objectURL`.
 
-### C5. Test cho Task C
-- `parseCatalog` với chuỗi hợp lệ / sai lưới / `revealOrder` không phải hoán vị.
-- `recordLessonDone`, `revealedTiles`, dựng bài thưởng.
+Bước 2, viết nội dung (làm trong cuộc trò chuyện với Claude, không tự động):
+- Claude đọc từng draft và viết `inbox/images/<objectId>.content.json` gồm `description` (tiếng Việt, 3–5 câu), `intro` (tiếng Anh A1, 3–5 câu, <= 10 từ, thì hiện tại đơn) và `alt` (tiếng Việt).
+- **Chỉ dùng dữ kiện có trong draft; không bịa, không thêm kiến thức nền.** `alt` chỉ mô tả cảnh khi rõ từ tên tác phẩm/chất liệu; nếu không rõ thì bỏ trống để dùng `alt` trung tính "Tác phẩm <title>".
+
+Bước 3, ghép (`npm run ingest:pictures -- --merge`):
+- Với mỗi draft có file nội dung: dựng `Picture` (id `met-<objectId>`, `src` `pictures/met-<objectId>.webp`, kích thước đo bằng ffprobe, `credit.url = objectURL`), kiểm tra bằng `parseCatalog` và `contentIssues`, rồi ghép vào mảng `pictures` (cùng id thì thay thế).
+- Credit tiếng Việt: `<artistDisplayName>, "<title>", <objectDate>. The Metropolitan Museum of Art, <creditLine>. Ảnh thuộc phạm vi công cộng (Met Open Access).` (bỏ phần tác giả khi rỗng; hàm thuần `buildCreditText`).
+- **Chỉ ghi `index.json` khi toàn bộ danh mục hợp lệ**; nếu có lỗi thì in lỗi và giữ nguyên file. Ghi qua file tạm rồi đổi tên. File được ghi lại với thụt lề 2 dấu cách.
+
+### E5. Test
+- `pictures.ts`: `shuffle` (hoán vị, xác định theo nguồn ngẫu nhiên), `isPermutation`, `revealedTiles`, bài thưởng, `contentIssues` (3–5 câu, 10 từ).
+- `progress.ts`: `loadProgress` với dữ liệu cũ/hợp lệ/sai; `recordLessonDone`; `pickNextPicture` (chưa xong, vòng mới tránh tranh vừa xong, một tranh duy nhất, id không còn trong catalog); `ensureActivePicture`; `recordPicturePass` (dưới/đúng ngưỡng 60, mở từng mảnh theo `order`, hoàn chỉnh ở mảnh 6, tranh mới sau khi hoàn chỉnh, không trùng trong `picturesDone`, không sửa đầu vào).
+- `catalog.ts`: tranh hợp lệ/thiếu trường/sai kiểu/trùng id, khóa `series` cũ bị bỏ qua.
+- `ingest.ts`: tên file, `isPublicDomain` (chỉ `true`), `pickDraftFields` (chỉ 10 trường), `buildCreditText` (có/không tác giả), `parseContent`, `buildPicture`, `mergePicture`, `mergeIntoCatalog` (không ghi khi sai).
+- Dữ liệu thật (`shippedCatalog.test.ts`): `index.json` không có cảnh báo, mọi tranh có file ảnh trong `public/pictures/`, đúng quy tắc nội dung, credit là credit Met bằng tiếng Việt.
 
 ---
 
 ## Việc người dùng tự làm (Claude Code không làm thay)
-1. **Chọn ảnh thiên nhiên** ở https://www.metmuseum.org: tìm trong bộ sưu tập "nature", bật lọc Open Access (biểu tượng CC0), chọn tranh ngang, thiên nhiên rõ nét, độ rộng >= 1600 px. Ghi lại objectId, tên tác phẩm, tác giả, năm và link trang. Thu nhỏ: `ffmpeg -i goc.jpg -vf scale=1600:-2 -q:v 80 nature.webp`, đặt vào `public/series/nature/`.
-2. **Viết `intro`**: 3–5 câu tiếng Anh A1 (mỗi câu <= 10 từ, thì hiện tại đơn), chỉ dùng thông tin trên trang của Met (tên, tác giả, năm, chất liệu). Nhờ Claude trong cuộc trò chuyện soạn giúp rồi kiểm tra lại.
-3. **Cắt audio VOA** cho 10 bài: `ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn -ac 1 -b:a 48k l01.mp3`, đặt vào `public/lessons/voa/`. Đối chiếu transcript trên trang VOA, nạp vào màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi thêm vào `public/lessons/index.json`.
-4. Chỉ lấy chữ và audio VOA, không lấy ảnh của họ. Giữ dòng ghi nguồn "Voice of America · public domain".
+1. **Chọn tranh** ở https://www.metmuseum.org: bật lọc Open Access, tải ảnh về, đổi tên thành `<objectId>.jpg` (số cuối link trang tác phẩm) và đặt vào `inbox/images/`. Chạy `npm run ingest:pictures`; nhờ Claude viết file nội dung từ các file `.draft.json`; đọc lại cho đúng rồi chạy `npm run ingest:pictures -- --merge`.
+2. **Cắt audio VOA**: `ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn -ac 1 -b:a 48k l01.mp3`, đặt vào `public/lessons/voa/`. Đối chiếu transcript trên trang VOA, nạp vào màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi thêm vào `public/lessons/index.json`.
+3. Chỉ lấy chữ và audio VOA, không lấy ảnh của họ. Giữ dòng ghi nguồn "Voice of America · public domain".

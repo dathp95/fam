@@ -8,9 +8,18 @@ import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { averageScore } from './lib/diff.ts'
-import { loadProgress, recordAnswer, recordLessonDone, saveProgress, type Progress } from './lib/progress.ts'
+import { isBonusLesson } from './lib/pictures.ts'
+import {
+  ensureActivePicture,
+  loadProgress,
+  recordAnswer,
+  recordLessonDone,
+  recordPicturePass,
+  saveProgress,
+  type PictureOutcome,
+  type Progress,
+} from './lib/progress.ts'
 import { SAMPLE_LESSON } from './lib/samples.ts'
-import { findSeriesForLesson, revealOutcome, type RevealOutcome } from './lib/series.ts'
 import { deleteLesson, getMedia, listLessons, requestPersistence, saveLesson } from './lib/storage.ts'
 import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
 
@@ -26,7 +35,7 @@ type View =
       run: number
       scores: number[]
       gained: number
-      outcome: RevealOutcome | null
+      outcome: PictureOutcome | null
     }
 
 export default function App() {
@@ -59,6 +68,8 @@ export default function App() {
       if (cancelled) return
       for (const w of c.warnings) console.warn(`[catalog] ${w}`)
       setCatalog(c)
+      // Make sure there is a covered picture to show on Home.
+      setProgress((p) => ensureActivePicture(p, c.pictures))
     })
     return () => {
       cancelled = true
@@ -139,13 +150,21 @@ export default function App() {
     setProgress((p) => recordAnswer(p, xp))
   }
 
-  /** Record the lesson as passed (average ≥ PASS_SCORE) and work out what the picture shows. */
-  function finishLesson(lesson: Lesson, scores: number[]): RevealOutcome | null {
+  /**
+   * Remember the score and, unless this was the bonus lesson, let a pass (average ≥ PASS_SCORE)
+   * open the next tile of the current picture.
+   */
+  function finishLesson(lesson: Lesson, scores: number[]): PictureOutcome | null {
     const avg = averageScore(scores)
-    const { progress: next } = recordLessonDone(progress, lesson.id, avg)
+    let next = recordLessonDone(progress, lesson.id, avg)
+    let outcome: PictureOutcome | null = null
+    if (catalog && !isBonusLesson(lesson.id)) {
+      const pass = recordPicturePass(next, catalog.pictures, avg)
+      next = pass.progress
+      outcome = pass.outcome
+    }
     setProgress(next)
-    const series = catalog ? findSeriesForLesson(catalog.series, lesson.id) : undefined
-    return series ? revealOutcome(series, progress, next, avg) : null
+    return outcome
   }
 
   return (

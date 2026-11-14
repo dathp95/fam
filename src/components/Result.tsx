@@ -1,13 +1,13 @@
 import { averageScore } from '../lib/diff.ts'
-import { PASS_SCORE } from '../lib/progress.ts'
-import type { RevealOutcome } from '../lib/series.ts'
+import { PICTURE_TILES } from '../lib/pictures.ts'
+import { PASS_SCORE, type PictureOutcome } from '../lib/progress.ts'
 import { Picture } from './Picture.tsx'
 
 interface Props {
   scores: number[]
   gained: number
-  /** Picture-reveal result when the lesson belongs to a series, otherwise null. */
-  outcome: RevealOutcome | null
+  /** What happened to the picture (null when there is no picture or for the bonus lesson). */
+  outcome: PictureOutcome | null
   onAgain: () => void
   onHome: () => void
 }
@@ -32,17 +32,17 @@ export function Result({ scores, gained, outcome, onAgain, onHome }: Props) {
 
         {outcome?.kind === 'opened' && (
           <div className="stack" role="status">
+            {outcome.started && <p className="muted">Một bức tranh mới bắt đầu!</p>}
             <p className="gain">
-              Bạn vừa mở mảnh thứ {outcome.count}/{outcome.series.grid.cols * outcome.series.grid.rows}
+              Bạn vừa mở mảnh thứ {outcome.count}/{PICTURE_TILES}
             </p>
-            <Picture series={outcome.series} revealed={outcome.revealed} fresh={outcome.fresh} />
+            <Picture picture={outcome.picture} revealed={outcome.revealed} fresh={outcome.fresh} />
             {outcome.complete && (
-              <p className="muted">Bạn đã mở hết bức tranh! Về trang chính để làm bài thưởng.</p>
+              <p className="muted">
+                Bạn đã mở hết bức tranh! Về trang chính để xem giới thiệu và làm bài thưởng.
+              </p>
             )}
           </div>
-        )}
-        {outcome?.kind === 'full' && (
-          <p className="muted">Bạn đã mở hết bức tranh rồi. Về trang chính để làm bài thưởng.</p>
         )}
         {outcome?.kind === 'failed' && (
           <p className="muted" role="status">

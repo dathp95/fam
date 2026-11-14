@@ -1,7 +1,7 @@
 import type { LoadedCatalog } from '../lib/catalog.ts'
 import { groupStaticLessons, OTHER_GROUP_KEY } from '../lib/lessonGroups.ts'
+import { bonusLessonId, buildBonusLesson } from '../lib/pictures.ts'
 import type { LessonDone, Progress } from '../lib/progress.ts'
-import { buildBonusLesson } from '../lib/series.ts'
 import { LESSON_SOURCES, type LessonSourceId } from '../lib/sources.ts'
 import type { Lesson, MediaLesson, SampleLesson, StaticLesson } from '../lib/types.ts'
 import { PictureCard } from './PictureCard.tsx'
@@ -42,7 +42,8 @@ export function Home({ progress, sample, userLessons, catalog, loading, message,
 
   const groups = catalog ? groupStaticLessons(catalog.lessons) : []
   const hasSeries = groups.some((g) => g.key !== OTHER_GROUP_KEY)
-  const seriesTitle = (seriesId: string) => catalog?.series.find((s) => s.id === seriesId)?.title ?? seriesId
+  // The picture being uncovered; missing while the catalog loads or if it no longer lists it.
+  const activePicture = progress.picture ? catalog?.pictures.find((p) => p.id === progress.picture?.id) : undefined
 
   return (
     <div className="stack">
@@ -80,6 +81,18 @@ export function Home({ progress, sample, userLessons, catalog, loading, message,
         </div>
       </section>
 
+      {activePicture && progress.picture && (
+        <section className="stack" aria-labelledby="picture-title">
+          <h2 id="picture-title">Bức tranh của bạn</h2>
+          <PictureCard
+            picture={activePicture}
+            state={progress.picture}
+            bonusDone={Object.hasOwn(progress.lessonsDone, bonusLessonId(activePicture.id))}
+            onStartBonus={() => onStart(buildBonusLesson(activePicture))}
+          />
+        </section>
+      )}
+
       <section className="stack" id={CATALOG_SECTION_ID} aria-labelledby="catalog-title">
         <h2 id="catalog-title">Bài có sẵn</h2>
         {catalog === null && <p className="status">Đang tải bài có sẵn…</p>}
@@ -87,19 +100,10 @@ export function Home({ progress, sample, userLessons, catalog, loading, message,
         {catalog && !catalog.error && catalog.lessons.length === 0 && (
           <p className="muted">Chưa có bài có sẵn.</p>
         )}
-        {catalog?.series.map((s) => (
-          <PictureCard
-            key={s.id}
-            series={s}
-            lessons={catalog.lessons}
-            progress={progress}
-            onStartBonus={() => onStart(buildBonusLesson(s))}
-          />
-        ))}
         {groups.map((g) => (
           <div className="stack" key={g.key}>
             {(hasSeries || g.key !== OTHER_GROUP_KEY) && (
-              <h3 className="group-title">{g.seriesId === null ? 'Khác' : `Chuỗi: ${seriesTitle(g.seriesId)}`}</h3>
+              <h3 className="group-title">{g.seriesId === null ? 'Khác' : `Chuỗi: ${g.seriesId}`}</h3>
             )}
             {g.lessons.map((l) => (
               <StaticLessonCard
