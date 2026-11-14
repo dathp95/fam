@@ -30,6 +30,17 @@ describe('shipped catalog (public/lessons/index.json)', () => {
     for (const p of catalog.pictures) expect(contentIssues(p), p.id).toEqual([])
   })
 
+  it('every picture has a complete commentary and no dimensions in its description', () => {
+    for (const p of catalog.pictures) {
+      for (const key of ['story', 'view', 'takeaway'] as const) {
+        expect(p.commentary[key].trim().length, `${p.id} commentary.${key}`).toBeGreaterThan(0)
+      }
+      expect(p.commentary.takeaway.startsWith('Rút ra'), `${p.id} takeaway must not carry the label`).toBe(false)
+      for (const sentence of p.description) expect(sentence.toLowerCase(), p.id).not.toContain('kích thước')
+      expect(p.byline, `${p.id} byline`).toBeTruthy()
+    }
+  })
+
   it('every picture points to an existing image named after its id', () => {
     for (const p of catalog.pictures) {
       expect(p.image.src, p.id).toBe(`pictures/${p.id}.webp`)
@@ -64,7 +75,15 @@ describe('shipped catalog (public/lessons/index.json)', () => {
       'It is from about 1830.',
       'Mount Fuji is small in the wave.',
     ])
-    expect(wave?.description).toHaveLength(4)
+    expect(wave?.description).toEqual([
+      'Bức tranh này có tên Under the Wave off Kanagawa (The Great Wave), của họa sĩ Nhật Bản Katsushika Hokusai (1760–1849).',
+      'Đây là tranh khắc gỗ, được làm vào khoảng năm 1830–32.',
+      'Tranh thuộc loạt Thirty-six Views of Mount Fuji (Ba mươi sáu cảnh núi Phú Sĩ), và núi Phú Sĩ hiện lên nhỏ bé bên trong con sóng.',
+      'Tranh dùng màu xanh chàm và xanh Phổ (Prussian blue), và được cho là đã truyền cảm hứng cho bản nhạc La Mer của Debussy và tác phẩm Der Berg của Rilke.',
+    ])
+    expect(wave?.commentary.takeaway).toBe(
+      'Trước một con sóng lớn, hãy cúi thấp, đi cùng nhau, và nhớ rằng phía xa vẫn có một điểm tựa vững chãi.',
+    )
   })
 
   it('keeps the existing lesson (and its seriesId/order) untouched', () => {

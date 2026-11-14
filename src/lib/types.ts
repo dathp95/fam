@@ -64,11 +64,23 @@ export interface PictureCredit {
   url: string
 }
 
+/** Short Vietnamese commentary on a picture, shown once it is complete. */
+export interface PictureCommentary {
+  /** What is happening in the scene. */
+  story: string
+  /** How the artist shows it / what to notice. */
+  view: string
+  /** One-sentence life lesson. Stored WITHOUT the "Rút ra" label (the UI adds it). */
+  takeaway: string
+}
+
 /** A public-domain artwork the learner uncovers tile by tile (public/lessons/index.json `pictures`). */
 export interface Picture {
   /** "met-<objectId>" */
   id: string
   title: string
+  /** "Artist · date", shown (muted) under the title of a completed picture. Optional. */
+  byline?: string
   image: {
     /** Path relative to BASE_URL, e.g. "pictures/met-39799.webp". */
     src: string
@@ -78,8 +90,10 @@ export interface Picture {
     alt: string
     credit: PictureCredit
   }
-  /** Vietnamese sentences about the artwork, shown once the picture is complete. */
+  /** Vietnamese sentences about the artwork, shown once the picture is complete. No dimensions. */
   description: string[]
+  /** Story / view / takeaway, shown after the description once the picture is complete. */
+  commentary: PictureCommentary
   /** English A1 sentences (present simple, ≤ 10 words) used by the bonus dictation lesson. */
   intro: string[]
 }

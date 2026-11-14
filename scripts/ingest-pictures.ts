@@ -4,9 +4,10 @@
  * Step 1 (default): for each inbox/images/<objectId>.(jpg|jpeg|png), fetch the Met Open Access
  *   record, skip anything that is not public domain, convert to public/pictures/met-<id>.webp
  *   (1600 px wide) and write inbox/images/<id>.draft.json with the API fields.
- * Step 2 (`--merge`): for each draft that has inbox/images/<id>.content.json (alt, description,
- *   intro written by hand), build the picture and merge it into public/lessons/index.json. The file
- *   is written only when the whole catalog validates.
+ * Step 2 (`--merge`): for each draft that has inbox/images/<id>.content.json, written by hand with
+ *   { alt?, description[], commentary: { story, view, takeaway }, intro[] }, build the picture and
+ *   merge it into public/lessons/index.json. The file is written only when the whole catalog
+ *   validates (commentary is required; descriptions must not state dimensions).
  *
  * ffmpeg/ffprobe are taken from FFMPEG_PATH / FFPROBE_PATH, then PATH, then a WinGet install.
  */
@@ -124,7 +125,7 @@ async function convert(): Promise<number> {
   }
   if (ready.length > 0) {
     console.log(
-      `\nTiếp theo: tạo inbox/images/<id>.content.json (alt, description, intro) cho: ${ready.join(', ')}, ` +
+      `\nTiếp theo: tạo inbox/images/<id>.content.json (alt, description, commentary { story, view, takeaway }, intro) cho: ${ready.join(', ')}, ` +
         'rồi chạy: npm run ingest:pictures -- --merge',
     )
   }

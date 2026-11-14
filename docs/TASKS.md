@@ -126,16 +126,23 @@ export interface PictureCredit { text: string; url: string }   // text tiếng V
 export interface Picture {
   id: string                  // "met-<objectId>"
   title: string
+  byline?: string             // "tác giả · năm" (vd. "Pieter Bruegel the Elder · 1565"), hiện mờ dưới tên tranh; tùy chọn
   image: { src: string; width: number; height: number; alt: string; credit: PictureCredit }
-  description: string[]       // tiếng Việt, 3–5 câu, hiện cho người dùng khi tranh hoàn chỉnh
+  description: string[]       // tiếng Việt, 3–5 câu, hiện cho người dùng khi tranh hoàn chỉnh; KHÔNG nêu kích thước tác phẩm
+  commentary: PictureCommentary // bắt buộc; hiện sau description khi tranh hoàn chỉnh
   intro: string[]             // tiếng Anh A1, 3–5 câu, <= 10 từ/câu, thì hiện tại đơn; dùng cho bài thưởng
+}
+export interface PictureCommentary {
+  story: string               // chuyện gì đang diễn ra trong cảnh
+  view: string                // họa sĩ thể hiện thế nào / nên chú ý gì
+  takeaway: string            // một câu rút ra; lưu KHÔNG kèm nhãn "Rút ra" (giao diện tự thêm nhãn)
 }
 export interface PictureProgress { id: string; opened: number; order: number[] }
 ```
 - `image.src` là đường dẫn tương đối `pictures/met-<objectId>.webp` (file nằm trong `public/pictures/`), `alt` tiếng Việt.
 - **Lưới là hằng số**, không lưu theo từng tranh: `PICTURE_COLS = 3`, `PICTURE_ROWS = 2`, `PICTURE_TILES = 6` (trong `src/lib/pictures.ts`). Không có `lessonIds`, `revealOrder`, `grid`, `level` trong tranh.
-- `parseCatalog` kiểm tra cấu trúc (id, title, image đủ trường, `description` và `intro` là danh sách chuỗi không rỗng, id không trùng). Tranh sai bị bỏ qua kèm cảnh báo, không làm hỏng bài học.
-- Quy tắc nội dung (hàm thuần `contentIssues` trong `src/lib/pictures.ts`, dùng ở công cụ ingest và test dữ liệu thật, **không** dùng ở parser để một câu dài không làm ẩn cả bức tranh): `description` và `intro` mỗi loại 3–5 câu; mỗi câu `intro` tối đa 10 từ. Nên tránh chữ có dấu trong `intro` (vd. "Cézanne"), vì trình chấm tiếng Anh chỉ giữ ký tự `a-z`, người học gõ "Cezanne" sẽ bị chấm sai.
+- `parseCatalog` kiểm tra cấu trúc (id, title, image đủ trường, `description` và `intro` là danh sách chuỗi không rỗng, id không trùng) và kiểm tra **nghiêm ngặt** `commentary`: phải là đối tượng có `story`, `view`, `takeaway` đều là chuỗi không rỗng (lỗi tiếng Việt nêu đúng trường, vd. "commentary.story phải là chuỗi không rỗng."); `byline` nếu có thì phải không rỗng. Tranh sai bị bỏ qua kèm cảnh báo, không làm hỏng bài học.
+- Quy tắc nội dung (hàm thuần `contentIssues` trong `src/lib/pictures.ts`, dùng ở công cụ ingest và test dữ liệu thật, **không** dùng ở parser để một câu dài không làm ẩn cả bức tranh): `description` và `intro` mỗi loại 3–5 câu; mỗi câu `intro` tối đa 10 từ; **không câu `description` nào chứa "Kích thước"** (kích thước tác phẩm không thuộc phần mô tả); `commentary` đủ `story`, `view`, `takeaway`. Nên tránh chữ có dấu trong `intro` (vd. "Cézanne"), vì trình chấm tiếng Anh chỉ giữ ký tự `a-z`, người học gõ "Cezanne" sẽ bị chấm sai.
 - Không dùng và không migrate dữ liệu cũ: khóa `series` bị bỏ qua.
 - Bức tranh có sẵn: `met-39799` (Hokusai, *Under the Wave off Kanagawa*), giữ nguyên ảnh, credit và `intro`; `description` gồm 4 câu tiếng Việt đã duyệt.
 
@@ -162,7 +169,7 @@ interface Progress {
 
 ### E3. Giao diện
 - **Home**: mục "Bức tranh của bạn" hiện tranh đang mở (`PictureCard`): ảnh nằm dưới, 6 ô che phủ lên theo `opened`/`order` (ô đã mở trong suốt), chú thích "Đã mở x/6 mảnh". Khi chưa hoàn chỉnh, tiêu đề là "Bức tranh bí ẩn" kèm dòng hướng dẫn mở mảnh. Ảnh đặt `role="img"` với `aria-label` từ `alt`; ô che có `aria-hidden`.
-- **Khi hoàn chỉnh**: hiện tiêu đề tác phẩm, ảnh đầy đủ, `description` (tiếng Việt), dòng "Nguồn ảnh: <credit.text>" cùng link tới bảo tàng (chỉ khi là http/https), nút "Bài thưởng: chép chính tả về bức tranh". Lần qua bài tiếp theo bắt đầu tranh mới.
+- **Khi hoàn chỉnh** (Home và Album; không hiện khi còn đang mở dở), theo thứ tự: tiêu đề tác phẩm, dòng `byline` ("tác giả · năm", mờ), ảnh đầy đủ, `description` (tiếng Việt), rồi `commentary`: hai đoạn `story` và `view`, và `takeaway` trong khối nổi bật (nhãn nhỏ mờ "Rút ra" phía trên, thanh trái 3px màu `--accent`, chữ thường); sau cùng là dòng "Nguồn ảnh: <credit.text>" cùng link tới bảo tàng (chỉ khi là http/https) và nút "Bài thưởng: chép chính tả về bức tranh". Chữ dùng dòng cao ~1.6, cột chữ tối đa 62 ký tự. Lần qua bài tiếp theo bắt đầu tranh mới. Màn Kết quả khi vừa mở hết tranh không hiện phần chữ này (hướng người dùng về trang chính).
 - **Result** khi qua bài: "Bạn vừa mở mảnh thứ k/6" và ảnh với ô vừa mở được làm nổi (viền nhấn và hiệu ứng mờ dần ~600 ms; tắt hiệu ứng khi `prefers-reduced-motion`, viền vẫn giữ). Nếu vừa bắt đầu tranh mới: "Một bức tranh mới bắt đầu!". Khi vừa hoàn chỉnh: nhắc về trang chính để xem giới thiệu và làm bài thưởng. Điểm < `PASS_SCORE`: "Cần điểm trung bình từ 60 để mở mảnh tranh" và nút "Luyện lại".
 - **Bài thưởng**: bài `tts` dựng từ `picture.intro` (hàm thuần `buildBonusLesson` trong `pictures.ts`; id `bonus:<pictureId>`, `langId: 'en'`), chép chính tả các câu tiếng Anh. Hoàn thành thì ghi điểm vào `lessonsDone` với khóa `bonus:<pictureId>`, nhận XP như thường, không mở mảnh.
 - Toàn bộ chữ trên giao diện là tiếng Việt, trừ `intro`.
@@ -185,7 +192,20 @@ Bước 1, chuyển ảnh (`npm run ingest:pictures`):
 - Ghi `inbox/images/<objectId>.draft.json` chỉ gồm các trường API: `title`, `artistDisplayName`, `objectDate`, `medium`, `dimensions`, `department`, `culture`, `period`, `creditLine`, `objectURL`.
 
 Bước 2, viết nội dung (làm trong cuộc trò chuyện với Claude, không tự động):
-- Claude đọc từng draft và viết `inbox/images/<objectId>.content.json` gồm `description` (tiếng Việt, 3–5 câu), `intro` (tiếng Anh A1, 3–5 câu, <= 10 từ, thì hiện tại đơn) và `alt` (tiếng Việt).
+- Claude đọc từng draft và viết `inbox/images/<objectId>.content.json` gồm `description` (tiếng Việt, 3–5 câu, không nêu kích thước), `commentary` (bắt buộc), `intro` (tiếng Anh A1, 3–5 câu, <= 10 từ, thì hiện tại đơn) và `alt` (tiếng Việt). Định dạng:
+  ```json
+  {
+    "alt": "Bức tranh sơn dầu trên vải tên …",
+    "description": ["Câu 1.", "Câu 2.", "Câu 3."],
+    "commentary": {
+      "story": "Chuyện gì đang diễn ra trong cảnh.",
+      "view": "Họa sĩ thể hiện thế nào, nên chú ý gì.",
+      "takeaway": "Một câu rút ra (không ghi nhãn \"Rút ra\")."
+    },
+    "intro": ["This picture is called …", "The artist is …", "It is from …"]
+  }
+  ```
+  `byline` ("tác giả · năm") không cần viết tay: công cụ tự tạo từ `artistDisplayName` và `objectDate` của draft. `commentary` mô tả điều nhìn thấy trong tranh và ý nghĩa của nó; không thêm sự kiện lịch sử hay tiểu sử ngoài draft. Thiếu hoặc rỗng `commentary` thì bước ghép từ chối và không ghi `index.json`.
 - **Chỉ dùng dữ kiện có trong draft; không bịa, không thêm kiến thức nền.** `alt` chỉ mô tả cảnh khi rõ từ tên tác phẩm/chất liệu; nếu không rõ thì bỏ trống để dùng `alt` trung tính "Tác phẩm <title>".
 
 Bước 3, ghép (`npm run ingest:pictures -- --merge`):

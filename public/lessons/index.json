@@ -98,6 +98,7 @@
     {
       "id": "met-39799",
       "title": "Under the Wave off Kanagawa (The Great Wave)",
+      "byline": "Katsushika Hokusai · khoảng 1830–32",
       "image": {
         "src": "pictures/met-39799.webp",
         "width": 1600,
@@ -110,10 +111,15 @@
       },
       "description": [
         "Bức tranh này có tên Under the Wave off Kanagawa (The Great Wave), của họa sĩ Nhật Bản Katsushika Hokusai (1760–1849).",
-        "Đây là tranh khắc gỗ, được làm vào khoảng năm 1830–32, kích thước 25,4 × 38,1 cm.",
+        "Đây là tranh khắc gỗ, được làm vào khoảng năm 1830–32.",
         "Tranh thuộc loạt Thirty-six Views of Mount Fuji (Ba mươi sáu cảnh núi Phú Sĩ), và núi Phú Sĩ hiện lên nhỏ bé bên trong con sóng.",
         "Tranh dùng màu xanh chàm và xanh Phổ (Prussian blue), và được cho là đã truyền cảm hứng cho bản nhạc La Mer của Debussy và tác phẩm Der Berg của Rilke."
       ],
+      "commentary": {
+        "story": "Một con sóng khổng lồ dựng cao như móng vuốt, sắp đổ xuống mấy chiếc thuyền đánh cá. Những người chèo thuyền cúi rạp xuống, ngồi sát nhau, chờ sóng đi qua.",
+        "view": "Hokusai đặt con sóng thật to và gần, còn núi Phú Sĩ thì nhỏ, xa và đứng yên. Sóng dữ dội, núi vững chãi, và con người nằm giữa hai thứ đó.",
+        "takeaway": "Trước một con sóng lớn, hãy cúi thấp, đi cùng nhau, và nhớ rằng phía xa vẫn có một điểm tựa vững chãi."
+      },
       "intro": [
         "This picture is called The Great Wave.",
         "Hokusai is a Japanese artist.",
@@ -125,6 +131,7 @@
     {
       "id": "met-435809",
       "title": "The Harvesters",
+      "byline": "Pieter Bruegel the Elder · 1565",
       "image": {
         "src": "pictures/met-435809.webp",
         "width": 1600,
@@ -139,9 +146,13 @@
         "Bức tranh này có tên The Harvesters (Những người gặt), của họa sĩ Pieter Bruegel the Elder.",
         "Tranh được vẽ vào năm 1565.",
         "Đây là tranh sơn dầu trên gỗ sồi (oil on oak).",
-        "Kích thước toàn bộ, tính cả các dải thêm vào ở trên, dưới và bên phải, là 119 x 162 cm; phần mặt tranh được vẽ ban đầu là 116,5 x 159,5 cm.",
         "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
       ],
+      "commentary": {
+        "story": "Giữa mùa gặt, một nhóm nông dân vẫn đang cắt lúa mì dưới nắng, trong khi vài người khác ngồi nghỉ dưới gốc cây để ăn uống. Có người đã ngủ say ngay giữa ban ngày.",
+        "view": "Bruegel không vẽ anh hùng hay lễ hội mà vẽ những người lao động bình thường, cho cả công việc lẫn giấc nghỉ cùng có chỗ trong khung tranh. Cánh đồng trải rộng khiến con người nhỏ lại, nhưng không ai bị bỏ quên.",
+        "takeaway": "Làm việc và nghỉ ngơi thuộc về cùng một ngày; dừng lại ăn một bữa dưới bóng cây không làm vụ mùa chậm đi."
+      },
       "intro": [
         "This picture is called The Harvesters.",
         "The artist is Pieter Bruegel the Elder.",
@@ -153,6 +164,7 @@
     {
       "id": "met-435844",
       "title": "The Musicians",
+      "byline": "Caravaggio (Michelangelo Merisi) · 1597",
       "image": {
         "src": "pictures/met-435844.webp",
         "width": 1600,
@@ -167,9 +179,13 @@
         "Bức tranh này có tên The Musicians (Các nhạc công), của họa sĩ Caravaggio (Michelangelo Merisi).",
         "Tranh được vẽ vào năm 1597.",
         "Đây là tranh sơn dầu trên vải (oil on canvas).",
-        "Kích thước của tranh là 92,1 x 118,4 cm (36 1/4 x 46 5/8 inch).",
         "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
       ],
+      "commentary": {
+        "story": "Mấy chàng trai mặc áo choàng kiểu cổ điển đang chỉnh nhạc cụ và xem bản nhạc, chuẩn bị chơi. Chưa có nốt nhạc nào vang lên.",
+        "view": "Caravaggio chọn vẽ khoảnh khắc trước khi chơi chứ không phải lúc biểu diễn. Ánh sáng đổ lên da và nếp vải làm cảnh trông gần và yên, như ta đang ngồi chung căn phòng.",
+        "takeaway": "Sự hòa hợp thường được làm nên ở khâu chuẩn bị; chịu khó chỉnh dây trước thì lúc chơi mới không lạc nhịp."
+      },
       "intro": [
         "This picture is called The Musicians.",
         "The artist is Caravaggio.",
@@ -180,6 +196,7 @@
     {
       "id": "met-435962",
       "title": "Hagar in the Wilderness",
+      "byline": "Camille Corot · 1835",
       "image": {
         "src": "pictures/met-435962.webp",
         "width": 1600,
@@ -194,9 +211,13 @@
         "Bức tranh này có tên Hagar in the Wilderness (Hagar trong vùng hoang dã), của họa sĩ Camille Corot.",
         "Tranh được vẽ vào năm 1835.",
         "Đây là tranh sơn dầu trên vải (oil on canvas).",
-        "Kích thước của tranh là 180,3 x 270,5 cm (71 x 106 1/2 inch).",
         "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
       ],
+      "commentary": {
+        "story": "Hagar bị đuổi khỏi nhà cùng con trai nhỏ, đi giữa sa mạc thì hết nước. Bà đặt con nằm xuống rồi ngồi cách ra vì không đành nhìn con chết, và bức tranh vẽ đúng khoảnh khắc tuyệt vọng nhất đó, ngay trước lúc được cứu.",
+        "view": "Corot không vẽ cảnh gào khóc mà vẽ một khung cảnh rất tĩnh, rộng và đẹp, trong đó mẹ con bà nhỏ bé và lặng lẽ. Chính sự tĩnh đó cho thấy tuyệt vọng thật sự thường rất im, và sự giúp đỡ (thiên thần nhỏ xíu trên trời) cũng đến lặng lẽ, dễ bỏ lỡ nếu ta không ngẩng đầu lên.",
+        "takeaway": "Lúc cùng đường nhất thường là ngay trước khi có chuyển biến, nên đừng chỉ nhìn cái bóng dưới chân mà hãy thỉnh thoảng ngẩng đầu lên."
+      },
       "intro": [
         "This picture is called Hagar in the Wilderness.",
         "The artist is Camille Corot.",
@@ -207,6 +228,7 @@
     {
       "id": "met-437549",
       "title": "Wheat Fields",
+      "byline": "Jacob van Ruisdael · ca. 1670",
       "image": {
         "src": "pictures/met-437549.webp",
         "width": 1600,
@@ -221,9 +243,13 @@
         "Bức tranh này có tên Wheat Fields (Những cánh đồng lúa mì), của họa sĩ Jacob van Ruisdael.",
         "Tranh được vẽ vào khoảng năm 1670.",
         "Đây là tranh sơn dầu trên vải (oil on canvas).",
-        "Kích thước của tranh là 100 x 130,2 cm (39 3/8 x 51 1/4 inch).",
         "Tranh thuộc bộ phận European Paintings (Tranh châu Âu)."
       ],
+      "commentary": {
+        "story": "Một con đường mòn len qua cánh đồng lúa mì chín vàng, vài người nhỏ xíu đi trên đó, còn bầu trời đầy mây chiếm gần nửa bức tranh.",
+        "view": "Ruisdael vẽ bầu trời như nhân vật chính: mây dày, ánh sáng thay đổi từng mảng trên cánh đồng, còn con người chỉ là những nét nhỏ phía dưới. Cảnh rất bình thường nhưng lại rộng và như đang chuyển động.",
+        "takeaway": "Mây có thể kéo bóng qua cánh đồng, nhưng lúa vẫn chín; những chuyện đang đè lên mình thường nhỏ hơn bầu trời phía trên."
+      },
       "intro": [
         "This picture is called Wheat Fields.",
         "The artist is Jacob van Ruisdael.",
@@ -234,6 +260,7 @@
     {
       "id": "met-459092",
       "title": "Trees and Houses Near the Jas de Bouffan",
+      "byline": "Paul Cézanne · 1885–86",
       "image": {
         "src": "pictures/met-459092.webp",
         "width": 1600,
@@ -248,9 +275,13 @@
         "Bức tranh này có tên Trees and Houses Near the Jas de Bouffan (Cây cối và những ngôi nhà gần Jas de Bouffan), của họa sĩ Paul Cézanne.",
         "Tranh được vẽ vào năm 1885–86.",
         "Đây là tranh sơn dầu trên vải (oil on canvas).",
-        "Kích thước của tranh là 67,9 × 92,1 cm (26 3/4 × 36 1/4 inch); tính cả khung là 98,7 × 121,3 cm (38 7/8 × 47 3/4 inch).",
         "Tranh thuộc Bộ sưu tập Robert Lehman (Robert Lehman Collection)."
       ],
+      "commentary": {
+        "story": "Cézanne vẽ mấy ngôi nhà và hàng cây quanh Jas de Bouffan, khu nhà của gia đình ông ở miền nam nước Pháp. Không có người, không có chuyện gì xảy ra, chỉ có cây, tường và mái nhà dưới nắng.",
+        "view": "Ông không cố vẽ giống ảnh chụp mà dùng những mảng màu nhỏ để dựng nên hình khối của cây và nhà. Nhìn lâu, cảnh quen thuộc trở nên chắc chắn và có cấu trúc, như được xây từ từng viên gạch màu.",
+        "takeaway": "Nhìn chậm và lâu vào một nơi quen thuộc, ta sẽ thấy nó có nhiều tầng hơn mình tưởng."
+      },
       "intro": [
         "This picture shows trees and houses.",
         "It is from 1885 to 1886.",

@@ -15,7 +15,10 @@ interface Props {
 
 const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
 
-/** The picture being uncovered; once complete it also shows the description, credit and bonus. */
+/**
+ * The picture being uncovered. Once complete it also shows (in this order) the byline, description,
+ * commentary (story, view, takeaway), credit and the bonus lesson. Nothing of this while in progress.
+ */
 export function PictureCard({ picture, state, bonusDone, onStartBonus, inAlbum = false }: Props) {
   const complete = isPictureComplete(state)
   const { credit } = picture.image
@@ -23,6 +26,7 @@ export function PictureCard({ picture, state, bonusDone, onStartBonus, inAlbum =
   return (
     <div className="card stack picture-card">
       <h3>{complete ? picture.title : 'Bức tranh bí ẩn'}</h3>
+      {complete && picture.byline && <p className="muted byline">{picture.byline}</p>}
       <Picture picture={picture} revealed={revealedTiles(state)} />
       {!inAlbum && (
         <p className="muted" role="status">
@@ -42,10 +46,18 @@ export function PictureCard({ picture, state, bonusDone, onStartBonus, inAlbum =
 
       {complete && (
         <div className="stack">
-          <div className="stack">
+          <div className="prose">
             {picture.description.map((s) => (
               <p key={s}>{s}</p>
             ))}
+          </div>
+          <div className="prose commentary">
+            <p>{picture.commentary.story}</p>
+            <p>{picture.commentary.view}</p>
+            <div className="takeaway">
+              <span className="takeaway-label">Rút ra</span>
+              <p>{picture.commentary.takeaway}</p>
+            </div>
           </div>
           <p className="muted">
             Nguồn ảnh: {credit.text}

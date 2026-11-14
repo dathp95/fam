@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildByline,
   buildCreditText,
   buildPicture,
   DRAFT_FIELDS,
@@ -32,8 +33,12 @@ const draft = (over: Partial<MetDraft> = {}): MetDraft => ({
   ...over,
 })
 
+const COMMENTARY = { story: 'Cảnh một.', view: 'Cách nhìn.', takeaway: 'Điều rút ra.' }
+const GOOD = { commentary: COMMENTARY }
+
 const content = (over: Partial<PictureContent> = {}): PictureContent => ({
   description: ['Một.', 'Hai.', 'Ba.'],
+  commentary: COMMENTARY,
   intro: ['This is a test.', 'It is old.', 'I see it.'],
   ...over,
 })
@@ -140,23 +145,26 @@ describe('buildCreditText', () => {
 
 describe('parseContent', () => {
   it('accepts description and intro, with or without alt', () => {
-    const r = parseContent({ alt: ' Ảnh thử ', description: [' Một. ', 'Hai.'], intro: ['One.', 'Two.'] })
-    expect(r).toEqual({ ok: true, value: { alt: 'Ảnh thử', description: ['Một.', 'Hai.'], intro: ['One.', 'Two.'] } })
-    const noAlt = parseContent({ description: ['Một.'], intro: ['One.'] })
+    const r = parseContent({ alt: ' Ảnh thử ', description: [' Một. ', 'Hai.'], commentary: { story: ' S. ', view: 'V.', takeaway: 'T.' }, intro: ['One.', 'Two.'] })
+    expect(r).toEqual({
+      ok: true,
+      value: { alt: 'Ảnh thử', description: ['Một.', 'Hai.'], commentary: { story: 'S.', view: 'V.', takeaway: 'T.' }, intro: ['One.', 'Two.'] },
+    })
+    const noAlt = parseContent({ ...GOOD, description: ['Một.'], intro: ['One.'] })
     expect(noAlt.ok && noAlt.value.alt).toBeUndefined()
   })
 
   it('rejects bad input with a message', () => {
     const bad: unknown[] = [
       null, 'x', [],
-      { intro: ['One.'] },
-      { description: ['Một.'] },
-      { description: [], intro: ['One.'] },
-      { description: ['Một.', ''], intro: ['One.'] },
-      { description: ['Một.'], intro: [3] },
-      { description: 'Một.', intro: ['One.'] },
-      { alt: '', description: ['Một.'], intro: ['One.'] },
-      { alt: 5, description: ['Một.'], intro: ['One.'] },
+      { ...GOOD, intro: ['One.'] },
+      { ...GOOD, description: ['Một.'] },
+      { ...GOOD, description: [], intro: ['One.'] },
+      { ...GOOD, description: ['Một.', ''], intro: ['One.'] },
+      { ...GOOD, description: ['Một.'], intro: [3] },
+      { ...GOOD, description: 'Một.', intro: ['One.'] },
+      { ...GOOD, alt: '', description: ['Một.'], intro: ['One.'] },
+      { ...GOOD, alt: 5, description: ['Một.'], intro: ['One.'] },
     ]
     for (const raw of bad) {
       const r = parseContent(raw)
@@ -171,6 +179,7 @@ describe('buildPicture', () => {
     expect(picture()).toEqual({
       id: 'met-123',
       title: 'Test Title',
+      byline: 'Test Artist · ca. 1900',
       image: {
         src: 'pictures/met-123.webp',
         width: 1600,
@@ -182,8 +191,13 @@ describe('buildPicture', () => {
         },
       },
       description: ['Một.', 'Hai.', 'Ba.'],
+      commentary: COMMENTARY,
       intro: ['This is a test.', 'It is old.', 'I see it.'],
     })
+  })
+
+  it('carries the commentary through unchanged', () => {
+    expect(picture().commentary).toEqual(COMMENTARY)
   })
 
   it('uses the neutral alt unless content provides one', () => {
@@ -313,5 +327,91 @@ describe('mergeIntoCatalog', () => {
     const second = buildPicture({ objectId: '456', draft: draft(), content: content(), width: 1600, height: 900 })
     const r = mergeIntoCatalog(base(), [picture(), second])
     expect(r.ok && (r.catalog.pictures as Picture[]).map((p) => p.id)).toEqual(['met-123', 'met-456'])
+  })
+})
+
+describe('parseContent: commentary is required', () => {
+  const base = { description: ['Một.'], intro: ['One.'] }
+
+  it('rejects content without commentary and says what the file needs', () => {
+    const r = parseContent(base)
+    expect(r.ok).toBe(false)
+    if (!r.ok) {
+      expect(r.error).toContain('commentary')
+      expect(r.error).toContain('story, view, takeaway')
+    }
+  })
+
+  it('rejects a commentary that is not an object', () => {
+    for (const commentary of [null, 'x', 3, [], ['a']]) expect(parseContent({ ...base, commentary }).ok).toBe(false)
+  })
+
+  it('rejects every missing, empty, blank or non-string field and names it', () => {
+    for (const key of ['story', 'view', 'takeaway']) {
+      for (const value of [undefined, '', '  ', 7, null]) {
+        const r = parseContent({ ...base, commentary: { ...COMMENTARY, [key]: value } })
+        expect(r.ok, key + ': ' + String(value)).toBe(false)
+        if (!r.ok) expect(r.error).toContain('commentary.' + key)
+      }
+    }
+  })
+
+  it('accepts a complete commentary', () => {
+    const r = parseContent({ ...base, commentary: COMMENTARY })
+    expect(r.ok && r.value.commentary).toEqual(COMMENTARY)
+  })
+})
+
+describe('buildByline', () => {
+  it('joins artist and date with " · "', () => {
+    expect(buildByline({ artistDisplayName: 'Paul Cézanne', objectDate: '1885–86' })).toBe('Paul Cézanne · 1885–86')
+  })
+
+  it('omits an empty part', () => {
+    expect(buildByline({ artistDisplayName: '', objectDate: 'ca. 1900' })).toBe('ca. 1900')
+    expect(buildByline({ artistDisplayName: 'Someone', objectDate: ' ' })).toBe('Someone')
+    expect(buildByline({ artistDisplayName: '', objectDate: '' })).toBe('')
+  })
+
+  it('buildPicture leaves the byline out when both parts are empty', () => {
+    const p = buildPicture({ objectId: '1', draft: draft({ artistDisplayName: '', objectDate: '' }), content: content(), width: 1, height: 1 })
+    expect('byline' in p).toBe(false)
+  })
+})
+
+describe('mergeIntoCatalog: description cleanup and commentary', () => {
+  const lesson = {
+    id: 'l1', kind: 'static', title: 'Lesson', audioUrl: 'lessons/l1.mp3', duration: 10,
+    sentences: [{ id: 's1', text: 'Hello.', start: 0, end: 4 }],
+    level: 'A1', topic: 'Greetings', source: { name: 'n', url: 'https://example.com/x', license: 'l' },
+  }
+  const base = () => ({ version: 1, lessons: [lesson], pictures: [] as unknown[] })
+
+  it('merges the commentary into index.json', () => {
+    const r = mergeIntoCatalog(base(), [picture()])
+    expect(r.ok).toBe(true)
+    if (r.ok) expect((r.catalog.pictures as Picture[])[0].commentary).toEqual(COMMENTARY)
+  })
+
+  it('refuses a description that states the dimensions', () => {
+    const bad = picture()
+    bad.description = ['Một.', 'Kích thước của tranh là 10 x 20 cm.', 'Ba.']
+    const r = mergeIntoCatalog(base(), [bad])
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors.join(' ')).toContain('kích thước')
+  })
+
+  it('refuses a picture whose commentary field is empty', () => {
+    const bad = picture()
+    bad.commentary = { ...COMMENTARY, takeaway: '' }
+    expect(mergeIntoCatalog(base(), [bad]).ok).toBe(false)
+  })
+
+  it('refuses when an existing picture in index.json has no commentary', () => {
+    const { commentary: _c, ...old } = picture()
+    void _c
+    const r = mergeIntoCatalog({ ...base(), pictures: [{ ...old, id: 'met-old' }] }, [picture()])
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors.join(' ')).toContain('met-old')
   })
 })

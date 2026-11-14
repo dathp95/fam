@@ -3,9 +3,9 @@
  * credit text, building a Picture and merging it into public/lessons/index.json.
  */
 
-import { parseCatalog, type ParseResult } from './catalog.ts'
+import { parseCatalog, parseCommentary, type ParseResult } from './catalog.ts'
 import { contentIssues } from './pictures.ts'
-import type { Picture } from './types.ts'
+import type { Picture, PictureCommentary } from './types.ts'
 
 export const MET_API = 'https://collectionapi.metmuseum.org/public/collection/v1/objects/'
 
@@ -71,6 +71,8 @@ export interface PictureContent {
   /** Vietnamese alt text; optional, a neutral one is used when missing. */
   alt?: string
   description: string[]
+  /** Required: story, view and takeaway (Vietnamese; takeaway without the "Rút ra" label). */
+  commentary: PictureCommentary
   intro: string[]
 }
 
@@ -86,12 +88,22 @@ export function parseContent(raw: unknown): ParseResult<PictureContent> {
   if (!isRecord(raw)) return fail('file nội dung phải là một đối tượng JSON.')
   const description = sentences(raw.description)
   if (!description) return fail('description phải là danh sách câu tiếng Việt không rỗng.')
+  const commentary = parseCommentary(raw.commentary)
+  if (!commentary.ok) return fail(`${commentary.error} (file nội dung cần commentary: { story, view, takeaway }).`)
   const intro = sentences(raw.intro)
   if (!intro) return fail('intro phải là danh sách câu tiếng Anh không rỗng.')
   if (raw.alt !== undefined && (typeof raw.alt !== 'string' || !raw.alt.trim())) {
     return fail('alt (nếu có) phải là chuỗi không rỗng.')
   }
-  return { ok: true, value: { alt: typeof raw.alt === 'string' ? raw.alt.trim() : undefined, description, intro } }
+  return {
+    ok: true,
+    value: { alt: typeof raw.alt === 'string' ? raw.alt.trim() : undefined, description, commentary: commentary.value, intro },
+  }
+}
+
+/** "Artist · date" from the draft (either part may be missing); "" when both are empty. */
+export function buildByline(d: Pick<MetDraft, 'artistDisplayName' | 'objectDate'>): string {
+  return [d.artistDisplayName.trim(), d.objectDate.trim()].filter(Boolean).join(' · ')
 }
 
 export function buildPicture(args: {
@@ -102,9 +114,11 @@ export function buildPicture(args: {
   height: number
 }): Picture {
   const { objectId, draft, content, width, height } = args
+  const byline = buildByline(draft)
   return {
     id: pictureId(objectId),
     title: draft.title,
+    ...(byline && { byline }),
     image: {
       src: pictureSrc(objectId),
       width,
@@ -113,6 +127,7 @@ export function buildPicture(args: {
       credit: { text: buildCreditText(draft), url: draft.objectURL },
     },
     description: content.description,
+    commentary: content.commentary,
     intro: content.intro,
   }
 }

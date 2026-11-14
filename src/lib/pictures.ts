@@ -1,6 +1,6 @@
 /** Picture collection: grid constants, random order, bonus lesson and content rules. */
 
-import type { Picture, PictureProgress, SampleLesson } from './types.ts'
+import type { Picture, PictureCommentary, PictureProgress, SampleLesson } from './types.ts'
 
 /** Fixed grid for every picture: 3 columns × 2 rows. */
 export const PICTURE_COLS = 3
@@ -78,14 +78,21 @@ export const MIN_SENTENCES = 3
 export const MAX_SENTENCES = 5
 export const MAX_INTRO_WORDS = 10
 
+/** Descriptions must not state the artwork's size (lower-case "Kích thước"). */
+const DIMENSIONS_WORD = 'kích thước'
+const COMMENTARY_KEYS = ['story', 'view', 'takeaway'] as const
+
 const wordCount = (s: string) => s.trim().split(/\s+/).filter(Boolean).length
 
 /**
  * Content rules that the catalog parser does not enforce (so one long sentence never hides a whole
- * picture at runtime) but the ingest tool and the tests do: 3–5 sentences each, intro ≤ 10 words.
+ * picture at runtime) but the ingest tool and the tests do: 3–5 sentences each, intro ≤ 10 words,
+ * no artwork dimensions in the description, and a complete commentary.
  * Returns Vietnamese messages; empty when the picture is fine.
  */
-export function contentIssues(p: Pick<Picture, 'id' | 'description' | 'intro'>): string[] {
+export function contentIssues(
+  p: Pick<Picture, 'id' | 'description' | 'intro'> & { commentary?: Partial<PictureCommentary> | null },
+): string[] {
   const issues: string[] = []
   const range = `${MIN_SENTENCES}–${MAX_SENTENCES}`
   if (p.description.length < MIN_SENTENCES || p.description.length > MAX_SENTENCES) {
@@ -93,6 +100,15 @@ export function contentIssues(p: Pick<Picture, 'id' | 'description' | 'intro'>):
   }
   if (p.intro.length < MIN_SENTENCES || p.intro.length > MAX_SENTENCES) {
     issues.push(`${p.id}: intro cần ${range} câu (hiện có ${p.intro.length}).`)
+  }
+  p.description.forEach((s, i) => {
+    if (s.toLowerCase().includes(DIMENSIONS_WORD)) {
+      issues.push(`${p.id}: câu description ${i + 1} nêu kích thước tác phẩm (không đưa kích thước vào mô tả).`)
+    }
+  })
+  for (const key of COMMENTARY_KEYS) {
+    const value = p.commentary?.[key]
+    if (typeof value !== 'string' || !value.trim()) issues.push(`${p.id}: thiếu commentary.${key}.`)
   }
   p.intro.forEach((s, i) => {
     const n = wordCount(s)

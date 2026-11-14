@@ -1,6 +1,6 @@
 /** Catalog of built-in lessons (public/lessons/index.json): loading and runtime validation. */
 
-import { LEVELS, type Picture, type StaticLesson, type TimedSentence } from './types.ts'
+import { LEVELS, type Picture, type PictureCommentary, type StaticLesson, type TimedSentence } from './types.ts'
 
 export interface Catalog {
   lessons: StaticLesson[]
@@ -123,6 +123,18 @@ function textList(v: unknown): string[] | null {
   return out.every((s): s is string => s !== null) ? out : null
 }
 
+/** story, view and takeaway must all be non-empty strings (strict: no defaults). */
+export function parseCommentary(raw: unknown): ParseResult<PictureCommentary> {
+  if (!isRecord(raw)) return fail('thiếu commentary (cần story, view và takeaway).')
+  const story = text(raw.story)
+  if (!story) return fail('commentary.story phải là chuỗi không rỗng.')
+  const view = text(raw.view)
+  if (!view) return fail('commentary.view phải là chuỗi không rỗng.')
+  const takeaway = text(raw.takeaway)
+  if (!takeaway) return fail('commentary.takeaway phải là chuỗi không rỗng.')
+  return { ok: true, value: { story, view, takeaway } }
+}
+
 /**
  * Validate one picture from JSON. Only the structure is checked here; the sentence-count and
  * word-count rules live in `contentIssues` (pictures.ts) so a long sentence never hides a picture.
@@ -148,16 +160,25 @@ export function parsePicture(raw: unknown): ParseResult<Picture> {
 
   const description = textList(raw.description)
   if (!description) return fail('description phải có ít nhất một câu không rỗng.')
+  const commentary = parseCommentary(raw.commentary)
+  if (!commentary.ok) return commentary
   const intro = textList(raw.intro)
   if (!intro) return fail('intro phải có ít nhất một câu không rỗng.')
+  let byline: string | undefined
+  if (raw.byline !== undefined) {
+    byline = text(raw.byline) ?? undefined
+    if (!byline) return fail('byline (nếu có) phải là chuỗi không rỗng.')
+  }
 
   return {
     ok: true,
     value: {
       id,
       title,
+      ...(byline !== undefined && { byline }),
       image: { src, width, height, alt, credit: { text: creditText, url: creditUrl } },
       description,
+      commentary: commentary.value,
       intro,
     },
   }

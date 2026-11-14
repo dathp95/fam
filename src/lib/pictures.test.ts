@@ -23,12 +23,15 @@ const seq = (...values: number[]) => {
   return () => values[i++ % values.length]
 }
 
+const COMMENTARY = { story: 'Cảnh một.', view: 'Cách nhìn.', takeaway: 'Điều rút ra.' }
+
 /** Fixture (test data only). */
 const picture = (over: Partial<Picture> = {}): Picture => ({
   id: 'met-1',
   title: 'Test picture',
   image: { src: 'pictures/met-1.webp', width: 1600, height: 1000, alt: 'Ảnh thử', credit: { text: 'Credit', url: 'https://example.com' } },
   description: ['Câu một.', 'Câu hai.', 'Câu ba.'],
+  commentary: COMMENTARY,
   intro: ['This is a test.', 'It is blue.', 'I like it.'],
   ...over,
 })
@@ -181,5 +184,50 @@ describe('bonusPictureId / ALL_TILES', () => {
   it('lists every tile index', () => {
     expect(ALL_TILES).toEqual([0, 1, 2, 3, 4, 5])
     expect(ALL_TILES).toHaveLength(PICTURE_TILES)
+  })
+})
+
+describe('contentIssues: dimensions and commentary', () => {
+  it('accepts a picture with a complete commentary and no dimensions', () => {
+    expect(contentIssues(picture())).toEqual([])
+  })
+
+  it('flags a description sentence that states the dimensions ("Kích thước")', () => {
+    const issues = contentIssues(
+      picture({ description: ['Câu một.', 'Kích thước của tranh là 92,1 x 118,4 cm.', 'Câu ba.'] }),
+    )
+    expect(issues).toHaveLength(1)
+    expect(issues[0]).toContain('câu description 2')
+    expect(issues[0]).toContain('kích thước')
+  })
+
+  it('also catches it in the middle of a sentence and in any letter case', () => {
+    expect(contentIssues(picture({ description: ['Một.', 'Hai, kích thước 10 cm.', 'Ba.'] }))).toHaveLength(1)
+    expect(contentIssues(picture({ description: ['KÍCH THƯỚC lớn.', 'Hai.', 'Ba.'] }))).toHaveLength(1)
+  })
+
+  it('reports every offending sentence', () => {
+    expect(contentIssues(picture({ description: ['Kích thước A.', 'Hai.', 'Kích thước B.'] }))).toHaveLength(2)
+  })
+
+  it('does not flag the word "kích" or "thước" on its own', () => {
+    expect(contentIssues(picture({ description: ['Một thước phim.', 'Kích động.', 'Ba.'] }))).toEqual([])
+  })
+
+  it('flags a missing commentary', () => {
+    const issues = contentIssues({ ...picture(), commentary: undefined })
+    expect(issues).toHaveLength(3)
+    expect(issues.join(' ')).toContain('commentary.story')
+    expect(contentIssues({ ...picture(), commentary: null })).toHaveLength(3)
+  })
+
+  it('flags each empty or blank commentary field separately', () => {
+    expect(contentIssues(picture({ commentary: { ...COMMENTARY, story: '' } }))).toEqual(['met-1: thiếu commentary.story.'])
+    expect(contentIssues(picture({ commentary: { ...COMMENTARY, view: '   ' } }))).toEqual(['met-1: thiếu commentary.view.'])
+    expect(contentIssues(picture({ commentary: { ...COMMENTARY, takeaway: '' } }))).toEqual(['met-1: thiếu commentary.takeaway.'])
+  })
+
+  it('flags a commentary with missing keys', () => {
+    expect(contentIssues({ ...picture(), commentary: { story: 'S' } })).toHaveLength(2)
   })
 })

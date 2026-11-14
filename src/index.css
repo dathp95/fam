@@ -180,3 +180,10 @@ body:has(.practice) { overflow: hidden; overscroll-behavior: none; }
 /* Horizontal swipes belong to the app here (previous/next picture), not to the browser (history swipe). */
 .album-detail { touch-action: pan-y; }
 body:has(.album-detail) { overscroll-behavior-x: none; }
+
+/* Completed picture: description and commentary (readable column, relaxed line height) */
+.picture-card .byline { margin: -8px 0 0; font-size: 14px; }
+.prose { display: flex; flex-direction: column; gap: 12px; max-width: 62ch; line-height: 1.6; }
+.prose p { margin: 0; }
+.takeaway { padding: 2px 0 2px 14px; border-left: 3px solid var(--accent); border-radius: 0; }
+.takeaway-label { display: block; margin-bottom: 2px; font-size: 13px; color: var(--muted); }

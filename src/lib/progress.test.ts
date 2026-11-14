@@ -44,6 +44,7 @@ const pic = (id: string): Picture => ({
   title: `Picture ${id}`,
   image: { src: `pictures/${id}.webp`, width: 1600, height: 1000, alt: 'Ảnh thử', credit: { text: 'Credit', url: 'https://example.com' } },
   description: ['Một.', 'Hai.', 'Ba.'],
+  commentary: { story: 'Cảnh.', view: 'Nhìn.', takeaway: 'Rút ra.' },
   intro: ['One.', 'Two.', 'Three.'],
 })
 const A = pic('met-1')

@@ -14,6 +14,7 @@ const picture = (over: Record<string, unknown> = {}) => ({
     credit: { text: 'Credit text', url: 'https://example.com/art' },
   },
   description: ['Câu một.', 'Câu hai.', 'Câu ba.'],
+  commentary: { story: 'Cảnh một.', view: 'Cách nhìn.', takeaway: 'Điều rút ra.' },
   intro: ['This is a test.', 'It is blue.', 'I like it.'],
   ...over,
 })
@@ -49,13 +50,14 @@ describe('parseCatalog: pictures', () => {
         credit: { text: 'Credit text', url: 'https://example.com/art' },
       },
       description: ['Câu một.', 'Câu hai.', 'Câu ba.'],
+      commentary: { story: 'Cảnh một.', view: 'Cách nhìn.', takeaway: 'Điều rút ra.' },
       intro: ['This is a test.', 'It is blue.', 'I like it.'],
     })
   })
 
   it('needs no grid, level or lesson ids', () => {
     const r = withPictures(picture())
-    expect(Object.keys(r.pictures[0]).sort()).toEqual(['description', 'id', 'image', 'intro', 'title'])
+    expect(Object.keys(r.pictures[0]).sort()).toEqual(['commentary', 'description', 'id', 'image', 'intro', 'title'])
   })
 
   it('trims text fields', () => {
@@ -130,6 +132,71 @@ describe('parseCatalog: pictures', () => {
     expect(r.lessons).toHaveLength(1)
     expect(r.pictures).toEqual([])
     expect(r.warnings).toHaveLength(3)
+  })
+})
+
+describe('parseCatalog: commentary (required, strict)', () => {
+  const GOOD = { story: 'Cảnh một.', view: 'Cách nhìn.', takeaway: 'Điều rút ra.' }
+
+  it('rejects a picture without commentary, with a Vietnamese error', () => {
+    const r = withPictures(picture({ commentary: undefined }))
+    expect(r.pictures).toEqual([])
+    expect(r.warnings).toHaveLength(1)
+    expect(r.warnings[0]).toContain('met-1')
+    expect(r.warnings[0]).toContain('thiếu commentary')
+  })
+
+  it('rejects a commentary that is not an object', () => {
+    for (const commentary of [null, 'text', 5, [], ['a', 'b', 'c'], true]) {
+      const r = withPictures(picture({ commentary }))
+      expect(r.pictures, JSON.stringify(commentary)).toEqual([])
+      expect(r.warnings[0]).toContain('commentary')
+    }
+  })
+
+  it('rejects each missing, empty, blank or non-string field and names it', () => {
+    for (const key of ['story', 'view', 'takeaway']) {
+      for (const value of [undefined, '', '   ', null, 3, ['x'], {}]) {
+        const r = withPictures(picture({ commentary: { ...GOOD, [key]: value } }))
+        expect(r.pictures, key + ': ' + JSON.stringify(value)).toEqual([])
+        expect(r.warnings[0]).toContain('commentary.' + key)
+      }
+    }
+  })
+
+  it('accepts a valid commentary and trims it', () => {
+    const r = withPictures(picture({ commentary: { story: '  Một.  ', view: ' Hai. ', takeaway: ' Ba. ' } }))
+    expect(r.warnings).toEqual([])
+    expect(r.pictures[0].commentary).toEqual({ story: 'Một.', view: 'Hai.', takeaway: 'Ba.' })
+  })
+
+  it('does not store the "Rút ra" label (that is added by the UI)', () => {
+    const r = withPictures(picture())
+    expect(r.pictures[0].commentary.takeaway.startsWith('Rút ra')).toBe(false)
+  })
+
+  it('only reports the broken picture and keeps the others', () => {
+    const r = withPictures(picture({ id: 'met-bad', commentary: {} }), picture({ id: 'met-good' }))
+    expect(r.pictures.map((p) => p.id)).toEqual(['met-good'])
+    expect(r.warnings).toHaveLength(1)
+  })
+})
+
+describe('parseCatalog: byline (optional)', () => {
+  it('accepts and trims a byline', () => {
+    expect(withPictures(picture({ byline: '  Artist · 1900 ' })).pictures[0].byline).toBe('Artist · 1900')
+  })
+
+  it('is absent when not given', () => {
+    expect('byline' in withPictures(picture()).pictures[0]).toBe(false)
+  })
+
+  it('rejects an empty or non-string byline', () => {
+    for (const byline of ['', '  ', 5, null]) {
+      const r = withPictures(picture({ byline }))
+      expect(r.pictures, JSON.stringify(byline)).toEqual([])
+      expect(r.warnings[0]).toContain('byline')
+    }
   })
 })
 
