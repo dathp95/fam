@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSegmentPlayer } from '../hooks/useSegmentPlayer.ts'
 import { HINT_PENALTY, maskHint, scoreAnswer, type ScoreResult } from '../lib/diff.ts'
 import { getLanguage } from '../lib/languages.ts'
+import { loadShortcut, matchesShortcut, saveShortcut, formatShortcut, type Shortcut } from '../lib/shortcut.ts'
 import { speak, stopSpeaking } from '../lib/tts.ts'
+import { ShortcutSetting } from './ShortcutSetting.tsx'
 import type { Lesson } from '../lib/types.ts'
 
 interface Props {
@@ -33,6 +35,7 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
   const [result, setResult] = useState<ScoreResult | null>(null)
   const [scores, setScores] = useState<number[]>([])
   const [gained, setGained] = useState(0)
+  const [shortcut, setShortcut] = useState<Shortcut>(loadShortcut)
 
   const n = lesson.sentences.length
   const sentence = lesson.sentences[i]
@@ -72,6 +75,7 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
     setScores((s) => [...s, res.score])
     setGained((g) => g + res.xp)
     onAnswered(res.xp)
+    play(false) // let the learner hear the correct sentence right after checking
   }
 
   function next() {
@@ -86,6 +90,26 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
       onFinish(scores, gained)
     }
   }
+
+  const changeShortcut = useCallback((s: Shortcut) => {
+    setShortcut(s)
+    saveShortcut(s)
+  }, [])
+
+  // Keyboard shortcut for "Nghe lại" (works before and after checking).
+  const playRef = useRef(play)
+  useEffect(() => {
+    playRef.current = play
+  })
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || !matchesShortcut(e, shortcut)) return
+      e.preventDefault()
+      playRef.current(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [shortcut])
 
   // Enter moves on once a sentence has been checked.
   const nextRef = useRef(next)
@@ -154,6 +178,9 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
               />
             </div>
             <div className="row">
+              <button className="btn" onClick={() => play(false)} title={`Phím tắt: ${formatShortcut(shortcut)}`}>
+                Nghe lại
+              </button>
               <button className="btn primary" onClick={check}>
                 Kiểm tra
               </button>
@@ -193,6 +220,7 @@ export function Practice({ lesson, media, onAnswered, onFinish, onQuit }: Props)
           </>
         )}
       </div>
+      <ShortcutSetting value={shortcut} onChange={changeShortcut} />
     </div>
   )
 }
