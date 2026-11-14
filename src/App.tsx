@@ -8,7 +8,7 @@ import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { averageScore } from './lib/diff.ts'
-import { isBonusLesson } from './lib/pictures.ts'
+import { isBonusLesson, revealedTiles } from './lib/pictures.ts'
 import {
   ensureActivePicture,
   loadProgress,
@@ -167,6 +167,26 @@ export default function App() {
     return outcome
   }
 
+  // The practice screen is full-height and has its own header, so it is rendered outside .wrap.
+  if (view.name === 'practice') {
+    // The picture as it is BEFORE this attempt: tiles only open when the lesson ends.
+    const active = progress.picture ? catalog?.pictures.find((p) => p.id === progress.picture?.id) : undefined
+    return (
+      <Practice
+        key={view.run}
+        lesson={view.lesson}
+        source={view.source}
+        picture={active ?? null}
+        revealed={revealedTiles(progress.picture)}
+        onAnswered={onAnswered}
+        onQuit={goHome}
+        onFinish={(scores, gained) =>
+          setView({ ...view, name: 'result', scores, gained, outcome: finishLesson(view.lesson, scores) })
+        }
+      />
+    )
+  }
+
   return (
     <div className="wrap">
       <TopBar progress={progress} theme={theme} onToggleTheme={toggle} />
@@ -188,18 +208,6 @@ export default function App() {
         <NewLesson onCancel={goHome} onAnalyzed={(draft) => setView({ name: 'review', draft })} />
       )}
       {view.name === 'review' && <Review draft={view.draft} onSave={saveDraft} onCancel={goHome} />}
-      {view.name === 'practice' && (
-        <Practice
-          key={view.run}
-          lesson={view.lesson}
-          source={view.source}
-          onAnswered={onAnswered}
-          onQuit={goHome}
-          onFinish={(scores, gained) =>
-            setView({ ...view, name: 'result', scores, gained, outcome: finishLesson(view.lesson, scores) })
-          }
-        />
-      )}
       {view.name === 'result' && (
         <Result
           scores={view.scores}

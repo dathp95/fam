@@ -57,8 +57,6 @@ textarea, input[type='text'], input[type='number'] { width: 100%; border: 1px so
 textarea { min-height: 140px; }
 .prog { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
 .prog i { display: block; height: 100%; background: var(--accent); transition: width 0.3s; }
-.player { display: flex; gap: 10px; flex-wrap: wrap; }
-.hint { font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.04em; color: var(--muted); min-height: 1.5em; }
 .diff { display: flex; flex-wrap: wrap; gap: 6px; }
 .w { padding: 2px 8px; border-radius: 6px; font-weight: 600; }
 .w.ok { background: var(--ok-bg); color: var(--ok); }
@@ -68,7 +66,6 @@ textarea { min-height: 140px; }
 .gain { color: var(--xp); font-weight: 600; }
 .status { font-size: 15px; color: var(--muted); }
 .err { color: var(--bad); font-size: 15px; }
-.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
 
 /* Review screen */
 .review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -78,17 +75,15 @@ textarea { min-height: 140px; }
 .times label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 .times input { padding: 8px 10px; color: var(--ink); }
 
-/* Shortcut setting */
-.shortcut { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
-.shortcut summary { cursor: pointer; font-weight: 600; }
-.shortcut .stack { margin-top: 12px; }
+/* Shortcut setting (inside the Practice "⋯" menu) */
+.shortcut-title { margin: 0; font-weight: 600; }
 kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 8px; background: var(--bg); }
 
 @media (max-width: 480px) {
   body { font-size: 16px; }
   .wrap { padding: 12px; }
   .card { padding: 16px; }
-  .player .btn, .lesson .row .btn { flex: 1 1 auto; }
+  .lesson .row .btn { flex: 1 1 auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
@@ -125,3 +120,36 @@ kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--line)
 @media (prefers-reduced-motion: reduce) { .tile.fresh { animation: none; } }
 .picture-card h3 { margin: 0; font-family: var(--display); font-size: 17px; }
 .picture-card a, .muted a { color: var(--accent); }
+
+/* Practice screen: mobile first, one centered column. All rules are scoped under .practice. */
+.practice { width: 100%; max-width: 480px; min-height: var(--vvh, 100dvh); margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
+.practice-top { position: relative; display: flex; align-items: center; gap: 4px; }
+.practice-title { flex: 1; min-width: 0; text-align: center; color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.practice-count { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.practice .icon-btn { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
+.practice .icon-btn:hover { background: var(--card); }
+.practice .prog { height: 4px; }
+/* The picture area takes the free height and shrinks first (e.g. when the keyboard opens). The picture
+   and its caption form one group, centered; the group is sized from the area's own width/height so the
+   picture keeps its aspect ratio (--ar) and is never cropped. 26px = caption (19.5px) + gap (6px). */
+.practice-picture { flex: 1 1 0; min-height: 120px; display: flex; align-items: center; justify-content: center; container-type: size; }
+.practice-picture-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+@supports (width: 1cqw) {
+  .practice-picture-group { width: min(100cqw, calc((100cqh - 26px) * var(--ar, 1.5))); }
+}
+.practice .picture { width: 100%; border-radius: 10px; }
+.practice-caption { margin: 0; font-size: 13px; line-height: 1.5; }
+.practice-bottom { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px 0 max(12px, env(safe-area-inset-bottom)); background: var(--bg); }
+.practice-controls { display: flex; align-items: center; gap: 8px; }
+.practice .play-btn { width: 44px; padding: 0; flex: none; }
+.practice .speed { min-width: 64px; padding: 10px 12px; border-radius: 99px; font-variant-numeric: tabular-nums; }
+.practice .hint-btn { margin-left: auto; padding: 10px 8px; border-color: transparent; background: none; color: var(--muted); }
+.practice .hint { margin: 0; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.04em; color: var(--muted); overflow-wrap: anywhere; }
+.practice textarea { min-height: 0; max-height: 9em; font-size: 16px; line-height: 1.4; background: var(--card); resize: none; }
+.practice-result { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--ok); border-radius: 10px; background: var(--ok-bg); }
+.practice-result p { margin: 0; }
+.practice-buttons { display: flex; gap: 8px; }
+.practice-buttons .btn { flex: 1 1 0; padding: 10px 8px; }
+.practice-buttons .btn.primary { flex: 2 1 0; }
+.practice-backdrop { position: fixed; inset: 0; z-index: 10; }
+.practice-menu { position: absolute; top: 100%; right: 0; z-index: 11; width: min(100%, 360px); padding: 12px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }

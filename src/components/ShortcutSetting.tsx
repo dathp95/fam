@@ -13,7 +13,7 @@ interface Props {
   onChange: (s: Shortcut) => void
 }
 
-/** Lets the user record a new key combination for "Nghe lại". */
+/** Lets the user record a new key combination for "Nghe lại" (shown in the Practice "⋯" menu). */
 export function ShortcutSetting({ value, onChange }: Props) {
   const [recording, setRecording] = useState(false)
   const [error, setError] = useState('')
@@ -44,26 +44,24 @@ export function ShortcutSetting({ value, onChange }: Props) {
   }, [recording, onChange])
 
   return (
-    <details className="shortcut">
-      <summary>Phím tắt "Nghe lại" (máy tính)</summary>
-      <div className="stack">
-        <div className="row">
-          <span>Hiện tại:</span>
-          <kbd>{formatShortcut(value)}</kbd>
-          <button className="btn" onClick={() => { setError(''); setRecording((r) => !r) }}>
-            {recording ? 'Đang chờ… (Esc để hủy)' : 'Đổi phím tắt'}
-          </button>
-          <button className="btn" onClick={() => onChange(DEFAULT_SHORTCUT)} disabled={recording}>
-            Mặc định
-          </button>
-        </div>
-        {recording && <p className="status" role="status">Bấm tổ hợp phím bạn muốn dùng, ví dụ Ctrl+Shift+R.</p>}
-        {error && <p className="err" role="alert">{error}</p>}
-        <p className="muted">
-          Ctrl+Tab và Alt+Tab do trình duyệt/hệ điều hành giữ nên không dùng được. Shift+Tab sẽ thay thế việc quay
-          lại ô trước.
-        </p>
+    <div className="shortcut stack">
+      <p className="shortcut-title">Phím tắt "Nghe lại" (máy tính)</p>
+      <div className="row">
+        <span>Hiện tại:</span>
+        <kbd>{formatShortcut(value)}</kbd>
+        <button className="btn" onClick={() => { setError(''); setRecording((r) => !r) }}>
+          {recording ? 'Đang chờ… (Esc để hủy)' : 'Đổi phím tắt'}
+        </button>
+        <button className="btn" onClick={() => onChange(DEFAULT_SHORTCUT)} disabled={recording}>
+          Mặc định
+        </button>
       </div>
-    </details>
+      {recording && <p className="status" role="status">Bấm tổ hợp phím bạn muốn dùng, ví dụ Ctrl+Shift+R.</p>}
+      {error && <p className="err" role="alert">{error}</p>}
+      <p className="muted">
+        Ctrl+Tab và Alt+Tab do trình duyệt/hệ điều hành giữ nên không dùng được. Shift+Tab sẽ thay thế việc quay
+        lại ô trước.
+      </p>
+    </div>
   )
 }
