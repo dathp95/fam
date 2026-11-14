@@ -3,15 +3,15 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { MediaLesson } from './types.ts'
 
-interface DlwDB extends DBSchema {
+interface FamDB extends DBSchema {
   lessons: { key: string; value: MediaLesson }
   media: { key: string; value: Blob }
 }
 
-let dbPromise: Promise<IDBPDatabase<DlwDB>> | null = null
+let dbPromise: Promise<IDBPDatabase<FamDB>> | null = null
 
 function db() {
-  dbPromise ??= openDB<DlwDB>('dlw', 1, {
+  dbPromise ??= openDB<FamDB>('fam', 1, {
     upgrade(d) {
       d.createObjectStore('lessons', { keyPath: 'id' })
       d.createObjectStore('media')

@@ -8,7 +8,7 @@ export interface Progress {
   sentences: number
 }
 
-const KEY = 'dlw.prog'
+const KEY = 'fam.prog'
 export const XP_PER_LEVEL = 100
 
 const EMPTY: Progress = { xp: 0, streak: 0, last: '', sentences: 0 }

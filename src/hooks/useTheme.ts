@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export type Theme = 'light' | 'dark'
-const KEY = 'dlw.theme'
+const KEY = 'fam.theme'
 
 function readStored(): Theme | null {
   try {

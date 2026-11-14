@@ -41,6 +41,10 @@ export default function App() {
     requestPersistence()
   }, [refresh])
 
+  useEffect(() => {
+    saveProgress(progress)
+  }, [progress])
+
   const goHome = () => setView({ name: 'home' })
 
   async function loadMedia(lesson: Lesson): Promise<Blob | null | undefined> {
@@ -99,11 +103,7 @@ export default function App() {
   }
 
   function onAnswered(xp: number) {
-    setProgress((p) => {
-      const next = recordAnswer(p, xp)
-      saveProgress(next)
-      return next
-    })
+    setProgress((p) => recordAnswer(p, xp))
   }
 
   return (

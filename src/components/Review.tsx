@@ -146,7 +146,7 @@ function ReviewRow({ index, sentence: s, problem, isLast, canRemove, onChange, o
   const n = index + 1
   const time = (key: 'start' | 'end') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.valueAsNumber
-    if (Number.isFinite(v)) onChange({ [key]: v })
+    if (Number.isFinite(v)) onChange(key === 'start' ? { start: v } : { end: v })
   }
   return (
     <li className="card review-row">

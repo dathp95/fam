@@ -79,29 +79,36 @@ export function alignSentences(
   duration: number,
   silences: number[],
 ): TimedSentence[] {
+  const n = texts.length
   const total = texts.reduce((a, t) => a + t.length, 0) || 1
-  let cum = 0
+  const roomy = duration >= n * MIN_GAP
   const bounds = [0]
-  texts.forEach((t, k) => {
-    cum += t.length
-    if (k === texts.length - 1) {
-      bounds.push(duration)
-      return
-    }
-    let b = (duration * cum) / total
-    let best: number | null = null
-    let bestDist = 2
-    for (const s of silences) {
-      const d = Math.abs(s - b)
-      if (d < bestDist) {
-        bestDist = d
-        best = s
+  let cum = 0
+  for (let k = 0; k < n - 1; k++) {
+    cum += texts[k].length
+    let b: number
+    if (roomy) {
+      b = (duration * cum) / total
+      let best: number | null = null
+      let bestDist = 2
+      for (const s of silences) {
+        const d = Math.abs(s - b)
+        if (d < bestDist) {
+          bestDist = d
+          best = s
+        }
       }
+      if (best !== null) b = best
+      // Each sentence (this one and the n-1-k after it) keeps at least MIN_GAP seconds.
+      const lo = bounds[k] + MIN_GAP
+      const hi = duration - (n - 1 - k) * MIN_GAP
+      b = Math.min(Math.max(b, lo), hi)
+    } else {
+      b = (duration * (k + 1)) / n // too short for MIN_GAP: split evenly
     }
-    if (best !== null) b = best
-    b = Math.max(b, bounds[bounds.length - 1] + MIN_GAP)
-    bounds.push(Math.min(b, duration))
-  })
+    bounds.push(b)
+  }
+  if (n > 0) bounds.push(duration)
   return texts.map((text, k) => ({
     id: uid('s'),
     text,
