@@ -29,3 +29,5 @@ inbox/
 __pycache__/
 *.pyc
 public/lessons/index.json.bak
+public/lessons/voa/*.bak
+public/lessons/voa/*.tmp.mp3

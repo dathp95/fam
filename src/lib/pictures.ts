@@ -8,11 +8,10 @@ export const PICTURE_ROWS = 2
 export const PICTURE_TILES = PICTURE_COLS * PICTURE_ROWS
 
 /**
- * How many tiles one passed lesson opens.
- * TEST MODE: 6 (= PICTURE_TILES), so a single lesson opens the whole picture.
- * REAL MODE: set this to 1, so it takes 6 passed lessons to open a picture.
+ * How many tiles one passed lesson opens: 1, so it takes PICTURE_TILES (6) passed lessons to open a
+ * picture. (Set it to PICTURE_TILES to test: one lesson then opens the whole picture.)
  */
-export const TILES_PER_PASS: number = 6
+export const TILES_PER_PASS: number = 1
 
 /** Source of randomness in [0, 1); injectable so tests are deterministic. */
 export type Random = () => number

@@ -18,7 +18,7 @@ import {
 } from './progress.ts'
 import type { Picture } from './types.ts'
 
-/** Real mode: one tile per passed lesson (the shipped default is test mode, see TILES_PER_PASS). */
+/** Real mode: one tile per passed lesson (the shipped default, see TILES_PER_PASS). */
 const realPass = (p: Progress, pictures: Picture[], avg: number, random: () => number) =>
   recordPicturePass(p, pictures, avg, random, 1)
 
@@ -439,9 +439,20 @@ describe('recordPicturePass', () => {
 })
 
 describe('recordPicturePass: tiles per pass', () => {
-  it('defaults to test mode: one passed lesson opens the whole picture', () => {
-    expect(TILES_PER_PASS).toBe(PICTURE_TILES)
-    const r = recordPicturePass(progress(), [A, B], 80, seq(0))
+  it('defaults to one tile per pass: six passed lessons open a picture', () => {
+    expect(TILES_PER_PASS).toBe(1)
+    let p = progress()
+    for (let n = 1; n <= PICTURE_TILES; n++) {
+      const r = recordPicturePass(p, [A, B], 80, seq(0))
+      p = r.progress
+      expect(p.picture?.opened).toBe(n)
+      expect(r.outcome).toMatchObject({ kind: 'opened', count: n, complete: n === PICTURE_TILES })
+    }
+    expect(p.album).toHaveLength(1)
+  })
+
+  it('test mode (6 tiles per pass): one passed lesson opens the whole picture', () => {
+    const r = recordPicturePass(progress(), [A, B], 80, seq(0), PICTURE_TILES)
     const state = r.progress.picture
     expect(state?.opened).toBe(PICTURE_TILES)
     expect(r.progress.picturesDone).toEqual([state?.id])
@@ -454,8 +465,8 @@ describe('recordPicturePass: tiles per pass', () => {
   })
 
   it('test mode: the next pass starts a new picture, which is opened at once as well', () => {
-    const first = recordPicturePass(progress(), [A, B], 80, seq(0))
-    const second = recordPicturePass(first.progress, [A, B], 80, seq(0))
+    const first = recordPicturePass(progress(), [A, B], 80, seq(0), PICTURE_TILES)
+    const second = recordPicturePass(first.progress, [A, B], 80, seq(0), PICTURE_TILES)
     expect(second.progress.picture?.id).not.toBe(first.progress.picture?.id)
     expect(second.outcome).toMatchObject({ kind: 'opened', complete: true, started: true })
     expect(second.progress.picturesDone).toHaveLength(2)
@@ -463,7 +474,7 @@ describe('recordPicturePass: tiles per pass', () => {
 
   it('test mode: below the pass mark still opens nothing', () => {
     const p = progress()
-    expect(recordPicturePass(p, [A, B], PASS_SCORE - 1, seq(0))).toEqual({ progress: p, outcome: { kind: 'failed' } })
+    expect(recordPicturePass(p, [A, B], PASS_SCORE - 1, seq(0), PICTURE_TILES)).toEqual({ progress: p, outcome: { kind: 'failed' } })
   })
 
   it('real mode (1 per pass) needs six passes', () => {
@@ -612,7 +623,7 @@ describe('album', () => {
   })
 
   it('test mode (6 tiles per pass): one lesson puts the picture in the album', () => {
-    expect(recordPicturePass(progress(), [A, B], 80, seq(0)).progress.album).toEqual(['met-1'])
+    expect(recordPicturePass(progress(), [A, B], 80, seq(0), PICTURE_TILES).progress.album).toEqual(['met-1'])
   })
 
   it('a failed pass adds nothing', () => {
