@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { publishLesson } from './adminPublish.ts'
+import { deleteCatalogLesson, publishLesson } from './adminPublish.ts'
 import type { StaticLesson } from './types.ts'
 
 const lesson: StaticLesson = {
@@ -74,5 +74,28 @@ describe('publishLesson', () => {
   it('does not report success for an ok answer without an id', async () => {
     const r = await publishLesson(lesson, false, reply(200, { ok: true }) as unknown as typeof fetch, '/')
     expect(r.ok).toBe(false)
+  })
+})
+
+describe('deleteCatalogLesson', () => {
+  it('POSTs {id} to <base>__admin/delete-lesson', async () => {
+    const fetchFn = reply(200, { ok: true, id: 'voa-l90-a', action: 'deleted' })
+    const r = await deleteCatalogLesson('voa-l90-a', fetchFn as unknown as typeof fetch, '/fam')
+    expect(r).toEqual({ ok: true, id: 'voa-l90-a' })
+    const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/fam/__admin/delete-lesson')
+    expect(JSON.parse(init.body as string)).toEqual({ id: 'voa-l90-a' })
+  })
+
+  it('returns the script error', async () => {
+    const r = await deleteCatalogLesson('x', reply(400, { ok: false, error: 'Không có bài "x" trong danh mục.' }) as unknown as typeof fetch, '/')
+    expect(r).toEqual({ ok: false, error: 'Không có bài "x" trong danh mục.' })
+  })
+
+  it('handles a network error and odd answers without throwing', async () => {
+    const down = await deleteCatalogLesson('x', (() => Promise.reject(new Error('down'))) as unknown as typeof fetch, '/')
+    expect(down.ok).toBe(false)
+    const odd = await deleteCatalogLesson('x', reply(200, { ok: true }) as unknown as typeof fetch, '/')
+    expect(odd.ok).toBe(false)
   })
 })

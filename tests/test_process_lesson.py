@@ -1240,3 +1240,58 @@ class ImportJsonTests(AudioFixture):
     def test_the_two_modes_cannot_be_combined(self):
         with self.assertRaises(SystemExit):
             pl.main(["--root", str(self.root), "--audio-only", "--import-json", "-"])
+
+
+class DeleteLessonTests(AudioFixture):
+    def run_delete(self, lesson_id, **kw):
+        import contextlib
+        import io
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = pl.run_delete(self.ctx(**kw), lesson_id)
+        lines = buf.getvalue().strip().splitlines()
+        return code, json.loads(lines[-1]), lines
+
+    def add(self, lesson_id="voa-l90-a"):
+        self.raw(lesson_id)
+        with mock.patch("process_lesson.find_tool", side_effect=lambda name, *a: name):
+            code, _, _ = ImportJsonTests.run_import(self, self.write_json(exported(lesson_id)))
+        self.assertEqual(code, 0, self.output())
+
+    def write_json(self, lesson, name="lesson.json"):
+        p = self.root / name
+        p.write_text(json.dumps(lesson, ensure_ascii=False), encoding="utf-8")
+        return str(p)
+
+    def test_removes_the_lesson_and_moves_the_mp3_to_done(self):
+        self.add()
+        code, result, lines = self.run_delete("voa-l90-a")
+        self.assertEqual(code, 0, self.output())
+        self.assertEqual(result["action"], "deleted")
+        self.assertEqual(len(lines), 1)
+        self.assertEqual([x["id"] for x in self.catalog()["lessons"]], ["old-l01"])
+        self.assertFalse((self.converted / "voa-l90-a.mp3").exists())
+        self.assertTrue(any((self.root / "inbox" / "lessons" / "done").glob("voa-l90-a*.mp3")))
+        self.assertTrue(self.catalog_path.with_name("index.json.bak").exists())
+
+    def test_an_unknown_id_is_an_error_and_nothing_is_written(self):
+        before = self.catalog_path.read_bytes()
+        code, result, _ = self.run_delete("nope")
+        self.assertEqual(code, 1)
+        self.assertFalse(result["ok"])
+        self.assertIn("nope", result["error"])
+        self.assertEqual(self.catalog_path.read_bytes(), before)
+
+    def test_a_bad_id_is_rejected(self):
+        code, result, _ = self.run_delete("../x")
+        self.assertEqual(code, 1)
+        self.assertFalse(result["ok"])
+
+    def test_dry_run_writes_nothing(self):
+        self.add()
+        before = self.catalog_path.read_bytes()
+        code, result, _ = self.run_delete("voa-l90-a", dry_run=True)
+        self.assertEqual((code, result["action"]), (0, "dry"))
+        self.assertEqual(self.catalog_path.read_bytes(), before)
+        self.assertTrue((self.converted / "voa-l90-a.mp3").exists())

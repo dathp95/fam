@@ -5,6 +5,8 @@ import {
   isLoopbackAddress,
   MAX_BODY_BYTES,
   parseLastJsonLine,
+  deleteArgs,
+  parseDeleteBody,
   parsePublishBody,
   pythonCandidates,
   scriptArgs,
@@ -122,5 +124,23 @@ describe('adminPublish plugin', () => {
     const plugin = adminPublish()
     expect(plugin.apply).toBe('serve')
     expect(plugin.name).toBe('fam-admin-publish')
+  })
+})
+
+describe('parseDeleteBody', () => {
+  const json = 'application/json'
+  it('accepts a safe id', () => {
+    expect(parseDeleteBody(json, JSON.stringify({ id: 'voa-03-i-am-here' }))).toEqual({ ok: true, id: 'voa-03-i-am-here' })
+  })
+  it('rejects wrong content type, bad JSON, missing, option-like or path-like ids', () => {
+    expect(parseDeleteBody('text/plain', '{}')).toMatchObject({ ok: false, status: 415 })
+    expect(parseDeleteBody(json, 'nope')).toMatchObject({ ok: false, status: 400 })
+    for (const id of [undefined, 5, '', '-rf', '../x', 'A b', 'a/b']) {
+      expect(parseDeleteBody(json, JSON.stringify({ id }))).toMatchObject({ ok: false, status: 400 })
+    }
+    expect(parseDeleteBody(json, '[]')).toMatchObject({ ok: false, status: 400 })
+  })
+  it('builds a fixed argument list', () => {
+    expect(deleteArgs({ command: 'py', prefix: ['-3'] }, 'a-1')).toEqual(['-3', 'process_lesson.py', '--delete-lesson=a-1'])
   })
 })

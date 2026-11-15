@@ -46,3 +46,33 @@ export async function publishLesson(
     return { ok: false, error: 'Không gọi được máy chủ dev. Hãy chạy bằng npm run dev (không phải bản build).', exists: false }
   }
 }
+
+export type DeleteResult = { ok: true; id: string } | { ok: false; error: string }
+
+/** POST {id} to the dev server, which runs `process_lesson.py --delete-lesson`. Never throws. */
+export async function deleteCatalogLesson(
+  id: string,
+  fetchFn: typeof fetch = fetch,
+  base: string = import.meta.env.BASE_URL,
+): Promise<DeleteResult> {
+  const url = `${base.endsWith('/') ? base : base + '/'}__admin/delete-lesson`
+  try {
+    const res = await fetchFn(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    const data: unknown = await res.json().catch(() => null)
+    if (typeof data !== 'object' || data === null || typeof (data as { ok?: unknown }).ok !== 'boolean') {
+      return { ok: false, error: `Máy chủ dev trả về dữ liệu lạ (HTTP ${res.status}).` }
+    }
+    const answer = data as { ok: boolean; id?: unknown; error?: unknown }
+    if (answer.ok && res.ok && typeof answer.id === 'string') return { ok: true, id: answer.id }
+    return {
+      ok: false,
+      error: typeof answer.error === 'string' && answer.error ? answer.error : `Không xóa được bài khỏi danh mục (HTTP ${res.status}).`,
+    }
+  } catch {
+    return { ok: false, error: 'Không gọi được máy chủ dev. Hãy chạy bằng npm run dev (không phải bản build).' }
+  }
+}

@@ -308,3 +308,19 @@ Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, l
 - Bài học không còn trường `topic`: đã bỏ khỏi kiểu `StaticLesson`, `parseStaticLesson`, xuất bài, form Review (không còn ô "Chủ đề" và các nút gợi ý), `process_lesson.py` (không còn tạo hay kiểm tra `topic`; dòng `topic:` trong phần đầu file `.txt` cũ vẫn đọc được nhưng bị bỏ qua; `--import-json` bỏ `topic` cũ trước khi ghi). Khóa `topic` cũ trong file JSON bị bỏ qua, không cảnh báo, không được chép vào bài đã nạp.
 - Home và `groupStaticLessons` chỉ nhóm theo trình độ rồi `order` (`LevelGroup { level, lessons }`); `order` tự động nay là số kế tiếp trong cùng trình độ. Dữ liệu `public/lessons/index.json` đã xóa `topic` ("Meeting people") khỏi các bài và được ghi lại đúng định dạng chuẩn của script (nội dung các bài khác không đổi).
 - Các mục cũ nhắc đến chủ đề (Task B, C, K...) là lịch sử; mô tả hiện hành nằm ở README và mục này.
+
+## Task W — Chỉnh sửa bài có sẵn (admin)
+
+- Ở `npm run dev` với `?admin`, mỗi bài có sẵn trên Home (tab "Bài tập") có thêm nút "Chỉnh sửa": tải audio của bài (`assetUrl`), mở màn Review với các câu hiện có (`draftFromStaticLesson` trong `src/lib/editStatic.ts`; `fileName` = `<mã>.mp3` nên xuất ra đúng mã bài và giữ `order`; trình độ được chọn sẵn). Sửa xong bấm "Đưa vào danh mục" rồi "Thay bài cũ".
+- Người học thường và bản build không có nút này (`import.meta.env.DEV && hasAdminParam`, giống nút "Đưa vào danh mục").
+
+## Task X — Xóa bài có sẵn (admin)
+
+- `process_lesson.py --delete-lesson ID`: bỏ bài khỏi `index.json` (sao lưu `.bak`), file mp3 được chuyển vào `inbox/lessons/done/` (không xóa hẳn; giữ lại nếu bài khác còn dùng). Kết quả là một dòng JSON ở cuối stdout, hỗ trợ `--dry-run`.
+- Cầu nối dev `scripts/admin-publish.ts` có thêm `POST /__admin/delete-lesson {id}` (cùng các kiểm tra loopback/Origin; id phải khớp `^[a-z0-9][a-z0-9-]*$`, truyền dạng `--delete-lesson=<id>`, không qua shell).
+- Ở `npm run dev` với `?admin`, thẻ bài có sẵn có nút "Xóa" (có hộp xác nhận), xong thì nạp lại danh mục. Không có ở bản public.
+
+## Rà soát quyền admin
+
+- Mọi công cụ admin (Chọn nguồn bài/tải file, Chỉnh sửa, Xóa, Đưa vào danh mục, Thay bài cũ) chỉ có khi `import.meta.env.DEV` **và** có `?admin`. Trước đây `?admin` trên bản public vẫn mở "Chọn nguồn bài"; nay `isSourcePickerVisible` cũng đòi `DEV` (`isAdminMode` trong `src/lib/features.ts`), nên `?admin` trên trang đã đăng hay máy khác không đổi gì: chỉ có giao diện luyện tập.
+- Cầu nối ghi file (`/__admin/*`) chỉ tồn tại ở `npm run dev` và chỉ nhận yêu cầu từ chính máy này. `dist` không chứa `__admin`, `publish-lesson`, `delete-lesson`, "Đưa vào danh mục", "Thay bài cũ".

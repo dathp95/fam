@@ -121,4 +121,6 @@ export interface Draft {
   timing: 'snapped' | 'estimated' | 'saved'
   /** Name of the uploaded file, when known (the admin export derives the lesson id from it). */
   fileName?: string
+  /** Level of the catalog lesson being edited (admin); preselects the "Trình độ" select. */
+  level?: string
 }

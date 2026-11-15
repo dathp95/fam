@@ -20,6 +20,10 @@ interface Props {
   message: string
   onStart: (lesson: Lesson) => void
   onEdit: (lesson: MediaLesson) => void
+  /** Admin only (dev + ?admin): edit a catalog lesson. Absent for learners. */
+  onEditStatic?: (lesson: StaticLesson) => void
+  /** Admin only (dev + ?admin): remove a catalog lesson. Absent for learners. */
+  onDeleteStatic?: (lesson: StaticLesson) => void
   onDelete: (lesson: MediaLesson) => void
   onNew: () => void
   /** Completed pictures (the album), oldest first. */
@@ -39,6 +43,8 @@ export function Home({
   message,
   onStart,
   onEdit,
+  onEditStatic,
+  onDeleteStatic,
   onDelete,
   onNew,
   album,
@@ -69,6 +75,8 @@ export function Home({
       done={isDone(l.id) ? progress.lessonsDone[l.id] : undefined}
       attempts={Object.hasOwn(progress.history, l.id) ? progress.history[l.id] : undefined}
       onStart={() => onStart(l)}
+      onEdit={onEditStatic && (() => onEditStatic(l))}
+      onDelete={onDeleteStatic && (() => onDeleteStatic(l))}
     />
   )
   // The lesson to continue, and the picture being uncovered (missing while the catalog loads).
@@ -212,11 +220,15 @@ function StaticLessonCard({
   done,
   attempts,
   onStart,
+  onEdit,
+  onDelete,
 }: {
   lesson: StaticLesson
   done: LessonDone | undefined
   attempts: number[] | undefined
   onStart: () => void
+  onEdit?: () => void
+  onDelete?: () => void
 }) {
   return (
     <div className={`card lesson${done ? ' done' : ''}`}>
@@ -227,6 +239,16 @@ function StaticLessonCard({
       </div>
       <div className="row">
         {done ? <span className="tag">Đã qua · {done.best}</span> : <span className="muted" aria-hidden="true">›</span>}
+        {onEdit && (
+          <button className="btn" onClick={onEdit}>
+            Chỉnh sửa
+          </button>
+        )}
+        {onDelete && (
+          <button className="btn" onClick={onDelete}>
+            Xóa
+          </button>
+        )}
         <button className="btn primary" onClick={onStart}>
           Luyện tập
         </button>

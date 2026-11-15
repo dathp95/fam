@@ -2,6 +2,8 @@
  * Dev-only bridge for the admin Review screen: POST /__admin/publish-lesson { lesson, force? } runs
  * `python process_lesson.py --import-json -` and answers with the JSON line the script prints last.
  *
+ * POST /__admin/delete-lesson { id } runs `python process_lesson.py --delete-lesson=<id>` the same way.
+ *
  * It is a Vite plugin with `apply: 'serve'`, so it exists only in `npm run dev`: not in `vite build`,
  * not in `vite preview`, not in a deployed site. Requests are accepted only from this machine (loopback
  * socket, local Origin and Host) and the command is built from fixed arguments (no shell).
@@ -13,6 +15,7 @@ import { resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
 export const PUBLISH_PATH = '/__admin/publish-lesson'
+export const DELETE_PATH = '/__admin/delete-lesson'
 export const MAX_BODY_BYTES = 1024 * 1024
 const PYTHON_TIMEOUT_MS = 120_000
 
@@ -72,6 +75,32 @@ export function parsePublishBody(contentType: string | undefined, raw: string): 
   return { ok: true, lesson: lesson as Record<string, unknown>, force: force === true }
 }
 
+export type DeleteBody = { ok: true; id: string } | { ok: false; status: number; error: string }
+
+/** Lesson ids as the script accepts them; no leading "-" so the id can never look like an option. */
+const SAFE_ID = /^[a-z0-9][a-z0-9-]*$/
+
+/** Validate the delete request: Content-Type application/json and {id: string} with a safe lesson id. */
+export function parseDeleteBody(contentType: string | undefined, raw: string): DeleteBody {
+  if (!/^application\/json\s*(;|$)/i.test(contentType ?? '')) {
+    return { ok: false, status: 415, error: 'Content-Type phải là application/json.' }
+  }
+  if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) {
+    return { ok: false, status: 413, error: 'Nội dung quá lớn (tối đa 1 MB).' }
+  }
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    return { ok: false, status: 400, error: 'Nội dung không phải JSON hợp lệ.' }
+  }
+  const id = typeof data === 'object' && data !== null && !Array.isArray(data) ? (data as Record<string, unknown>).id : undefined
+  if (typeof id !== 'string' || !SAFE_ID.test(id)) {
+    return { ok: false, status: 400, error: 'Cần {id} là mã bài hợp lệ (chữ thường, số, dấu gạch ngang).' }
+  }
+  return { ok: true, id }
+}
+
 export interface ScriptResult {
   ok: boolean
   error?: string
@@ -116,6 +145,12 @@ export const scriptArgs = (candidate: PythonCommand, force: boolean): string[] =
   '--import-json',
   '-',
   ...(force ? ['--force'] : []),
+]
+
+export const deleteArgs = (candidate: PythonCommand, id: string): string[] => [
+  ...candidate.prefix,
+  'process_lesson.py',
+  `--delete-lesson=${id}`,
 ]
 
 // ---------------------------------------------------------------- the plugin (runs only in `vite` dev)
@@ -183,7 +218,9 @@ export function adminPublish(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const pathname = (req.url ?? '').split('?')[0]
-        if (!pathname.endsWith(PUBLISH_PATH)) return next()
+        const isPublish = pathname.endsWith(PUBLISH_PATH)
+        const isDelete = pathname.endsWith(DELETE_PATH)
+        if (!isPublish && !isDelete) return next()
 
         if (!isLoopbackAddress(req.socket.remoteAddress) || !isAllowedOrigin(req.headers.origin, req.headers.host)) {
           return send(res, 403, { ok: false, error: 'Chỉ nhận yêu cầu từ chính máy này.' })
@@ -192,12 +229,21 @@ export function adminPublish(): Plugin {
 
         const body = await readBody(req)
         if (!body.ok) return send(res, 413, { ok: false, error: 'Nội dung quá lớn (tối đa 1 MB).' })
-        const parsed = parsePublishBody(req.headers['content-type'], body.text)
-        if (!parsed.ok) return send(res, parsed.status, { ok: false, error: parsed.error })
+        let input = ''
+        let makeArgs: (candidate: PythonCommand) => string[]
+        if (isDelete) {
+          const parsed = parseDeleteBody(req.headers['content-type'], body.text)
+          if (!parsed.ok) return send(res, parsed.status, { ok: false, error: parsed.error })
+          makeArgs = (c) => deleteArgs(c, parsed.id)
+        } else {
+          const parsed = parsePublishBody(req.headers['content-type'], body.text)
+          if (!parsed.ok) return send(res, parsed.status, { ok: false, error: parsed.error })
+          input = JSON.stringify(parsed.lesson)
+          makeArgs = (c) => scriptArgs(c, parsed.force)
+        }
 
-        const input = JSON.stringify(parsed.lesson)
         for (const candidate of pythonCandidates()) {
-          const { result } = await runPython(candidate, scriptArgs(candidate, parsed.force), root, input)
+          const { result } = await runPython(candidate, makeArgs(candidate), root, input)
           if (result === null) continue
           const answer = parseLastJsonLine(result.stdout)
           if (answer) return send(res, answer.ok ? 200 : 400, answer)

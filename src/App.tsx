@@ -9,10 +9,12 @@ import { Review } from './components/Review.tsx'
 import { SiteFooter } from './components/SiteFooter.tsx'
 import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
+import { deleteCatalogLesson } from './lib/adminPublish.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { averageScore } from './lib/diff.ts'
 import type { HomeTab } from './lib/homeTabs.ts'
-import { isSourcePickerVisible } from './lib/features.ts'
+import { draftFromStaticLesson } from './lib/editStatic.ts'
+import { hasAdminParam, isSourcePickerVisible } from './lib/features.ts'
 import { ALL_TILES, bonusPictureId, isBonusLesson, revealedTiles } from './lib/pictures.ts'
 import {
   advancePicture,
@@ -28,7 +30,7 @@ import {
   type Progress,
 } from './lib/progress.ts'
 import { deleteLesson, getMedia, listLessons, requestPersistence, saveLesson } from './lib/storage.ts'
-import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
+import type { Draft, Lesson, MediaLesson, PlaybackSource, StaticLesson } from './lib/types.ts'
 
 type View =
   | { name: 'home' }
@@ -151,6 +153,32 @@ export default function App() {
     })
   }
 
+  /** Admin only (dev + ?admin): open a catalog lesson in the Review screen. */
+  async function editStatic(lesson: StaticLesson) {
+    setMessage('')
+    try {
+      const res = await fetch(assetUrl(lesson.audioUrl))
+      if (!res.ok) throw new Error(String(res.status))
+      setView({ name: 'review', draft: draftFromStaticLesson(lesson, await res.blob()) })
+    } catch {
+      setMessage('Không tải được file audio của bài này để chỉnh sửa.')
+    }
+  }
+
+  /** Admin only (dev + ?admin): remove a catalog lesson (after a confirmation), then reload the catalog. */
+  async function deleteStatic(lesson: StaticLesson) {
+    if (!window.confirm(`Xóa bài "${lesson.title}" khỏi danh mục?
+File audio được chuyển vào inbox/lessons/done/, index.json được sao lưu thành index.json.bak.`)) return
+    setMessage('')
+    const r = await deleteCatalogLesson(lesson.id)
+    if (!r.ok) {
+      setMessage(r.error)
+      return
+    }
+    const c = await loadCatalog()
+    setCatalog(c)
+  }
+
   async function remove(lesson: MediaLesson) {
     if (!window.confirm(`Xóa bài "${lesson.title}"?`)) return
     try {
@@ -235,6 +263,8 @@ export default function App() {
           message={message}
           onStart={start}
           onEdit={edit}
+          onEditStatic={import.meta.env.DEV && hasAdminParam(window.location.search) ? editStatic : undefined}
+          onDeleteStatic={import.meta.env.DEV && hasAdminParam(window.location.search) ? deleteStatic : undefined}
           onDelete={remove}
           onNew={() => setView({ name: 'new' })}
           album={albumPictures(progress, catalog?.pictures ?? [])}

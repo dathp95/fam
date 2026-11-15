@@ -34,7 +34,7 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
   const [sentences, setSentences] = useState(draft.sentences)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [level, setLevel] = useState('')
+  const [level, setLevel] = useState(draft.level ?? '')
   const [exportError, setExportError] = useState('')
   const [exportNote, setExportNote] = useState('')
   const [canReplace, setCanReplace] = useState(false)

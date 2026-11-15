@@ -21,13 +21,15 @@ Phần đầu (tùy chọn) của file .txt, kết thúc bằng một dòng ch�
 
 Ví dụ:  python process_lesson.py --id voa-l02-at-home --dry-run
 
-Hai chế độ khác:
+Các chế độ khác:
 
     --audio-only        chỉ chuyển audio trong inbox/lessons sang public/lessons/voa/<id>.mp3
                         (không cần .txt, không đụng index.json)
     --import-json FILE  nhận MỘT bài đã xuất từ màn Review ("-" = đọc stdin), chuyển audio gốc
                         inbox/lessons/<id>.mp3 nếu có, rồi thêm bài vào index.json. Nhật ký in ra
                         stderr; dòng cuối của stdout là một dòng JSON {"ok": ...} cho chương trình gọi.
+    --delete-lesson ID  bỏ bài có mã ID khỏi index.json (sao lưu .bak). File mp3 không bị xóa hẳn:
+                        được chuyển vào inbox/lessons/done/. Cùng kiểu kết quả JSON ở dòng cuối stdout.
 
 Phần tách câu, tìm quãng im lặng và căn thời điểm là bản port từ src/lib/segment.ts
 (cùng hằng số, cùng kết quả), và kiểm tra bài theo đúng luật của parseStaticLesson
@@ -1025,6 +1027,49 @@ def run_import(ctx: Context, source: str, stdin_bytes: Any = None) -> int:
     return code
 
 
+def delete_lesson(lesson_id: str, ctx: Context) -> dict[str, Any]:
+    """Bỏ một bài khỏi catalog. File mp3 không bị xóa: được chuyển vào inbox/lessons/done/ (trừ khi bài khác còn dùng).
+
+    Trả về {"id", "action": "deleted" | "dry", "audio"}; ném LessonError khi lỗi.
+    """
+    say = ctx.out
+    check_id(lesson_id)
+    catalog = load_catalog(ctx.catalog_path)
+    lessons = catalog["lessons"]
+    found = [x for x in lessons if isinstance(x, dict) and x.get("id") == lesson_id]
+    if not found:
+        raise LessonError(f'Không có bài "{lesson_id}" trong danh mục.')
+    audio_url = found[0].get("audioUrl")
+    rest = [x for x in lessons if x is not found[0]]
+    shared = any(isinstance(x, dict) and x.get("audioUrl") == audio_url for x in rest)
+    target = ctx.audio_dir / f"{lesson_id}.mp3"
+    move_audio = target.exists() and not shared and audio_url == f"lessons/voa/{lesson_id}.mp3"
+    if ctx.dry_run:
+        say("[CHẠY THỬ] Kế hoạch (chưa ghi gì):")
+        say(f"  - bỏ bài khỏi {ctx.catalog_path}")
+        if move_audio:
+            say(f"  - chuyển {target} vào {ctx.inbox / 'done'}")
+        return {"id": lesson_id, "action": "dry", "audio": audio_url or ""}
+    write_catalog(ctx.catalog_path, {**catalog, "lessons": rest})
+    say(f"Đã bỏ bài {lesson_id} khỏi {ctx.catalog_path} (bản sao lưu: index.json.bak).")
+    if move_audio:
+        moved = move_files_to_done([target], ctx.inbox)
+        say(f"Đã chuyển {target.name} vào {moved[0].parent} (không xóa hẳn).")
+    return {"id": lesson_id, "action": "deleted", "audio": audio_url or ""}
+
+
+def run_delete(ctx: Context, lesson_id: str) -> int:
+    """--delete-lesson: nhật ký ra ctx.out (stderr); dòng cuối của stdout là JSON kết quả."""
+    try:
+        payload: dict[str, Any] = {"ok": True, **delete_lesson(lesson_id, ctx)}
+        code = 0
+    except LessonError as e:
+        ctx.out(f"LỖI: {e}")
+        payload, code = {"ok": False, "error": str(e)}, 1
+    print(json.dumps(payload, ensure_ascii=True), flush=True)
+    return code
+
+
 NEXT_STEPS = "Nghe thử từng câu; sửa mốc thời gian trong public/lessons/index.json nếu lệch; chạy npm run build và npm test."
 
 
@@ -1078,14 +1123,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--keep-inbox", action="store_true", help="không chuyển file gốc sang inbox/lessons/done/")
     parser.add_argument("--audio-only", action="store_true", help="chỉ chuyển audio inbox/lessons -> public/lessons/voa (không cần .txt)")
     parser.add_argument("--import-json", metavar="FILE", help='nhận một bài đã xuất từ màn Review ("-" = stdin) và thêm vào index.json')
+    parser.add_argument("--delete-lesson", metavar="ID", help="bỏ bài có mã này khỏi index.json (mp3 được chuyển vào inbox/lessons/done/, không xóa hẳn)")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent, help=argparse.SUPPRESS)
     parser.add_argument("--catalog", type=Path, help="đường dẫn index.json khác (mặc định: public/lessons/index.json)")
     args = parser.parse_args(argv)
 
     if args.audio_only and args.import_json is not None:
         parser.error("--audio-only và --import-json không dùng cùng lúc.")
+    if args.delete_lesson is not None and (args.audio_only or args.import_json is not None):
+        parser.error("--delete-lesson không dùng cùng --audio-only hoặc --import-json.")
     root: Path = args.root.resolve()
-    importing = args.import_json is not None
+    deleting = args.delete_lesson is not None
+    importing = args.import_json is not None or deleting
     ctx = Context(
         root=root,
         catalog_path=(args.catalog or root / "public" / "lessons" / "index.json").resolve(),
@@ -1098,6 +1147,8 @@ def main(argv: list[str] | None = None) -> int:
         # --import-json: stdout chỉ dành cho dòng JSON kết quả, nhật ký đi vào stderr.
         out=(lambda line: print(line, file=sys.stderr, flush=True)) if importing else print,
     )
+    if deleting:
+        return run_delete(ctx, args.delete_lesson)
     if importing:
         return run_import(ctx, args.import_json)
     if args.audio_only:
