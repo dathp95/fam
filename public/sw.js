@@ -13,7 +13,7 @@
  * A new worker waits until the page sends {type: 'SKIP_WAITING'}, so an update never swaps files mid-lesson.
  */
 
-const CACHE_VERSION = 1
+const CACHE_VERSION = 2
 const STATIC_CACHE = `fam-static-v${CACHE_VERSION}`
 const MEDIA_CACHE = `fam-media-v${CACHE_VERSION}`
 const DATA_CACHE = `fam-data-v${CACHE_VERSION}`
@@ -23,7 +23,7 @@ const SCOPE = self.registration.scope // absolute URL, always ends with "/"
 const at = (path) => new URL(path, SCOPE).href
 
 const INDEX_HTML = at('index.html')
-const SHELL = ['site.webmanifest', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'].map(at)
+const SHELL = ['site.webmanifest', 'favicon.ico', 'icons/favicon.svg', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'].map(at)
 const CATALOGS = [at('lessons/index.json'), at('pictures/index.json')]
 
 let claimOnActivate = false

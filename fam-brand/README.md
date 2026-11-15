@@ -7,6 +7,7 @@ logo/     SVG dùng biến CSS: fam-mark, fam-wordmark, fam-app-icon
 png/      xuất sẵn nền trong suốt: bản light (xanh) và dark (kem), mark 512/1024, wordmark 600/1200
 favicon/  favicon.svg, favicon.ico, 16/32/48, apple-touch-icon, icon-192/512, icon-maskable-512,
           site.webmanifest, head-snippet.html
+          (trong dự án FAM: chép ảnh vào public/icons/; favicon.ico và site.webmanifest vào public/)
 react/    FamLogo.tsx
 ```
 

@@ -11,7 +11,7 @@ export const TRANSFER_NOTE = 'Ủng hộ FAM'
 export const CONTACT_EMAIL = 'tranducdat.eng@gmail.com'
 
 /** QR image, relative to public/ (resolved with assetUrl so it works under a sub-path). */
-export const QR_IMAGE = 'support-qr.jpg'
+export const QR_IMAGE = 'images/support-qr.jpg'
 
 export const ABOUT = {
   title: 'Giới thiệu và nguồn',
