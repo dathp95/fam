@@ -55,6 +55,10 @@ Trên Home, bài có sẵn được nhóm theo trình độ (A1, A2), rồi ch�
 
 Để tạo bài bằng giao diện, mở app với `?admin`, tải file và dán chữ, rồi ở màn "Xem lại các câu" chọn "Trình độ" và "Chủ đề" trong khối "Phân loại" và bấm "Xuất bài (JSON)". Mã bài là tên file audio (chữ thường, gạch ngang), `audioUrl` là `lessons/voa/<id>.mp3`, `order` tự lấy số kế tiếp trong cùng trình độ và chủ đề, nguồn lấy mặc định ở `DEFAULT_LESSON_SOURCE` (`src/lib/sources.ts`). Đặt audio vào `public/<audioUrl>` và dán JSON vào mảng `lessons` của `public/lessons/index.json`.
 
+## Tiến độ và lịch sử luyện
+
+Tiến độ lưu trong localStorage (`fam.prog`): XP, streak, điểm cao nhất của từng bài (`lessonsDone`), tranh đang mở, album, và `history`: điểm trung bình của từng lần hoàn thành bài (tối đa 30 lần gần nhất mỗi bài). Trên Home, mỗi bài đã luyện hiện tối đa 10 ô vuông nhỏ (cũ trái, mới phải; "+N" nếu nhiều hơn): đỏ nhạt dưới 60 điểm, màu chính từ 60 đến 89, xanh lá từ 90. Bài chưa có lịch sử thì không hiện ô nào.
+
 ## Cấu trúc
 
 - `src/lib/`: logic thuần (ngôn ngữ, so sánh từ và tính điểm, tách câu và căn thời điểm, XP/streak, tranh, danh mục bài, lưu trữ IndexedDB).

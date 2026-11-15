@@ -17,6 +17,7 @@ import {
   ensureActivePicture,
   loadProgress,
   recordAnswer,
+  recordAttempt,
   recordLessonDone,
   recordPicturePass,
   saveProgress,
@@ -171,7 +172,7 @@ export default function App() {
    */
   function finishLesson(lesson: Lesson, scores: number[]): PictureOutcome | null {
     const avg = averageScore(scores)
-    let next = recordLessonDone(progress, lesson.id, avg)
+    let next = recordLessonDone(recordAttempt(progress, lesson.id, avg), lesson.id, avg)
     let outcome: PictureOutcome | null = null
     if (catalog && !isBonusLesson(lesson.id)) {
       const pass = recordPicturePass(next, catalog.pictures, avg)

@@ -32,12 +32,16 @@ export interface Progress {
   picturesDone: string[]
   /** Every picture ever completed (oldest first), never reset: the album. */
   album: string[]
+  /** Average score of every finished attempt per lesson id (oldest first, last HISTORY_LIMIT kept). */
+  history: Record<string, number[]>
 }
 
 const KEY = 'fam.prog'
 export const XP_PER_LEVEL = 100
 /** Minimum average score for a lesson to count as passed (opens a picture tile). */
 export const PASS_SCORE = 60
+/** How many finished attempts are remembered per lesson. */
+export const HISTORY_LIMIT = 30
 
 const emptyProgress = (): Progress => ({
   xp: 0,
@@ -48,6 +52,7 @@ const emptyProgress = (): Progress => ({
   picture: null,
   picturesDone: [],
   album: [],
+  history: {},
 })
 
 const dayString = (d: Date) => d.toLocaleDateString('en-CA')
@@ -63,6 +68,18 @@ function parseLessonsDone(raw: unknown): Record<string, LessonDone> {
   if (!isRecord(raw)) return out
   for (const [id, v] of Object.entries(raw)) {
     if (isRecord(v) && finite(v.best) && finite(v.at)) out[id] = { best: v.best, at: v.at }
+  }
+  return out
+}
+
+/** Well-formed attempt lists only: scores 0-100, the last HISTORY_LIMIT kept, bad entries dropped. */
+function parseHistory(raw: unknown): Record<string, number[]> {
+  const out: Record<string, number[]> = {}
+  if (!isRecord(raw)) return out
+  for (const [id, v] of Object.entries(raw)) {
+    if (id === '__proto__' || !Array.isArray(v)) continue
+    const scores = (v as unknown[]).filter((x): x is number => finite(x) && x >= 0 && x <= 100)
+    if (scores.length > 0) out[id] = scores.slice(-HISTORY_LIMIT)
   }
   return out
 }
@@ -110,6 +127,7 @@ export function loadProgress(): Progress {
         picturesDone,
         // Saved before the album existed: start it from what is known to be completed.
         album: Array.isArray(raw.album) ? parseIds(raw.album) : legacyAlbum(picturesDone, picture),
+        history: parseHistory(raw.history),
       }
     }
   } catch {
@@ -138,6 +156,17 @@ export function recordAnswer(p: Progress, xp: number, now = new Date()): Progres
     streak = p.last === yesterday ? p.streak + 1 : 1
   }
   return { ...p, xp: p.xp + xp, streak, last: today, sentences: p.sentences + 1 }
+}
+
+/**
+ * Append the average score of one finished attempt (pass or fail, replays included) to the lesson's
+ * history, keeping the last HISTORY_LIMIT. Non-finite scores are ignored (same object returned). Pure.
+ */
+export function recordAttempt(p: Progress, lessonId: string, avgScore: number): Progress {
+  if (!finite(avgScore)) return p
+  const before = Object.hasOwn(p.history, lessonId) ? p.history[lessonId] : []
+  const scores = [...before, avgScore].slice(-HISTORY_LIMIT)
+  return { ...p, history: { ...p.history, [lessonId]: scores } }
 }
 
 /**

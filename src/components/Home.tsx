@@ -1,7 +1,7 @@
 import type { LoadedCatalog } from '../lib/catalog.ts'
 import { groupStaticLessons } from '../lib/lessonGroups.ts'
 import { bonusLessonId, buildBonusLesson } from '../lib/pictures.ts'
-import type { LessonDone, Progress } from '../lib/progress.ts'
+import { PASS_SCORE, type LessonDone, type Progress } from '../lib/progress.ts'
 import { LESSON_SOURCES, type LessonSourceId } from '../lib/sources.ts'
 import { assetUrl } from '../lib/catalog.ts'
 import type { Lesson, MediaLesson, Picture, StaticLesson } from '../lib/types.ts'
@@ -104,6 +104,7 @@ export function Home({
                     key={l.id}
                     lesson={l}
                     done={Object.hasOwn(progress.lessonsDone, l.id) ? progress.lessonsDone[l.id] : undefined}
+                    attempts={Object.hasOwn(progress.history, l.id) ? progress.history[l.id] : undefined}
                     onStart={() => onStart(l)}
                   />
                 ))}
@@ -186,10 +187,12 @@ export function Home({
 function StaticLessonCard({
   lesson: l,
   done,
+  attempts,
   onStart,
 }: {
   lesson: StaticLesson
   done: LessonDone | undefined
+  attempts: number[] | undefined
   onStart: () => void
 }) {
   return (
@@ -197,6 +200,7 @@ function StaticLessonCard({
       <div>
         <h3>{l.title}</h3>
         <span className="muted">{l.sentences.length} câu</span>
+        {attempts && attempts.length > 0 && <AttemptSquares scores={attempts} />}
       </div>
       <div className="row">
         {done ? <span className="tag">Đã qua · {done.best}</span> : <span className="muted" aria-hidden="true">›</span>}
@@ -204,6 +208,25 @@ function StaticLessonCard({
           Luyện tập
         </button>
       </div>
+    </div>
+  )
+}
+
+/** Squares shown per lesson row; older attempts are summarised as "+N". */
+const MAX_SQUARES = 10
+
+/** Colour class of an attempt: below the pass mark, passed, or excellent. */
+const scoreClass = (score: number) => (score < PASS_SCORE ? 'low' : score < 90 ? 'mid' : 'high')
+
+function AttemptSquares({ scores }: { scores: number[] }) {
+  const hidden = Math.max(0, scores.length - MAX_SQUARES)
+  return (
+    <div className="attempts" role="group" aria-label={`${scores.length} lần luyện`}>
+      {hidden > 0 && <span className="attempts-more">+{hidden}</span>}
+      {scores.slice(hidden).map((score, i) => {
+        const label = `Lần ${hidden + i + 1}: ${Math.round(score)} điểm`
+        return <span key={hidden + i} className={`attempt ${scoreClass(score)}`} title={label} aria-label={label} role="img" />
+      })}
     </div>
   )
 }

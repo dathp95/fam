@@ -8,7 +8,9 @@ import {
   loadProgress,
   PASS_SCORE,
   pickNextPicture,
+  HISTORY_LIMIT,
   recordAnswer,
+  recordAttempt,
   recordLessonDone,
   recordPicturePass,
   xpIntoLevel,
@@ -29,6 +31,7 @@ const progress = (over: Partial<Progress> = {}): Progress => ({
   picture: null,
   picturesDone: [],
   album: [],
+  history: {},
   ...over,
 })
 
@@ -653,5 +656,70 @@ describe('album', () => {
     for (let n = 0; n < 3; n++) realPass(p, [A], 80, seq(0))
     recordPicturePass(p, [A], 80, seq(0))
     expect(p).toEqual(copy)
+  })
+})
+
+describe('attempt history', () => {
+  const stored = (value: unknown) =>
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(value), setItem: () => {} })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('appends every attempt, oldest first, pass or fail', () => {
+    let p = progress()
+    for (const s of [40, 80, 95]) p = recordAttempt(p, 'l1', s)
+    p = recordAttempt(p, 'l2', 70)
+    expect(p.history).toEqual({ l1: [40, 80, 95], l2: [70] })
+  })
+
+  it('keeps only the last 30 attempts', () => {
+    let p = progress()
+    for (let i = 1; i <= 35; i++) p = recordAttempt(p, 'l1', i)
+    expect(p.history.l1).toHaveLength(HISTORY_LIMIT)
+    expect(p.history.l1[0]).toBe(6)
+    expect(p.history.l1.at(-1)).toBe(35)
+  })
+
+  it('does not touch lessonsDone and does not mutate its input', () => {
+    const p = progress({ lessonsDone: { l1: { best: 80, at: 1 } }, history: { l1: [80] } })
+    const copy = structuredClone(p)
+    const next = recordAttempt(p, 'l1', 50)
+    expect(next.lessonsDone).toEqual(p.lessonsDone)
+    expect(p).toEqual(copy)
+  })
+
+  it('ignores non-finite scores and handles ids like "constructor"', () => {
+    const p = progress()
+    expect(recordAttempt(p, 'l1', Number.NaN)).toBe(p)
+    expect(recordAttempt(p, 'constructor', 70).history.constructor).toEqual([70])
+  })
+
+  it('loads data saved without history as empty history, without inventing attempts', () => {
+    stored({ xp: 5, lessonsDone: { l1: { best: 90, at: 1 } } })
+    const loaded = loadProgress()
+    expect(loaded.history).toEqual({})
+    expect(loaded.lessonsDone.l1.best).toBe(90)
+  })
+
+  it('drops invalid history entries and keeps valid ones', () => {
+    stored({ history: { ok: [50, 'x', null, 120, -1, Number.NaN, 77], bad: 'nope', empty: [], none: ['a'], __proto__: [1] } })
+    expect(loadProgress().history).toEqual({ ok: [50, 77] })
+    stored({ history: [1, 2, 3] })
+    expect(loadProgress().history).toEqual({})
+    stored({ history: 'x' })
+    expect(loadProgress().history).toEqual({})
+  })
+
+  it('trims a stored list longer than the limit to the last 30', () => {
+    stored({ history: { l1: Array.from({ length: 40 }, (_, i) => i + 1) } })
+    const h = loadProgress().history.l1
+    expect(h).toHaveLength(HISTORY_LIMIT)
+    expect(h[0]).toBe(11)
+  })
+
+  it('survives a JSON round trip', () => {
+    let p = progress()
+    for (const s of [40, 80, 95]) p = recordAttempt(p, 'l1', s)
+    stored(JSON.parse(JSON.stringify(p)))
+    expect(loadProgress().history).toEqual({ l1: [40, 80, 95] })
   })
 })
