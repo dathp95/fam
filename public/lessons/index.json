@@ -227,17 +227,191 @@
     {
       "id": "voa-03-i-am-here",
       "kind": "static",
-      "title": "Lesson 3: Test",
+      "title": "Lesson 3: I'm here",
       "langId": "en",
-      "createdAt": 1794741135554,
+      "createdAt": 1794752326525,
       "audioUrl": "lessons/voa/voa-03-i-am-here.mp3",
       "duration": 120.306939,
       "sentences": [
         {
-          "id": "smwhqj742zurqav",
-          "text": "I am in my new apartment",
+          "id": "smwhx724dyype1z",
+          "text": "I am in my new apartment!",
           "start": 7,
-          "end": 11
+          "end": 10.5
+        },
+        {
+          "id": "smwhx724dmly5mk",
+          "text": "Great!",
+          "start": 10.5,
+          "end": 12.0
+        },
+        {
+          "id": "smwhx724djyx84g",
+          "text": "I live with Marsha. We’re roommates.",
+          "start": 12.3,
+          "end": 16
+        },
+        {
+          "id": "smwhx724devrkku",
+          "text": "I want to cook dinner.",
+          "start": 16,
+          "end": 19.2
+        },
+        {
+          "id": "smwhx724dtsn1fk",
+          "text": "Oh!",
+          "start": 22,
+          "end": 24
+        },
+        {
+          "id": "smwhx724dy6gbbt",
+          "text": "Is there a supermarket near here?",
+          "start": 26,
+          "end": 30
+        },
+        {
+          "id": "smwhx724dxhxays",
+          "text": "Marsha knows.",
+          "start": 30,
+          "end": 32
+        },
+        {
+          "id": "smwhx724d6r5bhx",
+          "text": "Marsha’s work number is 555-8986.",
+          "start": 32,
+          "end": 40
+        },
+        {
+          "id": "smwhx724dcl9ha6",
+          "text": "Hello. Hello. Is this Marsha?",
+          "start": 42,
+          "end": 46
+        },
+        {
+          "id": "smwhx724dr06msl",
+          "text": "It is Anna.",
+          "start": 46,
+          "end": 47
+        },
+        {
+          "id": "smwhx724d8wb2rr",
+          "text": "I am sorry. You have the wrong number.",
+          "start": 47,
+          "end": 50
+        },
+        {
+          "id": "smwhx724d11zbvh",
+          "text": "Is this 555-8986?",
+          "start": 50,
+          "end": 54
+        },
+        {
+          "id": "smwhx724dpo2v2c",
+          "text": "No. This is 555-8689.",
+          "start": 54,
+          "end": 60
+        },
+        {
+          "id": "smwhx724dpqqj68",
+          "text": "Oh. Excuse me!",
+          "start": 60,
+          "end": 61.5
+        },
+        {
+          "id": "smwhx724ddcl2pc",
+          "text": "Okay. ‘Bye.",
+          "start": 61.5,
+          "end": 63
+        },
+        {
+          "id": "smwhx724d9iqvm5",
+          "text": "One more time. 555-8986.",
+          "start": 63,
+          "end": 70
+        },
+        {
+          "id": "smwhx724dhhwkfy",
+          "text": "Please be Marsha.",
+          "start": 70,
+          "end": 74
+        },
+        {
+          "id": "smwhx724dxznf1k",
+          "text": "Hello. This is Marsha.",
+          "start": 74,
+          "end": 77.6
+        },
+        {
+          "id": "smwhx724dwyriom",
+          "text": "Yes, Marsha. I want to cook dinner.",
+          "start": 77.6,
+          "end": 80.2
+        },
+        {
+          "id": "smwhx724d7gyy7i",
+          "text": "Excuse me?",
+          "start": 80.5,
+          "end": 81.6
+        },
+        {
+          "id": "smwhx724dd771k2",
+          "text": "Anna? Is that you?",
+          "start": 81.7,
+          "end": 83.4
+        },
+        {
+          "id": "smwhx724def00zc",
+          "text": "Oh, yes. I am here!",
+          "start": 83.4,
+          "end": 85
+        },
+        {
+          "id": "smwhx724de0a7ug",
+          "text": "Good. You are there.",
+          "start": 85,
+          "end": 87.3
+        },
+        {
+          "id": "smwhx724d0hthdm",
+          "text": "I want to find a supermarket.",
+          "start": 87.3,
+          "end": 90.1
+        },
+        {
+          "id": "smwhx724diabgqa",
+          "text": "Oh, okay. The supermarket is at 1500 Irving Street.",
+          "start": 90.1,
+          "end": 96.5
+        },
+        {
+          "id": "smwhx724d2ckezo",
+          "text": "It is near the apartment.",
+          "start": 96.5,
+          "end": 98.49
+        },
+        {
+          "id": "smwhx724d3who4l",
+          "text": "Great! Goodbye!",
+          "start": 98.5,
+          "end": 100
+        },
+        {
+          "id": "smwhx724dxghhgn",
+          "text": "Goodbye! Anna",
+          "start": 100.2,
+          "end": 102
+        },
+        {
+          "id": "smwhx724dyn78kh",
+          "text": "There is a big supermarket on our street.",
+          "start": 103.07,
+          "end": 108
+        },
+        {
+          "id": "smwhx724d10mtka",
+          "text": "And Marsha says I am a good cook!",
+          "start": 108,
+          "end": 112
         }
       ],
       "level": "A1",
