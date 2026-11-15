@@ -28,3 +28,4 @@ inbox/
 # Python (process_lesson.py and its tests)
 __pycache__/
 *.pyc
+public/lessons/index.json.bak
