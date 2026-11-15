@@ -84,7 +84,6 @@
         }
       ],
       "level": "A1",
-      "topic": "Meeting people",
       "source": {
         "name": "Voice of America",
         "url": "https://learningenglish.voanews.com/a/lets-learn-english-level-1-lesson-1/5184882.html",
@@ -94,138 +93,160 @@
       "order": 1
     },
     {
-    "id": "voa-l02-hello-im-anna",
-    "kind": "static",
-    "title": "Lesson 2: Hello, I’m Anna!",
-    "langId": "en",
-    "createdAt": 1794721883775,
-    "audioUrl": "lessons/voa/voa-l02-hello-im-anna.mp3",
-    "duration": 48.014127,
-    "sentences": [
+      "id": "voa-l02-hello-im-anna",
+      "kind": "static",
+      "title": "Lesson 2: Hello, I’m Anna!",
+      "langId": "en",
+      "createdAt": 1794721883775,
+      "audioUrl": "lessons/voa/voa-l02-hello-im-anna.mp3",
+      "duration": 48.014127,
+      "sentences": [
         {
-        "id": "smwhf2kcf7fjn0w",
-        "text": "Hey, Pete!",
-        "start": 0,
-        "end": 2
+          "id": "smwhf2kcf7fjn0w",
+          "text": "Hey, Pete!",
+          "start": 0,
+          "end": 2
         },
         {
-        "id": "smwhf2kcfh8q3ks",
-        "text": "Who’s your friend?",
-        "start": 2,
-        "end": 3.9
+          "id": "smwhf2kcfh8q3ks",
+          "text": "Who’s your friend?",
+          "start": 2,
+          "end": 3.9
         },
         {
-        "id": "smwhf2kcfgsml7g",
-        "text": "She is Anna.",
-        "start": 3.75,
-        "end": 5
+          "id": "smwhf2kcfgsml7g",
+          "text": "She is Anna.",
+          "start": 3.75,
+          "end": 5
         },
         {
-        "id": "smwhf2kcfp2833v",
-        "text": "She is new to D.C.",
-        "start": 5,
-        "end": 6.6
+          "id": "smwhf2kcfp2833v",
+          "text": "She is new to D.C.",
+          "start": 5,
+          "end": 6.6
         },
         {
-        "id": "smwhf2kcfmvg453",
-        "text": "Where are you from?",
-        "start": 6.6,
-        "end": 8
+          "id": "smwhf2kcfmvg453",
+          "text": "Where are you from?",
+          "start": 6.6,
+          "end": 8
         },
         {
-        "id": "smwhf2kcfflygbm",
-        "text": "I am from a small town.",
-        "start": 8,
-        "end": 10
+          "id": "smwhf2kcfflygbm",
+          "text": "I am from a small town.",
+          "start": 8,
+          "end": 10
         },
         {
-        "id": "smwhf2kcf4pe15k",
-        "text": "welcome to D.C.",
-        "start": 10,
-        "end": 12
+          "id": "smwhf2kcf4pe15k",
+          "text": "welcome to D.C.",
+          "start": 10,
+          "end": 12
         },
         {
-        "id": "smwhf2kcf8215pr",
-        "text": "Thank you.",
-        "start": 12,
-        "end": 13
+          "id": "smwhf2kcf8215pr",
+          "text": "Thank you.",
+          "start": 12,
+          "end": 13
         },
         {
-        "id": "smwhf2kcfvymmea",
-        "text": "I am Jonathan.",
-        "start": 13,
-        "end": 14
+          "id": "smwhf2kcfvymmea",
+          "text": "I am Jonathan.",
+          "start": 13,
+          "end": 14
         },
         {
-        "id": "smwhf2kcftt3cei",
-        "text": "I am in apartment B4.",
-        "start": 14,
-        "end": 16.3
+          "id": "smwhf2kcftt3cei",
+          "text": "I am in apartment B4.",
+          "start": 14,
+          "end": 16.3
         },
         {
-        "id": "smwhf2kcfe4lb2l",
-        "text": "I am in apartment C2.",
-        "start": 16.3,
-        "end": 18.8
+          "id": "smwhf2kcfe4lb2l",
+          "text": "I am in apartment C2.",
+          "start": 16.3,
+          "end": 18.8
         },
         {
-        "id": "smwhf2kcf5g6fla",
-        "text": "Marsha is my roommate.",
-        "start": 18.8,
-        "end": 21.2
+          "id": "smwhf2kcf5g6fla",
+          "text": "Marsha is my roommate.",
+          "start": 18.8,
+          "end": 21.2
         },
         {
-        "id": "smwhf2kcf18jv3u",
-        "text": "I know Marsha. She is nice.",
-        "start": 21.2,
-        "end": 25
+          "id": "smwhf2kcf18jv3u",
+          "text": "I know Marsha. She is nice.",
+          "start": 21.2,
+          "end": 25
         },
         {
-        "id": "smwhf2kcfsdsvh8",
-        "text": "And I am in Apartment D7.",
-        "start": 25,
-        "end": 28.5
+          "id": "smwhf2kcfsdsvh8",
+          "text": "And I am in Apartment D7.",
+          "start": 25,
+          "end": 28.5
         },
         {
-        "id": "smwhf2kcfe91x08",
-        "text": "I have to go now.",
-        "start": 28.5,
-        "end": 30.2
+          "id": "smwhf2kcfe91x08",
+          "text": "I have to go now.",
+          "start": 28.5,
+          "end": 30.2
         },
         {
-        "id": "smwhf2kcfiwu71l",
-        "text": "Oh Remember to call Marsha at work.",
-        "start": 30.05,
-        "end": 33.3
+          "id": "smwhf2kcfiwu71l",
+          "text": "Oh Remember to call Marsha at work.",
+          "start": 30.05,
+          "end": 33.3
         },
         {
-        "id": "smwhf2kcftc9pmf",
-        "text": "Tell her you’re here.",
-        "start": 33.65,
-        "end": 34.7
+          "id": "smwhf2kcftc9pmf",
+          "text": "Tell her you’re here.",
+          "start": 33.65,
+          "end": 34.7
         },
         {
-        "id": "smwhf2kcfkzgy8r",
-        "text": "Right, thanks, Pete. Nice to meet you!",
-        "start": 34.7,
-        "end": 37.9
+          "id": "smwhf2kcfkzgy8r",
+          "text": "Right, thanks, Pete. Nice to meet you!",
+          "start": 34.7,
+          "end": 37.9
         },
         {
-        "id": "smwhf2kcfe7yhpy",
-        "text": "You too, bye.",
-        "start": 37.9,
-        "end": 40
+          "id": "smwhf2kcfe7yhpy",
+          "text": "You too, bye.",
+          "start": 37.9,
+          "end": 40
         }
-    ],
-    "level": "A1",
-    "topic": "Meeting people",
-    "source": {
+      ],
+      "level": "A1",
+      "source": {
         "name": "Voice of America",
         "url": "https://learningenglish.voanews.com/a/3185254.html",
         "license": "public domain"
+      },
+      "order": 2
     },
-    "order": 2
+    {
+      "id": "voa-03-i-am-here",
+      "kind": "static",
+      "title": "Lesson 3: Test",
+      "langId": "en",
+      "createdAt": 1794741135554,
+      "audioUrl": "lessons/voa/voa-03-i-am-here.mp3",
+      "duration": 120.306939,
+      "sentences": [
+        {
+          "id": "smwhqj742zurqav",
+          "text": "I am in my new apartment",
+          "start": 7,
+          "end": 11
+        }
+      ],
+      "level": "A1",
+      "source": {
+        "name": "Voice of America",
+        "url": "https://learningenglish.voanews.com/",
+        "license": "public domain"
+      },
+      "order": 3
     }
-
   ]
 }

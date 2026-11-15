@@ -12,7 +12,6 @@ const lesson: StaticLesson = {
   duration: 10,
   sentences: [{ id: 's1', text: 'Hi.', start: 0, end: 2 }],
   level: 'A1',
-  topic: 'Greetings',
   source: { name: 'n', url: 'https://example.com', license: 'l' },
   order: 1,
 }

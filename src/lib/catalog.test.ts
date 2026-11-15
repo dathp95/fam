@@ -15,7 +15,7 @@ const lesson = (over: Record<string, unknown> = {}) => ({
     { id: 's2', text: 'How are you?', start: 4, end: 9.5 },
   ],
   level: 'A1',
-  topic: 'Greetings',
+  topic: 'Greetings', // legacy key: must be ignored
   source: { name: 'Test source', url: 'https://example.com/x', license: 'public domain' },
   seriesId: 'demo', // legacy key: must be ignored
   order: 1,
@@ -124,6 +124,17 @@ describe('parseStaticLesson', () => {
 
   it('rejects a lesson whose kind is not "static"', () => {
     expect(parseStaticLesson(lesson({ kind: 'media' })).ok).toBe(false)
+  })
+
+  it('does not need a topic, and silently ignores a legacy one', () => {
+    const { topic: _topic, ...withoutTopic } = lesson()
+    void _topic
+    for (const raw of [withoutTopic, lesson({ topic: 'Meeting people' }), lesson({ topic: 5 })]) {
+      const r = parseStaticLesson(raw)
+      expect(r.ok).toBe(true)
+      if (r.ok) expect('topic' in r.value).toBe(false)
+    }
+    expect(parseLessonsFile(catalog([withoutTopic])).warnings).toEqual([])
   })
 
   it('silently ignores a legacy seriesId, even an empty one', () => {

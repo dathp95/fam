@@ -5,7 +5,7 @@ import { DEFAULT_LESSON_SOURCE } from './sources.ts'
 import type { Level, StaticLesson } from './types.ts'
 
 /** Catalog lesson fixture (test data only, not real content). */
-const cat = (id: string, level: Level, topic: string, order?: number): StaticLesson => ({
+const cat = (id: string, level: Level, order?: number): StaticLesson => ({
   id,
   kind: 'static',
   title: id,
@@ -15,7 +15,6 @@ const cat = (id: string, level: Level, topic: string, order?: number): StaticLes
   duration: 5,
   sentences: [{ id: `${id}-1`, text: 'Hi.', start: 0, end: 2 }],
   level,
-  topic,
   source: { name: 'n', url: 'https://example.com', license: 'l' },
   ...(order !== undefined && { order }),
 })
@@ -30,7 +29,6 @@ const input = (over: Partial<PublishInput> = {}): PublishInput => ({
     { id: 's2', text: 'How are you?', start: 4, end: 9 },
   ],
   level: 'A1',
-  topic: 'Greetings',
   fileName: 'L01 Welcome.mp3',
   existing: [],
   ...over,
@@ -60,7 +58,6 @@ describe('buildStaticLesson', () => {
         { id: 's2', text: 'How are you?', start: 4, end: 9 },
       ],
       level: 'A1',
-      topic: 'Greetings',
       source: { name: 'Voice of America', url: 'https://learningenglish.voanews.com/', license: 'public domain' },
       order: 1,
     })
@@ -68,14 +65,14 @@ describe('buildStaticLesson', () => {
     expect('seriesId' in r.value).toBe(false)
   })
 
-  it('uses the next order after the highest in the same level and topic', () => {
-    const existing = [cat('a', 'A1', 'Greetings', 1), cat('b', 'A1', 'Greetings', 4), cat('c', 'A1', 'Food', 9), cat('d', 'A2', 'Greetings', 7)]
+  it('uses the next order after the highest in the same level', () => {
+    const existing = [cat('a', 'A1', 1), cat('b', 'A1', 4), cat('d', 'A2', 7)]
     const r = buildStaticLesson(input({ existing }))
     expect(r.ok && r.value.order).toBe(5)
   })
 
   it('keeps the order of a catalog lesson with the same id', () => {
-    const existing = [cat('l01-welcome', 'A2', 'Other', 3), cat('x', 'A1', 'Greetings', 8)]
+    const existing = [cat('l01-welcome', 'A2', 3), cat('x', 'A1', 8)]
     const r = buildStaticLesson(input({ existing }))
     expect(r.ok && r.value.order).toBe(3)
   })
@@ -96,7 +93,6 @@ describe('buildStaticLesson', () => {
     expect(errorOf({ title: ' ' })).toContain('tên bài')
     expect(errorOf({ level: '' })).toContain('trình độ')
     expect(errorOf({ level: 'B2' })).toContain('trình độ')
-    expect(errorOf({ topic: '  ' })).toContain('chủ đề')
   })
 
   it('asks the user to rename the file when no id can be derived', () => {
@@ -113,16 +109,16 @@ describe('buildStaticLesson', () => {
 
 describe('nextOrder', () => {
   it('is 1 when nothing matches', () => {
-    expect(nextOrder([], 'x', 'A1', 't')).toBe(1)
-    expect(nextOrder([cat('a', 'A2', 't', 5)], 'x', 'A1', 't')).toBe(1)
+    expect(nextOrder([], 'x', 'A1')).toBe(1)
+    expect(nextOrder([cat('a', 'A2', 5)], 'x', 'A1')).toBe(1)
   })
 
   it('counts lessons without an order as 0', () => {
-    expect(nextOrder([cat('a', 'A1', 't')], 'x', 'A1', 't')).toBe(1)
+    expect(nextOrder([cat('a', 'A1')], 'x', 'A1')).toBe(1)
   })
 
   it('falls back to the computed order when the same-id lesson has no order', () => {
-    expect(nextOrder([cat('x', 'A1', 't'), cat('a', 'A1', 't', 2)], 'x', 'A1', 't')).toBe(3)
+    expect(nextOrder([cat('x', 'A1'), cat('a', 'A1', 2)], 'x', 'A1')).toBe(3)
   })
 })
 

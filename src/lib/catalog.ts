@@ -74,8 +74,6 @@ export function parseStaticLesson(raw: unknown): ParseResult<StaticLesson> {
   if (!finite(raw.duration) || raw.duration <= 0) return fail('duration phải là số dương (giây).')
   const level = LEVELS.find((l) => l === raw.level)
   if (!level) return fail(`level phải là ${LEVELS.join(' hoặc ')}.`)
-  const topic = text(raw.topic)
-  if (!topic) return fail('thiếu topic.')
   if (!isRecord(raw.source)) return fail('thiếu source.')
   const name = text(raw.source.name)
   const url = text(raw.source.url)
@@ -105,7 +103,6 @@ export function parseStaticLesson(raw: unknown): ParseResult<StaticLesson> {
       duration: raw.duration,
       sentences: sentences.value,
       level,
-      topic,
       source: { name, url, license },
       ...(order !== undefined && { order }),
     },

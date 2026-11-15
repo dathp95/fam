@@ -44,7 +44,7 @@ def signal(sample_rate: int, segments: list[list[float]]) -> array.array:
 def good_lesson(**over) -> dict:
     lesson = pl.build_lesson(
         "test-l01",
-        pl.Meta("Test", "https://example.com/x", "Topic", "A1", None, False),
+        pl.Meta("Test", "https://example.com/x", "A1", None, False),
         10.0,
         [
             {"text": "Hello there.", "start": 0.0, "end": 4.0},
@@ -305,7 +305,7 @@ class HeaderTests(unittest.TestCase):
         header, transcript, warnings = pl.parse_lesson_text(raw)
         self.assertEqual(
             header,
-            {"title": "Lesson 2: At home", "url": "https://example.com/a", "topic": "Daily life", "level": "A1", "order": "2"},
+            {"title": "Lesson 2: At home", "url": "https://example.com/a", "level": "A1", "order": "2"},
         )
         self.assertEqual(transcript, "Hello.\nBye.")
         self.assertEqual(warnings, [])
@@ -346,16 +346,16 @@ class MetaTests(unittest.TestCase):
 
     def test_defaults(self):
         meta, warnings = pl.resolve_meta("voa-l02", {}, self.LEVELS)
-        self.assertEqual((meta.title, meta.level, meta.topic, meta.order), ("voa-l02", "A1", "Daily English", None))
+        self.assertEqual((meta.title, meta.level, meta.order), ("voa-l02", "A1", None))
         self.assertEqual(meta.url, "https://learningenglish.voanews.com/")
         self.assertTrue(meta.url_is_default)
         self.assertEqual(len(warnings), 1)
         self.assertIn("CẢNH BÁO", warnings[0])
 
     def test_given_values_and_no_warning_when_the_url_is_given(self):
-        header = {"title": "Lesson 2", "url": "https://example.com/a", "topic": "Home", "level": "a2", "order": "2"}
+        header = {"title": "Lesson 2", "url": "https://example.com/a", "level": "a2", "order": "2"}
         meta, warnings = pl.resolve_meta("x", header, self.LEVELS)
-        self.assertEqual((meta.title, meta.url, meta.topic, meta.level, meta.order), ("Lesson 2", "https://example.com/a", "Home", "A2", 2))
+        self.assertEqual((meta.title, meta.url, meta.level, meta.order), ("Lesson 2", "https://example.com/a", "A2", 2))
         self.assertEqual(warnings, [])
 
     def test_invalid_level_order_and_url(self):
@@ -404,7 +404,7 @@ class BuildLessonTests(unittest.TestCase):
 
     def test_order_comes_last_and_only_when_given(self):
         self.assertNotIn("order", good_lesson())
-        meta = pl.Meta("T", "https://example.com", "x", "A1", 3, False)
+        meta = pl.Meta("T", "https://example.com", "A1", 3, False)
         lesson = pl.build_lesson("x", meta, 5.0, [{"text": "A.", "start": 0, "end": 5}], 1)
         self.assertEqual(list(lesson.keys())[-1], "order")
         self.assertEqual(lesson["order"], 3)
@@ -433,7 +433,7 @@ class ValidateLessonTests(unittest.TestCase):
         return pl.validate_lesson(lesson)
 
     def test_required_text_fields(self):
-        for key in ("id", "title", "audioUrl", "topic"):
+        for key in ("id", "title", "audioUrl"):
             for bad in ("", "   ", None, 5):
                 with self.subTest(field=key, value=bad):
                     self.assertTrue(self.errors(**{key: bad}), key)
@@ -830,7 +830,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(cat["pictures"], self.initial["pictures"])  # untouched
         (lesson,) = cat["lessons"]
         self.assertEqual(pl.validate_lesson(lesson, ("A1", "A2")), [])
-        self.assertEqual((lesson["id"], lesson["title"], lesson["level"], lesson["topic"], lesson["order"]), ("test-l01", "Test lesson", "A2", "Testing", 4))
+        self.assertEqual((lesson["id"], lesson["title"], lesson["level"], lesson["order"]), ("test-l01", "Test lesson", "A2", 4))
+        self.assertNotIn("topic", lesson)  # a legacy "topic:" header line is read but not stored
         self.assertEqual(lesson["audioUrl"], "lessons/voa/test-l01.mp3")
         self.assertEqual(lesson["source"], {"name": "Voice of America", "url": "https://example.com/lesson", "license": "public domain"})
         self.assertEqual([s["text"] for s in lesson["sentences"]], ["One two three four.", "Five six seven eight.", "Nine ten eleven twelve."])
@@ -944,7 +945,8 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("CẢNH BÁO", self.output())
         lesson = self.catalog()["lessons"][0]
         self.assertEqual(lesson["source"]["url"], "https://learningenglish.voanews.com/")
-        self.assertEqual((lesson["title"], lesson["level"], lesson["topic"]), ("test-l01", "A1", "Daily English"))
+        self.assertEqual((lesson["title"], lesson["level"]), ("test-l01", "A1"))
+        self.assertNotIn("topic", lesson)
         self.assertNotIn("order", lesson)
 
     def test_the_period_note_lists_the_lines_that_got_one(self):
@@ -1148,14 +1150,23 @@ class ImportJsonTests(AudioFixture):
     def test_an_invalid_lesson_is_rejected_in_vietnamese_and_nothing_is_written(self):
         self.raw("voa-l90-a")
         before = self.catalog_path.read_bytes()
-        code, result, _ = self.run_import(self.write_json(exported(level="C2", topic="")))
+        code, result, _ = self.run_import(self.write_json(exported(level="C2")))
         self.assertEqual(code, 1)
         self.assertFalse(result["ok"])
         self.assertIn("Bài không hợp lệ", result["error"])
         self.assertIn("level", result["error"])
-        self.assertIn("topic", result["error"])
         self.assertEqual(self.catalog_path.read_bytes(), before)
         self.assertFalse(self.converted.exists())
+
+    def test_a_legacy_topic_is_dropped_before_the_lesson_is_written(self):
+        self.raw("voa-l90-a")
+        code, _, _ = self.run_import(self.write_json(exported(topic="Meeting people")))
+        self.assertEqual(code, 0, self.output())
+        self.assertNotIn("topic", self.catalog()["lessons"][1])
+
+    def test_a_lesson_without_a_topic_is_valid(self):
+        self.assertNotIn("topic", exported())
+        self.assertEqual(pl.validate_lesson(exported(), ("A1", "A2")), [])
 
     def test_an_audio_url_that_does_not_match_the_id_is_rejected(self):
         self.raw("voa-l90-a")

@@ -29,7 +29,6 @@ Tên file là mã bài: chỉ chữ thường a-z, số 0-9 và dấu gạch nga
 ```text
 title: Lesson 2: At home
 url: https://learningenglish.voanews.com/a/...
-topic: Daily life
 level: A1
 order: 2
 ---
@@ -37,7 +36,7 @@ Anna: This is my home.
 It has two rooms.
 ```
 
-Khi thiếu: `title` lấy theo mã bài, `level` A1, `topic` "Daily English", nguồn "Voice of America · public domain", `url` là trang chung (script in CẢNH BÁO, hãy điền url của trang bài học).
+Khi thiếu: `title` lấy theo mã bài, `level` A1, nguồn "Voice of America · public domain", `url` là trang chung (script in CẢNH BÁO, hãy điền url của trang bài học).
 
 ```bash
 python process_lesson.py --id voa-l02-at-home --dry-run   # xem trước bảng câu, chưa ghi gì
@@ -51,16 +50,16 @@ Kiểm thử script: `npm run test:py` (hoặc `python -m unittest discover -s t
 
 ## Bài có sẵn và xuất bài (admin)
 
-Trên Home, bài có sẵn được nhóm theo trình độ (A1, A2), rồi chủ đề, rồi `order` (tăng dần; thiếu `order` thì xuống cuối). `seriesId` không còn (khóa cũ trong JSON bị bỏ qua) và Home không hiện dòng nguồn của bài; dữ liệu `source` vẫn nằm trong JSON.
+Trên Home, bài có sẵn được nhóm theo trình độ (A1, A2), rồi `order` (tăng dần; thiếu `order` thì xuống cuối). `seriesId` không còn (khóa cũ trong JSON bị bỏ qua) và Home không hiện dòng nguồn của bài; dữ liệu `source` vẫn nằm trong JSON.
 
-Để tạo bài bằng giao diện, mở app với `?admin`, tải file và dán chữ, rồi ở màn "Xem lại các câu" chọn "Trình độ" và "Chủ đề" trong khối "Phân loại" và bấm "Xuất bài (JSON)". Mã bài là tên file audio (chữ thường, gạch ngang), `audioUrl` là `lessons/voa/<id>.mp3`, `order` tự lấy số kế tiếp trong cùng trình độ và chủ đề, nguồn lấy mặc định ở `DEFAULT_LESSON_SOURCE` (`src/lib/sources.ts`). Đặt audio vào `public/<audioUrl>` và dán JSON vào mảng `lessons` của `public/lessons/index.json`. Khi chạy `npm run dev` còn có nút "Đưa vào danh mục" làm tất cả các bước đặt audio và thêm vào `index.json` tự động (xem mục ngay dưới).
+Để tạo bài bằng giao diện, mở app với `?admin`, tải file và dán chữ, rồi ở màn "Xem lại các câu" chọn "Trình độ" trong khối "Phân loại" (không còn chủ đề) và bấm "Xuất bài (JSON)". Mã bài là tên file audio (chữ thường, gạch ngang), `audioUrl` là `lessons/voa/<id>.mp3`, `order` tự lấy số kế tiếp trong cùng trình độ, nguồn lấy mặc định ở `DEFAULT_LESSON_SOURCE` (`src/lib/sources.ts`). Đặt audio vào `public/<audioUrl>` và dán JSON vào mảng `lessons` của `public/lessons/index.json`. Khi chạy `npm run dev` còn có nút "Đưa vào danh mục" làm tất cả các bước đặt audio và thêm vào `index.json` tự động (xem mục ngay dưới).
 
 ## Đưa bài vào danh mục tự động (chỉ khi chạy npm run dev)
 
 Cần Python 3.10+ và ffmpeg như ở mục "Nạp bài bằng Python". **Luôn đặt file audio gốc vào `inbox/lessons/<mã bài>.mp3` trước** (tên file = mã bài, chữ thường, số và dấu gạch ngang; cũng nhận `.m4a`, `.wav`).
 
 1. **Chỉ chuyển audio**: `python process_lesson.py --audio-only [--id <mã>] [--dry-run] [--force] [--keep-inbox]` chuyển mọi file audio trong `inbox/lessons/` (hoặc đúng một file với `--id`) sang `public/lessons/voa/<mã>.mp3` (mono, 48 kbps), không cần file `.txt` và không đụng `index.json`. Bỏ qua (có thông báo) nếu file đích đã có, trừ khi dùng `--force`; in độ dài và dung lượng trước/sau; file gốc được chuyển vào `inbox/lessons/done/` (trừ khi `--keep-inbox`).
-2. **Nút "Đưa vào danh mục"**: chạy `npm run dev`, mở `/?admin`, tải file audio (tên file = mã bài) cùng chữ đã dán, "Tách câu", chọn "Trình độ" và "Chủ đề", bấm "Đưa vào danh mục". Máy chủ dev gọi `python process_lesson.py --import-json -`: kiểm tra bài, chuyển audio gốc (hoặc dùng lại `public/lessons/voa/<mã>.mp3` đã có), thêm bài vào `public/lessons/index.json` (sao lưu `index.json.bak`) rồi chuyển file gốc vào `inbox/lessons/done/`. Tải lại trang để thấy bài. Nếu mã bài đã có, app báo và hiện nút "Thay bài cũ". Lệnh `--import-json` dùng được riêng: `python process_lesson.py --import-json bai.json` (hoặc `-` để đọc stdin); nhật ký ra stderr, dòng cuối của stdout là một dòng JSON `{"ok": ...}`.
+2. **Nút "Đưa vào danh mục"**: chạy `npm run dev`, mở `/?admin`, tải file audio (tên file = mã bài) cùng chữ đã dán, "Tách câu", chọn "Trình độ", bấm "Đưa vào danh mục". Máy chủ dev gọi `python process_lesson.py --import-json -`: kiểm tra bài, chuyển audio gốc (hoặc dùng lại `public/lessons/voa/<mã>.mp3` đã có), thêm bài vào `public/lessons/index.json` (sao lưu `index.json.bak`) rồi chuyển file gốc vào `inbox/lessons/done/`. Tải lại trang để thấy bài. Nếu mã bài đã có, app báo và hiện nút "Thay bài cũ". Lệnh `--import-json` dùng được riêng: `python process_lesson.py --import-json bai.json` (hoặc `-` để đọc stdin); nhật ký ra stderr, dòng cuối của stdout là một dòng JSON `{"ok": ...}`.
 
 Nút này **không bao giờ có trong bản public**: cầu nối (`scripts/admin-publish.ts`) là plugin Vite chỉ chạy ở `npm run dev` (không có trong `vite build`, `vite preview` hay trang đã đăng), nút chỉ hiện khi `import.meta.env.DEV` và có `?admin`, và máy chủ chỉ nhận yêu cầu từ chính máy này (socket loopback, Origin cục bộ; chạy `npm run dev -- --host` thì máy khác bị trả 403).
 

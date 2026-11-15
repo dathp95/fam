@@ -14,7 +14,6 @@ Phần đầu (tùy chọn) của file .txt, kết thúc bằng một dòng ch�
 
     title: Lesson 2: At home
     url: https://learningenglish.voanews.com/a/...
-    topic: Daily life
     level: A1
     order: 2
     ---
@@ -68,10 +67,10 @@ SNAP_RADIUS = 2.0  # giây: mốc câu chỉ "hít" vào quãng im lặng trong 
 SAMPLE_RATE = 16000  # tần số lấy mẫu khi giải mã để phân tích
 AUDIO_EXTS = (".mp3", ".m4a", ".wav")
 DEFAULT_LEVELS = ("A1", "A2")  # dự phòng nếu không đọc được LEVELS từ src/lib/types.ts
-HEADER_KEYS = ("title", "url", "topic", "level", "order")
+HEADER_KEYS = ("title", "url", "level", "order")
+IGNORED_HEADER_KEYS = ("topic",)  # khóa cũ: vẫn đọc được file .txt cũ nhưng bỏ qua
 
 DEFAULT_LEVEL = "A1"
-DEFAULT_TOPIC = "Daily English"
 DEFAULT_SOURCE_NAME = "Voice of America"
 DEFAULT_LICENSE = "public domain"
 DEFAULT_URL = "https://learningenglish.voanews.com/"
@@ -296,7 +295,6 @@ def clean_transcript(raw: str) -> tuple[str, list[str]]:
 class Meta:
     title: str
     url: str
-    topic: str
     level: str
     order: int | None
     url_is_default: bool
@@ -317,9 +315,11 @@ def parse_lesson_text(raw: str) -> tuple[dict[str, str], str, list[str]]:
         if not m:
             raise LessonError(
                 f'Dòng đầu file không đúng dạng "khóa: giá trị": "{line.strip()}". '
-                "Phần trước dòng --- chỉ được có title, url, topic, level, order."
+                "Phần trước dòng --- chỉ được có title, url, level, order."
             )
         key = m.group(1).lower()
+        if key in IGNORED_HEADER_KEYS:
+            continue
         if key not in HEADER_KEYS:
             warnings.append(f'Bỏ qua khóa không biết trong phần đầu: "{m.group(1)}".')
             continue
@@ -351,7 +351,6 @@ def resolve_meta(lesson_id: str, header: dict[str, str], levels: tuple[str, ...]
     meta = Meta(
         title=header.get("title", "").strip() or lesson_id,
         url=url,
-        topic=header.get("topic", "").strip() or DEFAULT_TOPIC,
         level=level,
         order=order,
         url_is_default=url_is_default,
@@ -405,7 +404,6 @@ def build_lesson(
             for n, s in enumerate(aligned, start=1)
         ],
         "level": meta.level,
-        "topic": meta.topic,
         "source": {"name": DEFAULT_SOURCE_NAME, "url": meta.url, "license": DEFAULT_LICENSE},
     }
     if meta.order is not None:
@@ -437,8 +435,6 @@ def validate_lesson(lesson: dict[str, Any], levels: tuple[str, ...] = DEFAULT_LE
         errors.append("duration phải là số dương (giây).")
     if lesson.get("level") not in levels:
         errors.append(f"level phải là {' hoặc '.join(levels)}.")
-    if not _text(lesson.get("topic")):
-        errors.append("thiếu topic.")
     source = lesson.get("source")
     if not isinstance(source, dict) or not all(_text(source.get(k)) for k in ("name", "url", "license")):
         errors.append("source cần đủ name, url và license.")
@@ -948,6 +944,7 @@ def import_lesson(lesson: dict[str, Any], ctx: Context) -> dict[str, Any]:
     Trả về {"id", "action": "added" | "replaced" | "dry", "audio"}; ném LessonError khi lỗi.
     """
     say = ctx.out
+    lesson = {k: v for k, v in lesson.items() if k != "topic"}  # khóa cũ, không còn dùng
     lesson_id = lesson.get("id")
     if not isinstance(lesson_id, str):
         raise LessonError("Bài không hợp lệ:\n    - thiếu id.")

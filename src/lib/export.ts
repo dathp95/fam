@@ -11,7 +11,6 @@ export interface PublishInput {
   duration: number
   sentences: TimedSentence[]
   level: string
-  topic: string
   /** Name of the chosen audio file; the lesson id and audioUrl are derived from it. */
   fileName: string
   /** Lessons of the loaded catalog, used to pick the order (may be empty). */
@@ -35,12 +34,12 @@ export const audioUrlFor = (id: string) => `lessons/voa/${id}.mp3`
 
 /**
  * Order of an exported lesson: the order of the catalog lesson with the same id if it has one,
- * otherwise (highest order among lessons with the same level and topic) + 1, or 1 when none.
+ * otherwise (highest order among lessons of the same level) + 1, or 1 when none.
  */
-export function nextOrder(existing: StaticLesson[], id: string, level: string, topic: string): number {
+export function nextOrder(existing: StaticLesson[], id: string, level: string): number {
   const same = existing.find((l) => l.id === id)
   if (same?.order !== undefined) return same.order
-  const orders = existing.filter((l) => l.level === level && l.topic === topic).map((l) => l.order ?? 0)
+  const orders = existing.filter((l) => l.level === level).map((l) => l.order ?? 0)
   return Math.max(0, ...orders) + 1
 }
 
@@ -55,9 +54,6 @@ export function buildStaticLesson(input: PublishInput): ParseResult<StaticLesson
   const level = LEVELS.find((l) => l === input.level)
   if (!level) return fail(`Hãy chọn trình độ (${LEVELS.join(' hoặc ')}).`)
 
-  const topic = input.topic.trim()
-  if (!topic) return fail('Hãy nhập chủ đề.')
-
   const result = parseStaticLesson({
     id,
     kind: 'static',
@@ -68,9 +64,8 @@ export function buildStaticLesson(input: PublishInput): ParseResult<StaticLesson
     duration: input.duration,
     sentences: input.sentences,
     level,
-    topic,
     source: DEFAULT_LESSON_SOURCE,
-    order: nextOrder(input.existing, id, level, topic),
+    order: nextOrder(input.existing, id, level),
   })
   return result.ok ? result : fail(`Dữ liệu chưa hợp lệ: ${result.error}`)
 }

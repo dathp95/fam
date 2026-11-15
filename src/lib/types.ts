@@ -49,9 +49,8 @@ export interface StaticLesson extends LessonBase {
   duration: number
   sentences: TimedSentence[]
   level: Level
-  topic: string
   source: SourceInfo
-  /** Position inside the same level and topic (starts at 1). */
+  /** Position inside the same level (starts at 1). */
   order?: number
 }
 

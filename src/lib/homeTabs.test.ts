@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { currentLesson, HOME_TABS, orderedLessons, stepTab } from './homeTabs.ts'
 import type { Level, StaticLesson } from './types.ts'
 
-const l = (id: string, level: Level, topic: string, order?: number): StaticLesson => ({
+const l = (id: string, level: Level, order?: number): StaticLesson => ({
   id,
   kind: 'static',
   title: id,
@@ -12,7 +12,6 @@ const l = (id: string, level: Level, topic: string, order?: number): StaticLesso
   duration: 5,
   sentences: [{ id: `${id}-1`, text: 'Hi.', start: 0, end: 2 }],
   level,
-  topic,
   source: { name: 'n', url: 'https://example.com', license: 'l' },
   ...(order !== undefined && { order }),
 })
@@ -25,9 +24,9 @@ describe('HOME_TABS', () => {
 })
 
 describe('orderedLessons / currentLesson', () => {
-  const lessons = [l('b2', 'A2', 't', 1), l('a2', 'A1', 't', 2), l('a1', 'A1', 't', 1)]
+  const lessons = [l('b2', 'A2', 1), l('a2', 'A1', 2), l('a1', 'A1', 1)]
 
-  it('orders by level, topic and order', () => {
+  it('orders by level and order', () => {
     expect(orderedLessons(lessons).map((x) => x.id)).toEqual(['a1', 'a2', 'b2'])
   })
 

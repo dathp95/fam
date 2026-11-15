@@ -59,7 +59,7 @@ export function Home({
     }
   }
 
-  // Level -> topic -> lessons by `order`; topics are not shown, and a single level has no heading.
+  // Level -> lessons by `order`; a single level has no heading.
   const levels = catalog ? groupStaticLessons(catalog.lessons) : []
   const isDone = (id: string) => Object.hasOwn(progress.lessonsDone, id)
   const rowFor = (l: StaticLesson) => (
@@ -151,7 +151,7 @@ export function Home({
               {levels.map((g) => (
                 <div className="stack" key={g.level}>
                   {levels.length > 1 && <h3 className="group-title">{g.level}</h3>}
-                  {g.topics.flatMap((t) => t.lessons).map(rowFor)}
+                  {g.lessons.map(rowFor)}
                 </div>
               ))}
             </div>

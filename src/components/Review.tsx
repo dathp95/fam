@@ -5,14 +5,13 @@ import { buildStaticLesson, downloadJson } from '../lib/export.ts'
 import { hasAdminParam } from '../lib/features.ts'
 import { getLanguage } from '../lib/languages.ts'
 import { mergeSentences, splitSentenceAt } from '../lib/segment.ts'
-import { topicsOf } from '../lib/lessonGroups.ts'
 import { LEVELS, type Draft, type MediaLesson, type StaticLesson, type TimedSentence } from '../lib/types.ts'
 
 interface Props {
   draft: Draft
   onSave: (lesson: MediaLesson, media: Blob) => Promise<void>
   onCancel: () => void
-  /** Built-in lessons of the loaded catalog (for the topic suggestions and the automatic order). */
+  /** Built-in lessons of the loaded catalog (for the automatic order). */
   catalogLessons: StaticLesson[]
 }
 
@@ -36,7 +35,6 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [level, setLevel] = useState('')
-  const [topic, setTopic] = useState('')
   const [exportError, setExportError] = useState('')
   const [exportNote, setExportNote] = useState('')
   const [canReplace, setCanReplace] = useState(false)
@@ -79,7 +77,6 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
       duration: draft.duration,
       sentences,
       level,
-      topic,
       // Saved lessons do not remember the original file name; their title is the best stand-in.
       fileName: draft.fileName ?? draft.title,
       existing: catalogLessons,
@@ -184,15 +181,6 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
                 </option>
               ))}
             </select>
-          </label>
-          <label>
-            Chủ đề
-            <input type="text" list="topic-options" value={topic} onChange={(e) => setTopic(e.target.value)} />
-            <datalist id="topic-options">
-              {topicsOf(catalogLessons).map((t) => (
-                <option key={t} value={t} />
-              ))}
-            </datalist>
           </label>
           <div className="row wide">
             <button className="btn" onClick={exportJson}>

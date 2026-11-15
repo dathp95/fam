@@ -11,9 +11,9 @@ export const HOME_TABS: readonly { id: HomeTab; label: string }[] = [
   { id: 'album', label: 'Albums' },
 ]
 
-/** Lessons in the order Home lists them: by level, then topic, then `order`. */
+/** Lessons in the order Home lists them: by level, then `order`. */
 export function orderedLessons(lessons: StaticLesson[]): StaticLesson[] {
-  return groupStaticLessons(lessons).flatMap((level) => level.topics.flatMap((t) => t.lessons))
+  return groupStaticLessons(lessons).flatMap((level) => level.lessons)
 }
 
 /**
