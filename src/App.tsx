@@ -48,7 +48,7 @@ type View =
     }
 
 export default function App() {
-  const { theme, toggle } = useTheme()
+  const { mode, setMode } = useTheme()
   const [progress, setProgress] = useState<Progress>(loadProgress)
   const [saved, setSaved] = useState<MediaLesson[]>([])
   const [catalog, setCatalog] = useState<LoadedCatalog | null>(null)
@@ -223,7 +223,7 @@ export default function App() {
 
   return (
     <div className="wrap">
-      <TopBar progress={progress} theme={theme} onToggleTheme={toggle} />
+      <TopBar progress={progress} mode={mode} onSetTheme={setMode} onHome={goHome} />
       {view.name === 'home' && (
         <Home
           progress={progress}

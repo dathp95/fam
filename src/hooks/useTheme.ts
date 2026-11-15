@@ -1,48 +1,40 @@
 import { useCallback, useEffect, useState } from 'react'
+import { dataThemeFor, parseThemeMode, type ThemeMode } from '../lib/theme.ts'
 
-export type Theme = 'light' | 'dark'
 const KEY = 'fam.theme'
 
-function readStored(): Theme | null {
+function readStored(): ThemeMode {
   try {
-    const v = localStorage.getItem(KEY)
-    return v === 'light' || v === 'dark' ? v : null
+    return parseThemeMode(localStorage.getItem(KEY))
   } catch {
-    return null
+    return 'system'
   }
 }
 
-const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
-
-/** Explicit choice overrides the system preference; until chosen, follows the system. */
+/**
+ * Light / dark / system. The choice is saved in localStorage and applied as data-theme on <html>
+ * ("system" removes the attribute so the CSS follows prefers-color-scheme). index.html applies the
+ * saved value before first paint, so there is no flash.
+ */
 export function useTheme() {
-  const [stored, setStored] = useState<Theme | null>(readStored)
-  const [systemDark, setSystemDark] = useState(() => darkQuery().matches)
-
-  useEffect(() => {
-    const q = darkQuery()
-    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches)
-    q.addEventListener('change', onChange)
-    return () => q.removeEventListener('change', onChange)
-  }, [])
+  const [mode, setModeState] = useState<ThemeMode>(readStored)
 
   useEffect(() => {
     const root = document.documentElement
-    if (stored) root.dataset.theme = stored
+    const value = dataThemeFor(mode)
+    if (value) root.dataset.theme = value
     else delete root.dataset.theme
-  }, [stored])
+  }, [mode])
 
-  const theme: Theme = stored ?? (systemDark ? 'dark' : 'light')
-
-  const toggle = useCallback(() => {
-    const next: Theme = theme === 'dark' ? 'light' : 'dark'
-    setStored(next)
+  const setMode = useCallback((next: ThemeMode) => {
+    setModeState(next)
     try {
-      localStorage.setItem(KEY, next)
+      if (next === 'system') localStorage.removeItem(KEY)
+      else localStorage.setItem(KEY, next)
     } catch {
-      /* ignore */
+      /* storage may be disabled */
     }
-  }, [theme])
+  }, [])
 
-  return { theme, toggle }
+  return { mode, setMode }
 }

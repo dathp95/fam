@@ -70,7 +70,7 @@ App là web tĩnh (không máy chủ). Đường dẫn gốc lấy từ biến `
 
 ## Trang giới thiệu, ủng hộ và ảnh QR
 
-Chân trang Home có hai liên kết nhỏ: "Giới thiệu và nguồn" (giới thiệu, nguồn VOA và Met, email hợp tác, nút "Ủng hộ dự án") và "Ủng hộ" (lời kêu gọi song ngữ, mã QR, tên chủ tài khoản, ngân hàng, nội dung chuyển khoản, nút sao chép). Mọi văn bản công khai nằm trong `src/lib/siteInfo.ts` (`OWNER_NAME`, `BANK_NAME`, `TRANSFER_NOTE`, `CONTACT_EMAIL`, ...); **không ghi số tài khoản ở bất kỳ đâu trong mã, chỉ ảnh QR mang thông tin này**.
+Chân trang Home có hai liên kết nhỏ: "Giới thiệu và nguồn" (giới thiệu, nguồn VOA và Met, email hợp tác, nút "Ủng hộ dự án") và "Ủng hộ" (lời kêu gọi song ngữ, mã QR, tên chủ tài khoản, ngân hàng, nội dung chuyển khoản, nút sao chép). Mọi văn bản công khai nằm trong `src/lib/siteInfo.ts` (`OWNER_NAME`, `BANK_NAME`, `TRANSFER_NOTE`, `CONTACT_EMAIL`, ...); số tài khoản (`ACCOUNT_NUMBER`) cũng nằm ở đó và hiển thị công khai trên màn Ủng hộ; muốn ẩn thì xóa dòng này và dòng hiển thị tương ứng.
 
 Ảnh QR đặt ở `public/support-qr.jpg` (khoảng 600×600 px; app luôn tìm đúng tên file này). Nếu thiếu file hoặc không tải được, màn hình hiện dòng "Mã QR sẽ được cập nhật." thay cho ảnh. Trên Home còn nút nhỏ "Tiến độ được lưu ở đâu?" (bấm để hiện ghi chú: tiến độ chỉ lưu trong trình duyệt; không nhớ trạng thái đóng/mở).
 

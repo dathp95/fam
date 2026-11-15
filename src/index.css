@@ -1,23 +1,30 @@
 /* Layout: one centered column, a persistent progress strip on top, one task per screen. */
+/* Colours come from the --fam-* tokens (src/styles/theme.css, which switches light/dark/system).
+   The names below are what this stylesheet uses; change a colour in theme.css, not here. */
 :root {
-  --bg: #f2f5f7; --card: #ffffff; --ink: #14202b; --muted: #5b6b78; --line: #d9e1e7;
-  --accent: #0f7b6c; --accent-ink: #ffffff; --xp: #d98a00;
-  --ok: #17803d; --ok-bg: #dff3e5; --bad: #b3261e; --bad-bg: #fbe3e1; --extra: #6a5a8a;
+  --bg: var(--fam-surface);
+  --ink: var(--fam-text);
+  --accent: var(--fam-primary);
+  --accent-ink: var(--fam-surface);
+  --xp: var(--fam-accent);
+  --card: color-mix(in srgb, var(--fam-surface), var(--fam-text) 5%);
+  --muted: color-mix(in srgb, var(--fam-text) 68%, var(--fam-surface));
+  --line: color-mix(in srgb, var(--fam-text) 16%, var(--fam-surface));
+  --ok: var(--fam-primary);
+  --ok-bg: color-mix(in srgb, var(--fam-primary) 16%, var(--fam-surface));
+  /* Status colours without a brand token: errors and "extra word" marks. */
+  --bad: #b3261e; --bad-bg: #fbe3e1; --extra: #6a5a8a;
   --display: 'Sora', system-ui, sans-serif; --body: 'Source Sans 3', system-ui, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0f171d; --card: #17222a; --ink: #e8eef2; --muted: #9bacb8; --line: #2a3a45;
-    --accent: #3ec7b0; --accent-ink: #06211c; --xp: #f2b43a;
-    --ok: #6fdc93; --ok-bg: #1b3a29; --bad: #ff8f86; --bad-bg: #43211f; --extra: #b7a6dc;
+    --bad: #ff8f86; --bad-bg: #43211f; --extra: #b7a6dc;
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --bg: #0f171d; --card: #17222a; --ink: #e8eef2; --muted: #9bacb8; --line: #2a3a45;
-  --accent: #3ec7b0; --accent-ink: #06211c; --xp: #f2b43a;
-  --ok: #6fdc93; --ok-bg: #1b3a29; --bad: #ff8f86; --bad-bg: #43211f; --extra: #b7a6dc;
+  --bad: #ff8f86; --bad-bg: #43211f; --extra: #b7a6dc;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -27,7 +34,8 @@ button, input, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
 .top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 0 20px; }
-.brand { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; margin-right: auto; }
+.brand { margin-right: auto; display: block; padding: 0; border: 0; background: none; text-align: left; color: inherit; cursor: pointer; }
+.brand svg { display: block; }
 .brand small { display: block; font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); letter-spacing: 0; }
 .stat { display: flex; flex-direction: column; min-width: 64px; }
 .stat b { font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums; }
@@ -154,7 +162,7 @@ body:has(.practice) { overflow: hidden; overscroll-behavior: none; }
 .practice textarea.is-hidden { position: absolute; width: 1px !important; height: 1px !important; min-height: 0; padding: 0; border: 0; opacity: 0; overflow: hidden; pointer-events: none; }
 .practice-result { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 14px; padding: 10px 12px; border: 1px solid var(--ok); border-radius: 10px; background: var(--ok-bg); max-height: 9em; overflow: auto; }
 .practice-score { display: flex; flex-direction: column; align-items: center; min-width: 84px; }
-.practice-score b { font-family: var(--display); font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.practice-score b { font-family: var(--display); font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--fam-accent); }
 .practice-score span { margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--ok); white-space: nowrap; }
 .practice-score strong { font-weight: 700; }
 .practice-score.low span { color: var(--bad); }
@@ -197,8 +205,13 @@ body:has(.album-detail) { overscroll-behavior-x: none; }
 
 .donate-qr { display: block; width: 100%; max-width: 280px; height: auto; margin: 0 auto; border-radius: 8px; }
 .donate-center { text-align: center; justify-content: center; }
-.home-footer { display: flex; justify-content: center; gap: 16px; margin-top: 8px; }
+.home-footer { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 8px; }
 .home-footer .btn.link, .progress-note-btn { font-size: 14px; color: var(--muted); }
 .progress-note-btn { align-self: flex-start; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; font-family: inherit; }
 .progress-note { margin: 0; }
 .wrap p a { color: var(--accent); }
+
+.theme-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+.theme-switch button { border: 0; background: none; padding: 6px 10px; min-height: 36px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted); }
+.theme-switch button + button { border-left: 1px solid var(--line); }
+.theme-switch button[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); }

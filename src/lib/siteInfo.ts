@@ -1,11 +1,12 @@
 /**
  * Public texts of the site (About, Donate, progress note). Edit them here; the components only render them.
- * Never put a bank account number here or anywhere in the code: only the QR image (public/support-qr.jpg) carries it.
+ * The account number below is shown publicly on the Donate screen (and is in the repo): edit or remove it here.
  */
 
 export const SITE_NAME = 'FAM'
 export const OWNER_NAME = 'Trần Đức Đạt'
 export const BANK_NAME = 'Techcombank'
+export const ACCOUNT_NUMBER = '19038496949011'
 export const TRANSFER_NOTE = 'Ủng hộ FAM'
 export const CONTACT_EMAIL = 'tranducdat.eng@gmail.com'
 
@@ -40,10 +41,17 @@ export const DONATE = {
   qrAlt: 'Mã QR ủng hộ FAM / FAM donation QR code',
   qrMissingVi: 'Mã QR sẽ được cập nhật.',
   qrMissingEn: 'The QR code will be added soon.',
-  accountVi: `Chủ tài khoản: ${OWNER_NAME} · Ngân hàng: ${BANK_NAME}`,
-  accountEn: `Account holder: ${OWNER_NAME} · Bank: ${BANK_NAME}`,
-  noteVi: `Nội dung chuyển khoản: ${TRANSFER_NOTE}`,
-  noteEn: `Transfer note: ${TRANSFER_NOTE}`,
+  /** One line each, shown on separate lines. */
+  detailsVi: [
+    `Chủ tài khoản: ${OWNER_NAME}`,
+    `Ngân hàng: ${BANK_NAME} - ${ACCOUNT_NUMBER}`,
+    `Nội dung chuyển khoản: ${TRANSFER_NOTE}`,
+  ],
+  detailsEn: [
+    `Account holder: ${OWNER_NAME}`,
+    `Bank: ${BANK_NAME} - ${ACCOUNT_NUMBER}`,
+    `Transfer note: ${TRANSFER_NOTE}`,
+  ],
   copyButton: 'Sao chép nội dung chuyển khoản',
   copied: 'Đã sao chép',
   contactLabel: 'Email mời hợp tác:',

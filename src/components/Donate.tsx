@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { assetUrl } from '../lib/catalog.ts'
+import { copyText } from '../lib/clipboard.ts'
 import { CONTACT_EMAIL, DONATE, mailto, QR_IMAGE, TRANSFER_NOTE } from '../lib/siteInfo.ts'
 
 export function Donate({ onBack }: { onBack: () => void }) {
@@ -7,12 +8,9 @@ export function Donate({ onBack }: { onBack: () => void }) {
   const [copied, setCopied] = useState(false)
 
   async function copyNote() {
-    try {
-      await navigator.clipboard.writeText(TRANSFER_NOTE)
+    if (await copyText(TRANSFER_NOTE)) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch {
-      /* clipboard not available: stay silent */
     }
   }
 
@@ -34,16 +32,8 @@ export function Donate({ onBack }: { onBack: () => void }) {
         <img className="donate-qr" src={assetUrl(QR_IMAGE)} alt={DONATE.qrAlt} onError={() => setQrFailed(true)} />
       )}
       <div className="stack donate-center">
-        <p>
-          {DONATE.accountVi}
-          <br />
-          {DONATE.noteVi}
-        </p>
-        <p lang="en" className="muted">
-          {DONATE.accountEn}
-          <br />
-          {DONATE.noteEn}
-        </p>
+        <DetailLines lines={DONATE.detailsVi} />
+        <DetailLines lines={DONATE.detailsEn} lang="en" muted />
         <div className="row donate-center">
           <button className="btn" onClick={() => void copyNote()}>
             {DONATE.copyButton}
@@ -59,5 +49,18 @@ export function Donate({ onBack }: { onBack: () => void }) {
         {DONATE.contactLabel} <a href={mailto()}>{CONTACT_EMAIL}</a>
       </p>
     </div>
+  )
+}
+
+/** Each line on its own row. */
+function DetailLines({ lines, lang, muted }: { lines: readonly string[]; lang?: string; muted?: boolean }) {
+  return (
+    <p lang={lang} className={muted ? 'muted' : undefined}>
+      {lines.map((line, i) => (
+        <span key={i} style={{ display: 'block' }}>
+          {line}
+        </span>
+      ))}
+    </p>
   )
 }

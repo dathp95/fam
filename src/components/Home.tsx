@@ -206,7 +206,7 @@ export function Home({
         <button className="btn link" onClick={onAbout}>
           Giới thiệu và nguồn
         </button>
-        <button className="btn link" onClick={onDonate}>
+        <button className="btn" onClick={onDonate}>
           Ủng hộ
         </button>
       </nav>

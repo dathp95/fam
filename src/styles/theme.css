@@ -1,0 +1,48 @@
+/* FAM — theme tokens. Đổi màu ở đây, mọi logo / giao diện tự đổi theo. */
+
+/* 1) Màu gốc (primitives) — chỉ khai báo, không dùng trực tiếp trong component */
+:root {
+  --fam-green-600: #1F6B45;
+  --fam-green-400: #7CC79C;
+  --fam-green-900: #17382A;
+  --fam-yellow-500: #F2A81D;
+  --fam-yellow-400: #F5B82E;
+  --fam-cream-50:  #FFF7E6;
+}
+
+/* 2) Màu theo vai trò (semantic) — Sáng là mặc định */
+:root,
+[data-theme="light"] {
+  --fam-surface:  var(--fam-cream-50);
+  --fam-text:     var(--fam-green-900);
+  --fam-primary:  var(--fam-green-600);
+  --fam-accent:   var(--fam-yellow-500);
+
+  /* Logo */
+  --fam-logo-body:          var(--fam-primary);   /* chữ FAM / mái nhà */
+  --fam-logo-leaf:          var(--fam-accent);    /* mầm */
+  --fam-logo-tile:          var(--fam-green-600); /* nền biểu tượng app */
+  --fam-logo-on-tile:       var(--fam-cream-50);
+  --fam-logo-leaf-on-tile:  var(--fam-yellow-400);
+}
+
+/* 3) Tối: theo hệ thống, trừ khi ép theme sáng */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fam-surface: var(--fam-green-900);
+    --fam-text:    var(--fam-cream-50);
+    --fam-primary: var(--fam-green-400);
+    --fam-accent:  var(--fam-yellow-400);
+    --fam-logo-body: var(--fam-cream-50);
+    --fam-logo-leaf: var(--fam-yellow-400);
+  }
+}
+/* ...hoặc ép tay bằng <html data-theme="dark"> */
+[data-theme="dark"] {
+  --fam-surface: var(--fam-green-900);
+  --fam-text:    var(--fam-cream-50);
+  --fam-primary: var(--fam-green-400);
+  --fam-accent:  var(--fam-yellow-400);
+  --fam-logo-body: var(--fam-cream-50);
+  --fam-logo-leaf: var(--fam-yellow-400);
+}
