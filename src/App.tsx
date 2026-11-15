@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { About } from './components/About.tsx'
 import { Album } from './components/Album.tsx'
+import { Donate } from './components/Donate.tsx'
 import { Home } from './components/Home.tsx'
 import { NewLesson } from './components/NewLesson.tsx'
 import { Practice } from './components/Practice.tsx'
@@ -31,6 +33,8 @@ type View =
   | { name: 'home' }
   | { name: 'new' }
   | { name: 'album' }
+  | { name: 'about' }
+  | { name: 'donate'; from: 'home' | 'about' }
   | { name: 'review'; draft: Draft }
   | { name: 'practice'; lesson: Lesson; source: PlaybackSource; run: number }
   | {
@@ -234,6 +238,8 @@ export default function App() {
           onNew={() => setView({ name: 'new' })}
           album={albumPictures(progress, catalog?.pictures ?? [])}
           onOpenAlbum={() => setView({ name: 'album' })}
+          onAbout={() => setView({ name: 'about' })}
+          onDonate={() => setView({ name: 'donate', from: 'home' })}
         />
       )}
       {view.name === 'album' && (
@@ -244,6 +250,12 @@ export default function App() {
           onStartBonus={(picture) => void start(buildBonusLesson(picture))}
           onBack={goHome}
         />
+      )}
+      {view.name === 'about' && (
+        <About onBack={goHome} onDonate={() => setView({ name: 'donate', from: 'about' })} />
+      )}
+      {view.name === 'donate' && (
+        <Donate onBack={() => (view.from === 'about' ? setView({ name: 'about' }) : goHome())} />
       )}
       {view.name === 'new' && (
         <NewLesson onCancel={goHome} onAnalyzed={(draft) => setView({ name: 'review', draft })} />

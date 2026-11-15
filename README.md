@@ -59,13 +59,28 @@ Trên Home, bài có sẵn được nhóm theo trình độ (A1, A2), rồi ch�
 
 Tiến độ lưu trong localStorage (`fam.prog`): XP, streak, điểm cao nhất của từng bài (`lessonsDone`), tranh đang mở, album, và `history`: điểm trung bình của từng lần hoàn thành bài (tối đa 30 lần gần nhất mỗi bài). Trên Home, mỗi bài đã luyện hiện tối đa 10 ô vuông nhỏ (cũ trái, mới phải; "+N" nếu nhiều hơn): đỏ nhạt dưới 60 điểm, màu chính từ 60 đến 89, xanh lá từ 90. Bài chưa có lịch sử thì không hiện ô nào.
 
+## Đưa lên hosting tĩnh (GitHub Pages, Cloudflare Pages)
+
+App là web tĩnh (không máy chủ). Đường dẫn gốc lấy từ biến `VITE_BASE` (mặc định `/`); mọi đường dẫn bài, tranh, audio, ảnh QR và favicon đều đi qua đó nên chạy được ở thư mục con.
+
+- **Build cho thư mục con**: `npm run build:pages` (mặc định `/fam/`). Đổi bằng biến môi trường, ví dụ PowerShell: `$env:VITE_BASE = "/ten-repo/"; npm run build:pages`; bash: `VITE_BASE=/ten-repo/ npm run build:pages`. (Git Bash trên Windows tự đổi `/ten-repo/` thành đường dẫn Windows; nếu gặp lỗi "VITE_BASE không hợp lệ" hãy thêm `MSYS_NO_PATHCONV=1` hoặc dùng PowerShell.) Xem thử: `npm run build:pages` rồi `npx vite preview` với cùng `VITE_BASE`, mở `http://localhost:4173/fam/`.
+- **GitHub Pages**: workflow `.github/workflows/deploy.yml` chạy khi push lên `main`: `npm ci`, `npm test`, build với `VITE_BASE=/<tên repo>/`, rồi đăng thư mục `dist`. Bật một lần: Settings → Pages → Source: **GitHub Actions**.
+- **Cloudflare Pages**: build command `npm run build`, output `dist`, không đặt `VITE_BASE` (chạy ở gốc tên miền).
+- **Bản public không có `VITE_ADMIN_TOKEN`**: workflow và `build:pages` đều không đặt biến này (`build:pages` còn xóa nó khỏi môi trường). Lưu ý: hiện app chưa dùng token nào; chế độ `?admin` chỉ là tiện ích, không phải bảo mật (xem `src/lib/features.ts`).
+
+## Trang giới thiệu, ủng hộ và ảnh QR
+
+Chân trang Home có hai liên kết nhỏ: "Giới thiệu và nguồn" (giới thiệu, nguồn VOA và Met, email hợp tác, nút "Ủng hộ dự án") và "Ủng hộ" (lời kêu gọi song ngữ, mã QR, tên chủ tài khoản, ngân hàng, nội dung chuyển khoản, nút sao chép). Mọi văn bản công khai nằm trong `src/lib/siteInfo.ts` (`OWNER_NAME`, `BANK_NAME`, `TRANSFER_NOTE`, `CONTACT_EMAIL`, ...); **không ghi số tài khoản ở bất kỳ đâu trong mã, chỉ ảnh QR mang thông tin này**.
+
+Ảnh QR đặt ở `public/support-qr.jpg` (khoảng 600×600 px; app luôn tìm đúng tên file này). Nếu thiếu file hoặc không tải được, màn hình hiện dòng "Mã QR sẽ được cập nhật." thay cho ảnh. Trên Home còn nút nhỏ "Tiến độ được lưu ở đâu?" (bấm để hiện ghi chú: tiến độ chỉ lưu trong trình duyệt; không nhớ trạng thái đóng/mở).
+
 ## Cấu trúc
 
 - `src/lib/`: logic thuần (ngôn ngữ, so sánh từ và tính điểm, tách câu và căn thời điểm, XP/streak, tranh, danh mục bài, lưu trữ IndexedDB).
 - `src/components/`: màn hình (Home, NewLesson, Review, Practice, Result, TopBar, PictureCard).
 - `src/hooks/`: `useSegmentPlayer`, `useTheme`.
 - `src/workers/`: chỗ dành cho nhận dạng giọng nói (Whisper) ở bước sau; hiện chỉ có kiểu dữ liệu.
-- `scripts/`: công cụ dòng lệnh (`ingest-pictures.ts`).
+- `scripts/`: công cụ dòng lệnh (`ingest-pictures.ts`, `build-pages.ts`, `base.ts` chuẩn hóa `VITE_BASE`).
 - `process_lesson.py`, `tests/`: nạp bài bằng Python và test của nó.
 - `public/lessons/index.json`: danh mục bài (`{ version, lessons }`); dán bài xuất từ màn Review ("Xuất bài (JSON)") vào mảng `lessons` ở đây. `process_lesson.py` ghi vào file này.
 - `public/pictures/index.json`: danh mục tranh (`{ version, pictures }`), do `npm run ingest:pictures -- --merge` ghi; `public/pictures/*.webp`: ảnh tranh.
