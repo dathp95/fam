@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { About } from './components/About.tsx'
-import { Album } from './components/Album.tsx'
 import { Donate } from './components/Donate.tsx'
 import { Home } from './components/Home.tsx'
 import { NewLesson } from './components/NewLesson.tsx'
 import { Practice } from './components/Practice.tsx'
 import { Result } from './components/Result.tsx'
 import { Review } from './components/Review.tsx'
+import { SiteFooter } from './components/SiteFooter.tsx'
 import { TopBar } from './components/TopBar.tsx'
 import { useTheme } from './hooks/useTheme.ts'
 import { assetUrl, loadCatalog, type LoadedCatalog } from './lib/catalog.ts'
 import { averageScore } from './lib/diff.ts'
+import type { HomeTab } from './lib/homeTabs.ts'
 import { isSourcePickerVisible } from './lib/features.ts'
-import { ALL_TILES, bonusLessonId, bonusPictureId, buildBonusLesson, isBonusLesson, revealedTiles } from './lib/pictures.ts'
+import { ALL_TILES, bonusPictureId, isBonusLesson, revealedTiles } from './lib/pictures.ts'
 import {
   advancePicture,
   albumPictures,
@@ -32,7 +33,6 @@ import type { Draft, Lesson, MediaLesson, PlaybackSource } from './lib/types.ts'
 type View =
   | { name: 'home' }
   | { name: 'new' }
-  | { name: 'album' }
   | { name: 'about' }
   | { name: 'donate'; from: 'home' | 'about' }
   | { name: 'review'; draft: Draft }
@@ -55,6 +55,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [view, setView] = useState<View>({ name: 'home' })
+  const [homeTab, setHomeTab] = useState<HomeTab>('learning')
 
   const refresh = useCallback(async () => {
     try {
@@ -237,18 +238,8 @@ export default function App() {
           onDelete={remove}
           onNew={() => setView({ name: 'new' })}
           album={albumPictures(progress, catalog?.pictures ?? [])}
-          onOpenAlbum={() => setView({ name: 'album' })}
-          onAbout={() => setView({ name: 'about' })}
-          onDonate={() => setView({ name: 'donate', from: 'home' })}
-        />
-      )}
-      {view.name === 'album' && (
-        <Album
-          pictures={albumPictures(progress, catalog?.pictures ?? [])}
-          total={catalog?.pictures.length ?? 0}
-          bonusDone={(id) => Object.hasOwn(progress.lessonsDone, bonusLessonId(id))}
-          onStartBonus={(picture) => void start(buildBonusLesson(picture))}
-          onBack={goHome}
+          tab={homeTab}
+          onTab={setHomeTab}
         />
       )}
       {view.name === 'about' && (
@@ -281,6 +272,10 @@ export default function App() {
           onHome={goHome}
         />
       )}
+      <SiteFooter
+        onAbout={() => setView({ name: 'about' })}
+        onDonate={() => setView({ name: 'donate', from: view.name === 'about' ? 'about' : 'home' })}
+      />
     </div>
   )
 }

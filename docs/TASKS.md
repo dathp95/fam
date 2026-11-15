@@ -280,3 +280,11 @@ Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, l
 ## Task R — Đơn giản hóa phần đầu Home
 
 - Bỏ công tắc "Sáng | Tối | Theo hệ thống" và nút "Tiến độ được lưu ở đâu?". Chỉ còn hàng XP/chuỗi ngày và một nút tròn 🌕 (`theme-toggle`) đổi giao diện: đang tối thì sang sáng, đang sáng thì sang tối. Khi chưa chọn, giao diện theo hệ thống; chạm lần đầu thì lưu lựa chọn rõ ràng (`fam.theme`). Logic thuần: `resolveTheme`, `toggledMode` trong `src/lib/theme.ts` (có test).
+
+## Task S — Home có ba tab: Đang học | Bài tập | Albums
+
+- Dưới header là một dòng tab (`role="tablist"`, tab đang chọn có đường kẻ chân bằng màu chính; ← / → đổi tab). Tab nhớ trong phiên (state ở `App`), mặc định "Đang học".
+- **Đang học**: bài để học tiếp (bài đầu tiên chưa qua theo thứ tự danh sách, hết bài chưa qua thì bài cuối; hàm thuần `currentLesson` trong `src/lib/homeTabs.ts`) và bức tranh bí ẩn hiện tại.
+- **Bài tập**: chỉ danh sách bài (có tiêu đề trình độ nếu từ hai trình độ trở lên; không còn tên chủ đề). Với admin/người đã có bài tải lên vẫn thấy "Chọn nguồn bài" và "Bài của bạn" ở tab này.
+- **Albums**: tranh đã sưu tập (lưới, bấm vào xem chi tiết với ‹ ›). Màn hình `album` riêng và thẻ "Album" trên Home đã bỏ.
+- Đã bỏ các tiêu đề "Bài có sẵn", "Bức tranh của bạn", "Album" và tên chủ đề.

@@ -12,11 +12,10 @@ interface Props {
   total: number
   bonusDone: (pictureId: string) => boolean
   onStartBonus: (picture: Picture) => void
-  onBack: () => void
 }
 
 /** The pictures the learner has completed: a grid, and a detail view (with ‹ ›) for each one. */
-export function Album({ pictures, total, bonusDone, onStartBonus, onBack }: Props) {
+export function Album({ pictures, total, bonusDone, onStartBonus }: Props) {
   const [openId, setOpenId] = useState<string | null>(null)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const index = pictures.findIndex((p) => p.id === openId)
@@ -59,7 +58,7 @@ export function Album({ pictures, total, bonusDone, onStartBonus, onBack }: Prop
       >
         <div className="row between album-nav">
           <button className="btn link" onClick={() => setOpenId(null)}>
-            ← Album
+            ← Quay lại
           </button>
           <div className="row album-arrows">
             <button className="btn" onClick={() => go(-1)} disabled={index === 0} aria-label="Tranh trước">
@@ -91,10 +90,6 @@ export function Album({ pictures, total, bonusDone, onStartBonus, onBack }: Prop
 
   return (
     <div className="stack">
-      <button className="btn link" onClick={onBack}>
-        ← Quay lại
-      </button>
-      <h2>Album</h2>
       <p className="muted">
         Đã sưu tập {pictures.length}/{total} tranh
       </p>
