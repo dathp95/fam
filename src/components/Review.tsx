@@ -3,37 +3,15 @@ import { useSegmentPlayer } from '../hooks/useSegmentPlayer.ts'
 import { buildStaticLesson, downloadJson } from '../lib/export.ts'
 import { getLanguage } from '../lib/languages.ts'
 import { mergeSentences, splitSentenceAt } from '../lib/segment.ts'
-import { LEVELS, type Draft, type MediaLesson, type TimedSentence } from '../lib/types.ts'
-
-/** Optional publishing info for "Xuất bài (JSON)"; all fields are plain text inputs. */
-interface PublishForm {
-  id: string
-  level: string
-  topic: string
-  sourceName: string
-  sourceUrl: string
-  sourceLicense: string
-  seriesId: string
-  order: string
-  audioUrl: string
-}
-
-const EMPTY_PUBLISH: PublishForm = {
-  id: '',
-  level: '',
-  topic: '',
-  sourceName: '',
-  sourceUrl: '',
-  sourceLicense: '',
-  seriesId: '',
-  order: '',
-  audioUrl: '',
-}
+import { topicsOf } from '../lib/lessonGroups.ts'
+import { LEVELS, type Draft, type MediaLesson, type StaticLesson, type TimedSentence } from '../lib/types.ts'
 
 interface Props {
   draft: Draft
   onSave: (lesson: MediaLesson, media: Blob) => Promise<void>
   onCancel: () => void
+  /** Built-in lessons of the loaded catalog (for the topic suggestions and the automatic order). */
+  catalogLessons: StaticLesson[]
 }
 
 const TIMING_NOTE: Record<Draft['timing'], string> = {
@@ -50,12 +28,13 @@ function problem(s: TimedSentence, duration: number, hasWords: boolean): string 
   return ''
 }
 
-export function Review({ draft, onSave, onCancel }: Props) {
+export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
   const [title, setTitle] = useState(draft.title)
   const [sentences, setSentences] = useState(draft.sentences)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [publish, setPublish] = useState<PublishForm>(EMPTY_PUBLISH)
+  const [level, setLevel] = useState('')
+  const [topic, setTopic] = useState('')
   const [exportError, setExportError] = useState('')
   const [exportNote, setExportNote] = useState('')
   const player = useSegmentPlayer(draft.media)
@@ -88,25 +67,20 @@ export function Review({ draft, onSave, onCancel }: Props) {
     setSentences((list) => list.filter((_, k) => k !== i))
   }
 
-  const setField = (key: keyof PublishForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setPublish((p) => ({ ...p, [key]: e.target.value }))
-
   function exportJson() {
     setExportError('')
     setExportNote('')
     const result = buildStaticLesson({
-      id: publish.id,
       title,
       langId: draft.langId,
       createdAt: draft.createdAt,
       duration: draft.duration,
       sentences,
-      level: publish.level,
-      topic: publish.topic,
-      source: { name: publish.sourceName, url: publish.sourceUrl, license: publish.sourceLicense },
-      seriesId: publish.seriesId,
-      order: publish.order,
-      audioUrl: publish.audioUrl,
+      level,
+      topic,
+      // Saved lessons do not remember the original file name; their title is the best stand-in.
+      fileName: draft.fileName ?? draft.title,
+      existing: catalogLessons,
     })
     if (!result.ok) return setExportError(result.error)
     downloadJson(`${result.value.id}.json`, result.value)
@@ -166,12 +140,12 @@ export function Review({ draft, onSave, onCancel }: Props) {
           />
         ))}
       </ol>
-      <details className="publish">
-        <summary>Thông tin xuất bản (tùy chọn)</summary>
+      <section className="card publish" aria-labelledby="classify-title">
+        <h3 id="classify-title">Phân loại</h3>
         <div className="form">
           <label>
             Trình độ
-            <select value={publish.level} onChange={setField('level')}>
+            <select value={level} onChange={(e) => setLevel(e.target.value)}>
               <option value="">Chọn…</option>
               {LEVELS.map((l) => (
                 <option key={l} value={l}>
@@ -181,41 +155,13 @@ export function Review({ draft, onSave, onCancel }: Props) {
             </select>
           </label>
           <label>
-            Chủ đề (topic)
-            <input type="text" value={publish.topic} onChange={setField('topic')} />
-          </label>
-          <label>
-            Tên nguồn
-            <input type="text" value={publish.sourceName} onChange={setField('sourceName')} />
-          </label>
-          <label>
-            Giấy phép
-            <input type="text" value={publish.sourceLicense} onChange={setField('sourceLicense')} />
-          </label>
-          <label className="wide">
-            Đường dẫn nguồn (http/https)
-            <input type="text" inputMode="url" value={publish.sourceUrl} onChange={setField('sourceUrl')} />
-          </label>
-          <label className="wide">
-            Đường dẫn audio trong public/ (audioUrl)
-            <input
-              type="text"
-              placeholder="lessons/voa/l01.mp3"
-              value={publish.audioUrl}
-              onChange={setField('audioUrl')}
-            />
-          </label>
-          <label>
-            Mã chuỗi (seriesId)
-            <input type="text" value={publish.seriesId} onChange={setField('seriesId')} />
-          </label>
-          <label>
-            Thứ tự trong chuỗi (order)
-            <input type="number" min="1" step="1" value={publish.order} onChange={setField('order')} />
-          </label>
-          <label className="wide">
-            Mã bài (id), bỏ trống để lấy từ audioUrl
-            <input type="text" value={publish.id} onChange={setField('id')} />
+            Chủ đề
+            <input type="text" list="topic-options" value={topic} onChange={(e) => setTopic(e.target.value)} />
+            <datalist id="topic-options">
+              {topicsOf(catalogLessons).map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
           </label>
           <div className="row wide">
             <button className="btn" onClick={exportJson}>
@@ -233,7 +179,7 @@ export function Review({ draft, onSave, onCancel }: Props) {
             </p>
           )}
         </div>
-      </details>
+      </section>
       {error && (
         <p className="err" role="alert">
           {error}

@@ -28,8 +28,6 @@ interface Props {
 
 const CATALOG_SECTION_ID = 'catalog-section'
 
-const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
-
 export function Home({
   progress,
   userLessons,
@@ -58,8 +56,8 @@ export function Home({
     }
   }
 
-  // One simple list, in catalog order (by series, then by `order`); no group headings.
-  const lessons = catalog ? groupStaticLessons(catalog.lessons).flatMap((g) => g.lessons) : []
+  // Level -> topic -> lessons by `order`. With a single level its heading is skipped.
+  const levels = catalog ? groupStaticLessons(catalog.lessons) : []
   // The picture being uncovered; missing while the catalog loads or if it no longer lists it.
   const activePicture = progress.picture ? catalog?.pictures.find((p) => p.id === progress.picture?.id) : undefined
 
@@ -94,14 +92,24 @@ export function Home({
         <h2 id="catalog-title">Bài có sẵn</h2>
         {catalog === null && <p className="status">Đang tải bài có sẵn…</p>}
         {catalog?.error && <p className="muted">{catalog.error}</p>}
-        {catalog && !catalog.error && lessons.length === 0 && <p className="muted">Chưa có bài có sẵn.</p>}
-        {lessons.map((l) => (
-          <StaticLessonCard
-            key={l.id}
-            lesson={l}
-            done={Object.hasOwn(progress.lessonsDone, l.id) ? progress.lessonsDone[l.id] : undefined}
-            onStart={() => onStart(l)}
-          />
+        {catalog && !catalog.error && levels.length === 0 && <p className="muted">Chưa có bài có sẵn.</p>}
+        {levels.map((g) => (
+          <div className="stack" key={g.level}>
+            {levels.length > 1 && <h3 className="group-title">{g.level}</h3>}
+            {g.topics.map((t) => (
+              <div className="stack" key={t.topic}>
+                <h4 className="topic-title">{t.topic}</h4>
+                {t.lessons.map((l) => (
+                  <StaticLessonCard
+                    key={l.id}
+                    lesson={l}
+                    done={Object.hasOwn(progress.lessonsDone, l.id) ? progress.lessonsDone[l.id] : undefined}
+                    onStart={() => onStart(l)}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         ))}
       </section>
 
@@ -188,27 +196,14 @@ function StaticLessonCard({
     <div className={`card lesson${done ? ' done' : ''}`}>
       <div>
         <h3>{l.title}</h3>
-        <div className="meta">
-          <span className="tag">{l.level}</span>
-          <span className="tag">{l.topic}</span>
-          <span className="muted">{l.sentences.length} câu</span>
-          {done && <span className="tag">Đã qua · {done.best}</span>}
-        </div>
-        <div className="muted">
-          Nguồn:{' '}
-          {isHttpUrl(l.source.url) ? (
-            <a href={l.source.url} target="_blank" rel="noreferrer noopener">
-              {l.source.name}
-            </a>
-          ) : (
-            l.source.name
-          )}{' '}
-          · {l.source.license}
-        </div>
+        <span className="muted">{l.sentences.length} câu</span>
       </div>
-      <button className="btn primary" onClick={onStart}>
-        Luyện tập
-      </button>
+      <div className="row">
+        {done ? <span className="tag">Đã qua · {done.best}</span> : <span className="muted" aria-hidden="true">›</span>}
+        <button className="btn primary" onClick={onStart}>
+          Luyện tập
+        </button>
+      </div>
     </div>
   )
 }

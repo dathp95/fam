@@ -39,3 +39,10 @@ export const LESSON_SOURCES: LessonSourceOption[] = [
     available: false,
   },
 ]
+
+/** Source written into every lesson exported from the admin Review screen (edit here to change it). */
+export const DEFAULT_LESSON_SOURCE = {
+  name: 'Voice of America',
+  url: 'https://learningenglish.voanews.com/',
+  license: 'public domain',
+} as const

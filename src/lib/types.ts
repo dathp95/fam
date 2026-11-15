@@ -51,8 +51,7 @@ export interface StaticLesson extends LessonBase {
   level: Level
   topic: string
   source: SourceInfo
-  seriesId?: string
-  /** Position inside the series (starts at 1). */
+  /** Position inside the same level and topic (starts at 1). */
   order?: number
 }
 
@@ -121,4 +120,6 @@ export interface Draft {
   sentences: TimedSentence[]
   /** How the timings were obtained (shown as a hint in the review screen). */
   timing: 'snapped' | 'estimated' | 'saved'
+  /** Name of the uploaded file, when known (the admin export derives the lesson id from it). */
+  fileName?: string
 }

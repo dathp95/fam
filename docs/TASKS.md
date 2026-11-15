@@ -55,13 +55,12 @@ export interface StaticLesson extends LessonBase {
   level: Level
   topic: string
   source: SourceInfo
-  seriesId?: string
-  /** Thứ tự trong chuỗi (bắt đầu từ 1). */
+  /** Thứ tự trong cùng trình độ và chủ đề (bắt đầu từ 1). Từ Task K không còn `seriesId`. */
   order?: number
 }
 // Lesson = SampleLesson | MediaLesson | StaticLesson
 ```
-`seriesId` và `order` của bài học chỉ còn dùng để nhóm và sắp xếp bài trên Home; chúng không liên quan đến tranh (xem Task E).
+`order` của bài học chỉ dùng để sắp xếp bài trong cùng trình độ và chủ đề trên Home (`seriesId` đã bỏ ở Task K); chúng không liên quan đến tranh (xem Task E).
 
 ### B2. Danh mục bài (`public/lessons/index.json`)
 ```json
@@ -92,13 +91,13 @@ export const LESSON_SOURCES: LessonSourceOption[] = [...]
 - Home hiện nhóm "Chọn nguồn bài" gồm các thẻ này. Thêm nguồn mới sau này chỉ cần thêm một phần tử vào mảng và một nhánh xử lý.
 
 ### B5. Home
-- Nhóm "Bài có sẵn" nằm trên cùng (dưới "Chọn nguồn bài" nếu đang hiện): một danh sách phẳng, không có tiêu đề nhóm, sắp theo `seriesId` rồi `order`; mỗi bài có nhãn `level`, chủ đề, số câu và dòng nguồn ("Nguồn: Voice of America · public domain") lấy từ `source`. Bài đã qua (có điểm trong `lessonsDone`) có nền xanh nhẹ (`--ok-bg`) và nhãn "Đã qua · điểm".
+- (Đã thay bằng Task K: nhóm theo trình độ/chủ đề, không còn dòng nguồn.) Nhóm "Bài có sẵn" nằm trên cùng (dưới "Chọn nguồn bài" nếu đang hiện): một danh sách phẳng, không có tiêu đề nhóm, sắp theo `seriesId` rồi `order`; mỗi bài có nhãn `level`, chủ đề, số câu và dòng nguồn ("Nguồn: Voice of America · public domain") lấy từ `source`. Bài đã qua (có điểm trong `lessonsDone`) có nền xanh nhẹ (`--ok-bg`) và nhãn "Đã qua · điểm".
 - Nhóm "Bài của bạn": bài `media` như hiện nay (Chỉnh sửa/Xóa).
 - Không còn bài mẫu TTS trên Home (đã bỏ).
 - Khi catalog rỗng hoặc lỗi: dòng thông báo trung tính, không chặn các phần khác.
 
 ### B6. Xuất JSON từ màn hình Review (`Review.tsx`)
-- Thêm khối thu gọn "Thông tin xuất bản (tùy chọn)": `level` (A1/A2), `topic`, `source.name`, `source.url`, `source.license`, `seriesId`, `order`, `audioUrl`.
+- (Đã thay bằng khối "Phân loại" ở Task K.) Thêm khối thu gọn "Thông tin xuất bản (tùy chọn)": `level` (A1/A2), `topic`, `source.name`, `source.url`, `source.license`, `seriesId`, `order`, `audioUrl`.
 - Nút "Xuất bài (JSON)": tạo `StaticLesson` từ trạng thái hiện tại (id lấy từ `audioUrl` hoặc ô nhập, `kind: 'static'`, `sentences` đang chỉnh) và tải về bằng Blob + thẻ `<a download>`. Không đưa file audio vào JSON.
 - Hàm dựng JSON là hàm thuần trong `src/lib/export.ts` (`buildStaticLesson(...)`), có test, kiểm tra đủ trường bắt buộc và trả lỗi tiếng Việt nếu thiếu.
 - Quy trình nội dung: nạp audio → căn câu → xuất JSON → người dùng đặt audio vào `public/lessons/...` và dán phần tử vào `lessons` của `index.json`.
@@ -249,3 +248,11 @@ Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, l
 - **Bộ nạp** (`src/lib/catalog.ts`): `parseLessonsFile` và `parsePicturesFile` (cùng cách kiểm tra như trước: version, từng mục, id trùng bị bỏ và có cảnh báo tiếng Việt). Khóa cũ `pictures` hay `series` trong file bài bị bỏ qua. `parseCatalog` đã bỏ. Hằng số `LESSONS_INDEX`, `PICTURES_INDEX`.
 - **`loadCatalog()`** tải song song hai file (`Promise.allSettled`), không bao giờ ném lỗi; một file hỏng không làm mất file kia. Lỗi file bài: `lessons = []` và `error` như cũ; lỗi file tranh: `pictures = []` và cảnh báo "Không tải được danh sách tranh.".
 - **Test**: `shippedCatalog.test.ts` đọc cả hai file thật (không cảnh báo, ảnh tồn tại, quy tắc nội dung và credit); `catalog.test.ts` có test `loadCatalog` khi một file lỗi và khi file bài còn mảng `pictures` cũ; `test_process_lesson.py` có test file bài không có khóa `pictures`.
+
+## Task K — Nhóm bài theo trình độ/chủ đề; form xuất bài tối giản
+
+- **Nhóm bài trên Home**: trình độ (theo thứ tự `LEVELS`) → chủ đề (theo thứ tự xuất hiện đầu tiên trong danh mục) → bài sắp theo `order` (thiếu `order` thì xuống cuối, bằng nhau giữ thứ tự danh mục). Hàm thuần `groupStaticLessons` trong `src/lib/lessonGroups.ts` trả về `LevelGroup { level, topics: { topic, lessons }[] }`. Tiêu đề trình độ chỉ hiện khi có từ hai trình độ; tiêu đề chủ đề luôn hiện (nhỏ, màu mờ).
+- **`seriesId` không còn**: đã bỏ khỏi kiểu `StaticLesson`, bộ nạp, xuất bài và form. Khóa `seriesId` cũ trong file JSON bị bỏ qua, không cảnh báo và không được chép vào bài đã nạp. `order` nay là thứ tự trong cùng trình độ và chủ đề.
+- **Mỗi dòng bài trên Home**: tên bài, "N câu" (mờ), bên phải "Đã qua · điểm cao nhất" hoặc dấu `›` khi chưa qua, và nút "Luyện tập". Không còn dòng "Nguồn: … · giấy phép" và không còn thẻ level/topic trên từng dòng. Dữ liệu `source` vẫn nằm trong JSON và kiểu dữ liệu, chỉ không hiển thị.
+- **Form xuất bài (admin, màn Review)**: khối "Phân loại" luôn hiện, chỉ có "Trình độ" (bắt buộc), "Chủ đề" (bắt buộc, gợi ý bằng `<datalist>` từ các chủ đề đang có trong danh mục) và nút "Xuất bài (JSON)". Giá trị tự suy ra (hàm thuần có test trong `src/lib/export.ts`): `id` = tên file audio bỏ đuôi, chữ thường a-z, 0-9 và gạch ngang (không ra được thì báo lỗi bảo đổi tên file); `audioUrl` = `lessons/voa/<id>.mp3`; `order` = giữ `order` của bài cùng `id` trong danh mục, nếu không thì (`order` lớn nhất trong cùng trình độ và chủ đề) + 1, hoặc 1; `source` lấy từ hằng số `DEFAULT_LESSON_SOURCE` trong `src/lib/sources.ts` (Voice of America, https://learningenglish.voanews.com/, public domain). Bài mở lại từ "Bài của bạn" không còn nhớ tên file gốc nên lấy `id` từ tên bài.
+- Sau khi xuất, app báo tên file JSON, nơi đặt audio (`public/<audioUrl>`) và dán JSON vào mảng `lessons` của `public/lessons/index.json`.

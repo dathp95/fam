@@ -49,6 +49,12 @@ Tùy chọn: `--force` (thay bài đã có cùng mã), `--dry-run`, `--keep-inbo
 
 Kiểm thử script: `npm run test:py` (hoặc `python -m unittest discover -s tests`). Phần tách câu, tìm im lặng và căn thời điểm được đối chiếu với chính code TypeScript qua `tests/segment_vectors.json`; sau khi sửa `src/lib/segment.ts`, chạy `node tests/gen_segment_vectors.mjs` để sinh lại.
 
+## Bài có sẵn và xuất bài (admin)
+
+Trên Home, bài có sẵn được nhóm theo trình độ (A1, A2), rồi chủ đề, rồi `order` (tăng dần; thiếu `order` thì xuống cuối). `seriesId` không còn (khóa cũ trong JSON bị bỏ qua) và Home không hiện dòng nguồn của bài; dữ liệu `source` vẫn nằm trong JSON.
+
+Để tạo bài bằng giao diện, mở app với `?admin`, tải file và dán chữ, rồi ở màn "Xem lại các câu" chọn "Trình độ" và "Chủ đề" trong khối "Phân loại" và bấm "Xuất bài (JSON)". Mã bài là tên file audio (chữ thường, gạch ngang), `audioUrl` là `lessons/voa/<id>.mp3`, `order` tự lấy số kế tiếp trong cùng trình độ và chủ đề, nguồn lấy mặc định ở `DEFAULT_LESSON_SOURCE` (`src/lib/sources.ts`). Đặt audio vào `public/<audioUrl>` và dán JSON vào mảng `lessons` của `public/lessons/index.json`.
+
 ## Cấu trúc
 
 - `src/lib/`: logic thuần (ngôn ngữ, so sánh từ và tính điểm, tách câu và căn thời điểm, XP/streak, tranh, danh mục bài, lưu trữ IndexedDB).

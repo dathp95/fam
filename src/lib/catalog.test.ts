@@ -17,7 +17,7 @@ const lesson = (over: Record<string, unknown> = {}) => ({
   level: 'A1',
   topic: 'Greetings',
   source: { name: 'Test source', url: 'https://example.com/x', license: 'public domain' },
-  seriesId: 'demo',
+  seriesId: 'demo', // legacy key: must be ignored
   order: 1,
   ...over,
 })
@@ -42,10 +42,10 @@ describe('parseLessonsFile', () => {
   })
 
   it('accepts valid lessons', () => {
-    const r = parseLessonsFile(catalog([lesson(), lesson({ id: 'test-l02', seriesId: undefined, order: undefined })]))
+    const r = parseLessonsFile(catalog([lesson(), lesson({ id: 'test-l02', order: undefined })]))
     expect(r.warnings).toEqual([])
     expect(r.lessons.map((l) => l.id)).toEqual(['test-l01', 'test-l02'])
-    expect(r.lessons[1].seriesId).toBeUndefined()
+    expect('seriesId' in r.lessons[0]).toBe(false)
     expect(r.lessons[1].order).toBeUndefined()
   })
 
@@ -126,8 +126,13 @@ describe('parseStaticLesson', () => {
     expect(parseStaticLesson(lesson({ kind: 'media' })).ok).toBe(false)
   })
 
-  it('rejects an empty seriesId', () => {
-    expect(parseStaticLesson(lesson({ seriesId: '  ' })).ok).toBe(false)
+  it('silently ignores a legacy seriesId, even an empty one', () => {
+    for (const seriesId of ['demo', '  ', 5]) {
+      const r = parseStaticLesson(lesson({ seriesId }))
+      expect(r.ok).toBe(true)
+      if (r.ok) expect('seriesId' in r.value).toBe(false)
+    }
+    expect(parseLessonsFile(catalog([lesson()])).warnings).toEqual([])
   })
 })
 

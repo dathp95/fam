@@ -1,41 +1,45 @@
-/** Grouping and ordering of built-in lessons for the Home screen. */
+/** Grouping and ordering of built-in lessons for the Home screen: level, then topic, then order. */
 
-import type { StaticLesson } from './types.ts'
+import { LEVELS, type Level, type StaticLesson } from './types.ts'
 
-export interface LessonGroup {
-  /** Stable key: the seriesId, or "other" for lessons without a series. */
-  key: string
-  /** seriesId, or null for the "Khác" group. */
-  seriesId: string | null
+export interface TopicGroup {
+  topic: string
   lessons: StaticLesson[]
 }
 
-export const OTHER_GROUP_KEY = 'other'
+export interface LevelGroup {
+  level: Level
+  topics: TopicGroup[]
+}
 
 /**
- * Group by seriesId (groups in order of first appearance), with lessons that have no series
- * in a final "other" group. Inside a group, sort by `order` (missing order goes last),
- * keeping the catalog order for ties.
+ * Group by level (in the order of LEVELS; levels without lessons are left out), then by topic
+ * inside a level (topics in order of first appearance in the list), then sort the lessons of a
+ * topic by `order` (missing order goes last, ties keep the catalog order). Does not mutate input.
  */
-export function groupStaticLessons(lessons: StaticLesson[]): LessonGroup[] {
-  const bySeries = new Map<string, StaticLesson[]>()
-  const other: StaticLesson[] = []
-  for (const l of lessons) {
-    if (l.seriesId === undefined) {
-      other.push(l)
-    } else {
-      const list = bySeries.get(l.seriesId) ?? []
+export function groupStaticLessons(lessons: StaticLesson[]): LevelGroup[] {
+  const groups: LevelGroup[] = []
+  for (const level of LEVELS) {
+    const topics = new Map<string, StaticLesson[]>()
+    for (const l of lessons) {
+      if (l.level !== level) continue
+      const list = topics.get(l.topic) ?? []
       list.push(l)
-      bySeries.set(l.seriesId, list)
+      topics.set(l.topic, list)
     }
+    if (topics.size === 0) continue
+    groups.push({
+      level,
+      topics: [...topics].map(([topic, list]) => ({
+        topic,
+        lessons: list.toSorted((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity)),
+      })),
+    })
   }
-  const sorted = (list: StaticLesson[]) =>
-    list.toSorted((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity))
-  const groups: LessonGroup[] = [...bySeries].map(([seriesId, list]) => ({
-    key: seriesId,
-    seriesId,
-    lessons: sorted(list),
-  }))
-  if (other.length) groups.push({ key: OTHER_GROUP_KEY, seriesId: null, lessons: sorted(other) })
   return groups
+}
+
+/** Distinct topics of the lessons, in order of first appearance (for the admin form's suggestions). */
+export function topicsOf(lessons: StaticLesson[]): string[] {
+  return [...new Set(lessons.map((l) => l.topic))]
 }

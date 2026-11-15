@@ -1,11 +1,10 @@
 /** Build a StaticLesson (for public/lessons/index.json) from the review screen, and download it. */
 
 import { parseStaticLesson, type ParseResult } from './catalog.ts'
+import { DEFAULT_LESSON_SOURCE } from './sources.ts'
 import { LEVELS, type StaticLesson, type TimedSentence } from './types.ts'
 
 export interface PublishInput {
-  /** Optional; derived from audioUrl when blank. */
-  id: string
   title: string
   langId: string
   createdAt: number
@@ -13,20 +12,17 @@ export interface PublishInput {
   sentences: TimedSentence[]
   level: string
   topic: string
-  source: { name: string; url: string; license: string }
-  /** Blank = no series. */
-  seriesId: string
-  /** Blank = no order; otherwise an integer ≥ 1 as typed. */
-  order: string
-  /** Path relative to BASE_URL, e.g. "lessons/voa/l01.mp3". */
-  audioUrl: string
+  /** Name of the chosen audio file; the lesson id and audioUrl are derived from it. */
+  fileName: string
+  /** Lessons of the loaded catalog, used to pick the order (may be empty). */
+  existing: StaticLesson[]
 }
 
 const fail = (error: string): { ok: false; error: string } => ({ ok: false, error })
 
 /** "lessons/voa/L01 Welcome.mp3" -> "l01-welcome". */
 export function slugFromPath(path: string): string {
-  const file = path.split('/').pop() ?? ''
+  const file = path.split(/[/\\]/).pop() ?? ''
   return file
     .replace(/\.[^.]+$/, '')
     .toLowerCase()
@@ -34,19 +30,24 @@ export function slugFromPath(path: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-/** Validate the publish form and return a StaticLesson, or a Vietnamese error message. */
-export function buildStaticLesson(input: PublishInput): ParseResult<StaticLesson> {
-  const rawAudio = input.audioUrl.trim().replaceAll('\\', '/')
-  if (!rawAudio) return fail('Hãy nhập đường dẫn audio, ví dụ lessons/voa/l01.mp3.')
-  // Reject full URLs ("https:", "data:", "//host") before leading slashes are stripped below.
-  if (/^[a-z][a-z0-9+.-]*:|^\/\//i.test(rawAudio)) {
-    return fail('Đường dẫn audio phải là đường dẫn tương đối trong thư mục public, ví dụ lessons/voa/l01.mp3.')
-  }
-  const audioUrl = rawAudio.replace(/^(?:\.?\/)+/, '')
-  if (!audioUrl) return fail('Hãy nhập đường dẫn audio, ví dụ lessons/voa/l01.mp3.')
+/** Where the exported lesson's audio goes, relative to public/. */
+export const audioUrlFor = (id: string) => `lessons/voa/${id}.mp3`
 
-  const id = input.id.trim() || slugFromPath(audioUrl)
-  if (!id) return fail('Không tạo được mã bài (id). Hãy nhập id hoặc đường dẫn audio hợp lệ.')
+/**
+ * Order of an exported lesson: the order of the catalog lesson with the same id if it has one,
+ * otherwise (highest order among lessons with the same level and topic) + 1, or 1 when none.
+ */
+export function nextOrder(existing: StaticLesson[], id: string, level: string, topic: string): number {
+  const same = existing.find((l) => l.id === id)
+  if (same?.order !== undefined) return same.order
+  const orders = existing.filter((l) => l.level === level && l.topic === topic).map((l) => l.order ?? 0)
+  return Math.max(0, ...orders) + 1
+}
+
+/** Validate the export form and return a StaticLesson, or a Vietnamese error message. */
+export function buildStaticLesson(input: PublishInput): ParseResult<StaticLesson> {
+  const id = slugFromPath(input.fileName)
+  if (!id) return fail('Không tạo được mã bài (id) từ tên file. Hãy đổi tên file audio (dùng chữ và số) rồi tải lại.')
 
   const title = input.title.trim()
   if (!title) return fail('Hãy nhập tên bài.')
@@ -57,34 +58,19 @@ export function buildStaticLesson(input: PublishInput): ParseResult<StaticLesson
   const topic = input.topic.trim()
   if (!topic) return fail('Hãy nhập chủ đề.')
 
-  const name = input.source.name.trim()
-  const url = input.source.url.trim()
-  const license = input.source.license.trim()
-  if (!name || !url || !license) return fail('Hãy nhập đủ thông tin nguồn: tên nguồn, đường dẫn và giấy phép.')
-  if (!/^https?:\/\//i.test(url)) return fail('Đường dẫn nguồn phải bắt đầu bằng http:// hoặc https://.')
-
-  const seriesId = input.seriesId.trim()
-  const orderText = input.order.trim()
-  let order: number | undefined
-  if (orderText) {
-    order = Number(orderText)
-    if (!Number.isInteger(order) || order < 1) return fail('Thứ tự (order) phải là số nguyên từ 1 trở lên.')
-  }
-
   const result = parseStaticLesson({
     id,
     kind: 'static',
     title,
     langId: input.langId,
     createdAt: input.createdAt,
-    audioUrl,
+    audioUrl: audioUrlFor(id),
     duration: input.duration,
     sentences: input.sentences,
     level,
     topic,
-    source: { name, url, license },
-    ...(seriesId && { seriesId }),
-    ...(order !== undefined && { order }),
+    source: DEFAULT_LESSON_SOURCE,
+    order: nextOrder(input.existing, id, level, topic),
   })
   return result.ok ? result : fail(`Dữ liệu chưa hợp lệ: ${result.error}`)
 }

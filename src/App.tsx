@@ -247,7 +247,7 @@ export default function App() {
       {view.name === 'new' && (
         <NewLesson onCancel={goHome} onAnalyzed={(draft) => setView({ name: 'review', draft })} />
       )}
-      {view.name === 'review' && <Review draft={view.draft} onSave={saveDraft} onCancel={goHome} />}
+      {view.name === 'review' && <Review draft={view.draft} onSave={saveDraft} onCancel={goHome} catalogLessons={catalog?.lessons ?? []} />}
       {view.name === 'result' && (
         <Result
           scores={view.scores}

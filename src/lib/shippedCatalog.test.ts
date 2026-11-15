@@ -89,10 +89,10 @@ describe('shipped catalogs', () => {
     )
   })
 
-  it('keeps the existing lesson (and its seriesId/order) untouched', () => {
+  it('keeps the existing lesson (and its order) and ignores its legacy seriesId', () => {
     const lesson = catalog.lessons.find((l) => l.id === 'voa-l01-welcome')
     expect(lesson).toBeDefined()
-    expect(lesson?.seriesId).toBe('nature')
+    expect(lesson && 'seriesId' in lesson).toBe(false)
     expect(lesson?.order).toBe(1)
   })
 })

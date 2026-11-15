@@ -82,11 +82,6 @@ export function parseStaticLesson(raw: unknown): ParseResult<StaticLesson> {
   const license = text(raw.source.license)
   if (!name || !url || !license) return fail('source cần đủ name, url và license.')
 
-  let seriesId: string | undefined
-  if (raw.seriesId !== undefined) {
-    seriesId = text(raw.seriesId) ?? undefined
-    if (!seriesId) return fail('seriesId phải là chuỗi không rỗng.')
-  }
   let order: number | undefined
   if (raw.order !== undefined) {
     if (!finite(raw.order) || !Number.isInteger(raw.order) || raw.order < 1) {
@@ -112,7 +107,6 @@ export function parseStaticLesson(raw: unknown): ParseResult<StaticLesson> {
       level,
       topic,
       source: { name, url, license },
-      ...(seriesId !== undefined && { seriesId }),
       ...(order !== undefined && { order }),
     },
   }

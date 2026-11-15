@@ -27,6 +27,7 @@ export function NewLesson({ onCancel, onAnalyzed }: Props) {
       onAnalyzed({
         id: uid('u'),
         title: file.name.replace(/\.[^.]+$/, ''),
+        fileName: file.name,
         langId: DEFAULT_LANGUAGE_ID,
         createdAt: Date.now(),
         media: file,
