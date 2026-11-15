@@ -1,4 +1,4 @@
-/** Catalog of built-in lessons (public/lessons/index.json): loading and runtime validation. */
+/** Catalogs of built-in lessons (public/lessons/index.json) and pictures (public/pictures/index.json): loading and runtime validation. */
 
 import { LEVELS, type Picture, type PictureCommentary, type StaticLesson, type TimedSentence } from './types.ts'
 
@@ -10,11 +10,15 @@ export interface Catalog {
 }
 
 export interface LoadedCatalog extends Catalog {
-  /** Set when the file could not be loaded at all (network or JSON error). */
+  /** Set when the lessons file could not be loaded at all (network or JSON error). */
   error: string | null
 }
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string }
+
+/** Catalog files, relative to public/ (and to BASE_URL at runtime). */
+export const LESSONS_INDEX = 'lessons/index.json'
+export const PICTURES_INDEX = 'pictures/index.json'
 
 const SUPPORTED_VERSION = 1
 const TIME_TOLERANCE = 0.01
@@ -184,51 +188,41 @@ export function parsePicture(raw: unknown): ParseResult<Picture> {
   }
 }
 
-/** Validate the pictures list; invalid or duplicate pictures are skipped and listed in warnings. */
-function parsePictureList(raw: unknown, warnings: string[]): Picture[] {
-  if (raw === undefined) return []
-  if (!Array.isArray(raw)) {
-    warnings.push('"pictures" phải là một mảng.')
-    return []
-  }
-  const out: Picture[] = []
-  const ids = new Set<string>()
-  raw.forEach((item: unknown, i: number) => {
-    const label = `Tranh #${i + 1}${isRecord(item) && text(item.id) ? ` (${text(item.id)})` : ''}`
-    const parsed = parsePicture(item)
-    if (!parsed.ok) {
-      warnings.push(`${label}: ${parsed.error}`)
-    } else if (ids.has(parsed.value.id)) {
-      warnings.push(`${label}: trùng id, đã bỏ qua.`)
-    } else {
-      ids.add(parsed.value.id)
-      out.push(parsed.value)
-    }
-  })
-  return out
+export interface LessonsFile {
+  lessons: StaticLesson[]
+  warnings: string[]
 }
 
-/**
- * Validate the whole catalog; invalid or duplicate lessons/pictures are skipped and listed in
- * warnings. A legacy "series" key is ignored.
- */
-export function parseCatalog(raw: unknown): Catalog {
-  if (!isRecord(raw)) return { lessons: [], pictures: [], warnings: ['Danh mục bài không đúng định dạng.'] }
+export interface PicturesFile {
+  pictures: Picture[]
+  warnings: string[]
+}
+
+/** Shared checks for a catalog file: object, version 1, array under `key`. Returns the array or a warning. */
+function listOf(raw: unknown, key: 'lessons' | 'pictures', what: string): { list: unknown[] } | { warning: string } {
+  if (!isRecord(raw)) return { warning: `${what} không đúng định dạng.` }
   if (raw.version !== SUPPORTED_VERSION) {
-    return {
-      lessons: [],
-      pictures: [],
-      warnings: [`Phiên bản danh mục không được hỗ trợ (cần version ${SUPPORTED_VERSION}).`],
-    }
+    return { warning: `Phiên bản ${what.toLowerCase()} không được hỗ trợ (cần version ${SUPPORTED_VERSION}).` }
   }
+  const list = raw[key]
+  if (!Array.isArray(list)) return { warning: `${what} thiếu mảng "${key}".` }
+  return { list: list as unknown[] }
+}
+
+const idOf = (item: unknown): string | null => (isRecord(item) ? text(item.id) : null)
+
+/**
+ * Validate the lessons file (public/lessons/index.json); invalid or duplicate lessons are skipped
+ * and listed in warnings. Legacy "series" and "pictures" keys are ignored.
+ */
+export function parseLessonsFile(raw: unknown): LessonsFile {
+  const found = listOf(raw, 'lessons', 'Danh mục bài')
+  if ('warning' in found) return { lessons: [], warnings: [found.warning] }
   const warnings: string[] = []
-  if (!Array.isArray(raw.lessons)) {
-    return { lessons: [], pictures: [], warnings: ['Danh mục thiếu mảng "lessons".'] }
-  }
   const lessons: StaticLesson[] = []
   const ids = new Set<string>()
-  raw.lessons.forEach((item: unknown, i: number) => {
-    const label = `Bài #${i + 1}${isRecord(item) && text(item.id) ? ` (${text(item.id)})` : ''}`
+  found.list.forEach((item, i) => {
+    const label = `Bài #${i + 1}${idOf(item) ? ` (${idOf(item)})` : ''}`
     const parsed = parseStaticLesson(item)
     if (!parsed.ok) {
       warnings.push(`${label}: ${parsed.error}`)
@@ -239,20 +233,65 @@ export function parseCatalog(raw: unknown): Catalog {
       lessons.push(parsed.value)
     }
   })
-  const pictures = parsePictureList(raw.pictures, warnings)
-  return { lessons, pictures, warnings }
+  return { lessons, warnings }
+}
+
+/** Validate the pictures file (public/pictures/index.json); invalid or duplicate pictures are skipped and listed in warnings. */
+export function parsePicturesFile(raw: unknown): PicturesFile {
+  const found = listOf(raw, 'pictures', 'Danh mục tranh')
+  if ('warning' in found) return { pictures: [], warnings: [found.warning] }
+  const warnings: string[] = []
+  const pictures: Picture[] = []
+  const ids = new Set<string>()
+  found.list.forEach((item, i) => {
+    const label = `Tranh #${i + 1}${idOf(item) ? ` (${idOf(item)})` : ''}`
+    const parsed = parsePicture(item)
+    if (!parsed.ok) {
+      warnings.push(`${label}: ${parsed.error}`)
+    } else if (ids.has(parsed.value.id)) {
+      warnings.push(`${label}: trùng id, đã bỏ qua.`)
+    } else {
+      ids.add(parsed.value.id)
+      pictures.push(parsed.value)
+    }
+  })
+  return { pictures, warnings }
 }
 
 const LOAD_ERROR = 'Không tải được danh sách bài có sẵn. Bạn vẫn có thể dùng bài mẫu hoặc tải file của bạn.'
+const PICTURES_LOAD_ERROR = 'Không tải được danh sách tranh.'
 
-/** Fetch and validate the catalog. Never throws: failures give an empty catalog and a message. */
+async function fetchJson(path: string): Promise<unknown> {
+  const res = await fetch(assetUrl(path))
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+/**
+ * Fetch and validate both catalog files in parallel. Never throws; one file failing does not hide
+ * the other. `error` is set (as before) only when the lessons file could not be loaded, and a
+ * pictures failure is added to `warnings`. Both failing sets `error` and keeps the pictures note.
+ */
 export async function loadCatalog(): Promise<LoadedCatalog> {
-  try {
-    const res = await fetch(assetUrl('lessons/index.json'))
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const raw: unknown = await res.json()
-    return { ...parseCatalog(raw), error: null }
-  } catch {
-    return { lessons: [], pictures: [], warnings: [], error: LOAD_ERROR }
+  const [lessonsRes, picturesRes] = await Promise.allSettled([fetchJson(LESSONS_INDEX), fetchJson(PICTURES_INDEX)])
+  const warnings: string[] = []
+  let lessons: StaticLesson[] = []
+  let pictures: Picture[] = []
+  let error: string | null = null
+
+  if (lessonsRes.status === 'fulfilled') {
+    const parsed = parseLessonsFile(lessonsRes.value)
+    lessons = parsed.lessons
+    warnings.push(...parsed.warnings)
+  } else {
+    error = LOAD_ERROR
   }
+  if (picturesRes.status === 'fulfilled') {
+    const parsed = parsePicturesFile(picturesRes.value)
+    pictures = parsed.pictures
+    warnings.push(...parsed.warnings)
+  } else {
+    warnings.push(PICTURES_LOAD_ERROR)
+  }
+  return { lessons, pictures, warnings, error }
 }

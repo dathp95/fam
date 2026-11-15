@@ -6,8 +6,8 @@
  *   (1600 px wide) and write inbox/images/<id>.draft.json with the API fields.
  * Step 2 (`--merge`): for each draft that has inbox/images/<id>.content.json, written by hand with
  *   { alt?, description[], commentary: { story, view, takeaway }, intro[] }, build the picture and
- *   merge it into public/lessons/index.json. The file is written only when the whole catalog
- *   validates (commentary is required; descriptions must not state dimensions).
+ *   merge it into public/pictures/index.json (created as { version: 1, pictures: [] } when missing).
+ *   The file is written only when the whole file validates (commentary is required; descriptions must not state dimensions).
  *
  * ffmpeg/ffprobe are taken from FFMPEG_PATH / FFPROBE_PATH, then PATH, then a WinGet install.
  */
@@ -32,7 +32,7 @@ import { contentIssues } from '../src/lib/pictures.ts'
 const ROOT = resolve(import.meta.dirname, '..')
 const IMAGES_DIR = join(ROOT, 'inbox', 'images')
 const PICTURES_DIR = join(ROOT, 'public', 'pictures')
-const INDEX_PATH = join(ROOT, 'public', 'lessons', 'index.json')
+const INDEX_PATH = join(PICTURES_DIR, 'index.json')
 const WIDTH = 1600
 
 class UserError extends Error {}
@@ -165,18 +165,18 @@ function merge(): number {
   if (problems.length > 0) return report(problems)
   if (pictures.length === 0) throw new UserError('Không có bức tranh nào để ghép.')
 
-  const merged = mergeIntoCatalog(readJson(INDEX_PATH), pictures)
+  const merged = mergeIntoCatalog(existsSync(INDEX_PATH) ? readJson(INDEX_PATH) : null, pictures)
   if (!merged.ok) return report(merged.errors)
 
   const tmp = `${INDEX_PATH}.tmp`
   writeFileSync(tmp, JSON.stringify(merged.catalog, null, 2) + '\n')
   renameSync(tmp, INDEX_PATH)
-  console.log(`Đã ghi ${pictures.length} bức tranh vào public/lessons/index.json: ${pictures.map((p) => p.id).join(', ')}.`)
+  console.log(`Đã ghi ${pictures.length} bức tranh vào public/pictures/index.json: ${pictures.map((p) => p.id).join(', ')}.`)
   return 0
 }
 
 function report(errors: string[]): number {
-  console.log('Không ghi index.json vì có lỗi:')
+  console.log('Không ghi public/pictures/index.json vì có lỗi:')
   for (const e of errors) console.log(`  - ${e}`)
   return 1
 }

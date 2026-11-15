@@ -74,7 +74,7 @@ export interface PictureCommentary {
   takeaway: string
 }
 
-/** A public-domain artwork the learner uncovers tile by tile (public/lessons/index.json `pictures`). */
+/** A public-domain artwork the learner uncovers tile by tile (public/pictures/index.json). */
 export interface Picture {
   /** "met-<objectId>" */
   id: string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCatalog } from './catalog.ts'
+import { parseLessonsFile } from './catalog.ts'
 import { buildStaticLesson, slugFromPath, type PublishInput } from './export.ts'
 
 /** Test data only, not real lesson content. */
@@ -72,10 +72,10 @@ describe('buildStaticLesson', () => {
     expect(JSON.stringify(r)).not.toMatch(/blob|base64/i)
   })
 
-  it('produces output that parseCatalog accepts', () => {
+  it('produces output that parseLessonsFile accepts', () => {
     const r = buildStaticLesson(input())
     if (!r.ok) throw new Error(r.error)
-    const parsed = parseCatalog({ version: 1, lessons: [JSON.parse(JSON.stringify(r.value))], series: [] })
+    const parsed = parseLessonsFile({ version: 1, lessons: [JSON.parse(JSON.stringify(r.value))], series: [] })
     expect(parsed.warnings).toEqual([])
     expect(parsed.lessons).toEqual([r.value])
   })

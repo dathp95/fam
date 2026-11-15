@@ -120,7 +120,7 @@ Những gì được giữ lại trong Task E: `PASS_SCORE = 60`, lưới ô che
 
 ## Task E — Bộ sưu tập tranh ngẫu nhiên
 
-### E1. Dữ liệu (`public/lessons/index.json` → `pictures`)
+### E1. Dữ liệu (`public/pictures/index.json` → `pictures`; từ Task I, trước đó nằm trong `public/lessons/index.json`)
 ```ts
 export interface PictureCredit { text: string; url: string }   // text tiếng Việt, hiển thị nguyên văn
 export interface Picture {
@@ -209,7 +209,7 @@ Bước 2, viết nội dung (làm trong cuộc trò chuyện với Claude, khô
 - **Chỉ dùng dữ kiện có trong draft; không bịa, không thêm kiến thức nền.** `alt` chỉ mô tả cảnh khi rõ từ tên tác phẩm/chất liệu; nếu không rõ thì bỏ trống để dùng `alt` trung tính "Tác phẩm <title>".
 
 Bước 3, ghép (`npm run ingest:pictures -- --merge`):
-- Với mỗi draft có file nội dung: dựng `Picture` (id `met-<objectId>`, `src` `pictures/met-<objectId>.webp`, kích thước đo bằng ffprobe, `credit.url = objectURL`), kiểm tra bằng `parseCatalog` và `contentIssues`, rồi ghép vào mảng `pictures` (cùng id thì thay thế).
+- Với mỗi draft có file nội dung: dựng `Picture` (id `met-<objectId>`, `src` `pictures/met-<objectId>.webp`, kích thước đo bằng ffprobe, `credit.url = objectURL`), kiểm tra bằng `parsePicturesFile` và `contentIssues`, rồi ghép vào mảng `pictures` của `public/pictures/index.json` (cùng id thì thay thế).
 - Credit tiếng Việt: `<artistDisplayName>, "<title>", <objectDate>. The Metropolitan Museum of Art, <creditLine>. Ảnh thuộc phạm vi công cộng (Met Open Access).` (bỏ phần tác giả khi rỗng; hàm thuần `buildCreditText`).
 - **Chỉ ghi `index.json` khi toàn bộ danh mục hợp lệ**; nếu có lỗi thì in lỗi và giữ nguyên file. Ghi qua file tạm rồi đổi tên. File được ghi lại với thụt lề 2 dấu cách.
 
@@ -218,13 +218,13 @@ Bước 3, ghép (`npm run ingest:pictures -- --merge`):
 - `progress.ts`: `loadProgress` với dữ liệu cũ/hợp lệ/sai; `recordLessonDone`; `pickNextPicture` (chưa xong, vòng mới tránh tranh vừa xong, một tranh duy nhất, id không còn trong catalog); `ensureActivePicture`; `recordPicturePass` (dưới/đúng ngưỡng 60, mở từng mảnh theo `order`, hoàn chỉnh ở mảnh 6, tranh mới sau khi hoàn chỉnh, không trùng trong `picturesDone`, không sửa đầu vào).
 - `catalog.ts`: tranh hợp lệ/thiếu trường/sai kiểu/trùng id, khóa `series` cũ bị bỏ qua.
 - `ingest.ts`: tên file, `isPublicDomain` (chỉ `true`), `pickDraftFields` (chỉ 10 trường), `buildCreditText` (có/không tác giả), `parseContent`, `buildPicture`, `mergePicture`, `mergeIntoCatalog` (không ghi khi sai).
-- Dữ liệu thật (`shippedCatalog.test.ts`): `index.json` không có cảnh báo, mọi tranh có file ảnh trong `public/pictures/`, đúng quy tắc nội dung, credit là credit Met bằng tiếng Việt.
+- Dữ liệu thật (`shippedCatalog.test.ts`): cả hai file `index.json` không có cảnh báo, mọi tranh có file ảnh trong `public/pictures/`, đúng quy tắc nội dung, credit là credit Met bằng tiếng Việt.
 
 ---
 
 ## Việc người dùng tự làm (Claude Code không làm thay)
 1. **Chọn tranh** ở https://www.metmuseum.org: bật lọc Open Access, tải ảnh về, đổi tên thành `<objectId>.jpg` (số cuối link trang tác phẩm) và đặt vào `inbox/images/`. Chạy `npm run ingest:pictures`; nhờ Claude viết file nội dung từ các file `.draft.json`; đọc lại cho đúng rồi chạy `npm run ingest:pictures -- --merge`.
-2. **Nạp bài VOA bằng Python** (xem mục "Nạp bài bằng Python" trong README): cắt audio nếu cần (`ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn l01.mp3`), đặt `<id>.mp3` và `<id>.txt` (transcript, có thể kèm phần đầu title/url/topic/level/order) vào `inbox/lessons/`, chạy `python process_lesson.py --id <id> --dry-run` để xem bảng câu rồi chạy không có `--dry-run`. Đối chiếu transcript với trang VOA, nghe thử từng câu và sửa mốc thời gian trong `public/lessons/index.json` nếu lệch. (Cách cũ vẫn dùng được: nạp ở màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi dán vào `index.json`; hiện mục "Tải file" ẩn trừ khi mở bằng `?admin`.)
+2. **Nạp bài VOA bằng Python** (xem mục "Nạp bài bằng Python" trong README): cắt audio nếu cần (`ffmpeg -ss <bắt đầu> -to <kết thúc> -i bai.mp4 -vn l01.mp3`), đặt `<id>.mp3` và `<id>.txt` (transcript, có thể kèm phần đầu title/url/topic/level/order) vào `inbox/lessons/`, chạy `python process_lesson.py --id <id> --dry-run` để xem bảng câu rồi chạy không có `--dry-run`. Đối chiếu transcript với trang VOA, nghe thử từng câu và sửa mốc thời gian trong `public/lessons/index.json` nếu lệch. (Cách cũ vẫn dùng được: nạp ở màn hình "Tải file" → "Xem lại các câu" → "Xuất bài (JSON)" rồi dán vào mảng `lessons` của `public/lessons/index.json`; hiện mục "Tải file" ẩn trừ khi mở bằng `?admin`.)
 3. Chỉ lấy chữ và audio VOA, không lấy ảnh của họ. Giữ dòng ghi nguồn "Voice of America · public domain".
 
 ---
@@ -237,6 +237,15 @@ Script độc lập ở thư mục gốc, Python 3.10+ chỉ dùng thư viện c
 - **Làm sạch transcript**: nháy cong thành nháy thẳng, bỏ nháy kép, "..." và "…" thành khoảng trắng, bỏ nhãn người nói ở đầu dòng (tối đa 2 từ), nối dòng bằng khoảng trắng; dòng không kết thúc bằng `. ! ?` được thêm dấu chấm (script liệt kê các dòng đó). Dòng kết thúc bằng `, ; :` coi như câu còn tiếp, trừ dòng cuối (đổi thành dấu chấm).
 - **Tách câu, im lặng, căn thời điểm**: bản port trung thực của `splitSentences`, `findSilences`, `alignSentences` trong `src/lib/segment.ts` (cùng hằng số; `round2` làm tròn nửa lên như `Math.round`). Audio được chuyển bằng `ffmpeg -ac 1 -b:a 48k -map_metadata -1` vào `public/lessons/voa/<id>.mp3`; độ dài đo bằng ffprobe trên file đã chuyển; quãng im lặng tìm trên bản giải mã mono 16 kHz.
 - **Bài tạo ra** đúng lược đồ `parseStaticLesson` (id, kind, title, langId, createdAt, audioUrl, duration, sentences với id `<id>-<n>`, level, topic, source, và `order` nếu có), được kiểm tra trong Python trước khi ghi.
-- **Ghi `index.json` an toàn**: giữ nguyên mọi thứ khác (kể cả `pictures`), chỉ thêm bài (thay bài cùng id khi `--force`, không thì bỏ qua); luôn sao lưu `index.json.bak`; ghi file tạm cùng thư mục rồi `os.replace`; thụt lề 2 dấu cách, UTF-8, có xuống dòng cuối. File gốc được chuyển sang `inbox/lessons/done/`; script không bao giờ xóa file người dùng.
+- **Ghi `index.json` an toàn**: giữ nguyên mọi thứ khác (kể cả các khóa lạ), chỉ thêm bài (thay bài cùng id khi `--force`, không thì bỏ qua); luôn sao lưu `index.json.bak`; ghi file tạm cùng thư mục rồi `os.replace`; thụt lề 2 dấu cách, UTF-8, có xuống dòng cuối. File gốc được chuyển sang `inbox/lessons/done/`; script không bao giờ xóa file người dùng.
 - **Cờ**: `--id`, `--force`, `--dry-run` (không chuyển audio, không ghi gì; đo từ file gốc), `--keep-inbox`. Mã thoát 1 nếu có bài lỗi. Mọi thông báo bằng tiếng Việt; sau mỗi bài in bảng `n, start, end, text` và cảnh báo (câu > 16 từ, câu < 0,6 giây, câu kết thúc bằng dấu phẩy, im lặng đầu/cuối > 2 giây, không tìm thấy quãng im lặng nào).
 - **Test**: `tests/test_process_lesson.py` (`npm run test:py`), đối chiếu với code TypeScript qua `tests/segment_vectors.json` (sinh bằng `node tests/gen_segment_vectors.mjs`); phần chạy thật với ffmpeg tự bỏ qua nếu máy không có ffmpeg.
+
+## Task I — Tách danh mục tranh khỏi danh mục bài
+
+Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, lối chơi hay nội dung.
+
+- **Hai file danh mục**: `public/lessons/index.json` = `{ "version": 1, "lessons": [...] }` (bài có sẵn; `process_lesson.py` và "Xuất bài (JSON)" ghi/dán vào đây, mảng `lessons`) và `public/pictures/index.json` = `{ "version": 1, "pictures": [...] }` (tranh; `npm run ingest:pictures -- --merge` ghi vào đây, tự tạo file nếu chưa có). `image.src` vẫn tính từ `public/` (`pictures/met-<id>.webp`).
+- **Bộ nạp** (`src/lib/catalog.ts`): `parseLessonsFile` và `parsePicturesFile` (cùng cách kiểm tra như trước: version, từng mục, id trùng bị bỏ và có cảnh báo tiếng Việt). Khóa cũ `pictures` hay `series` trong file bài bị bỏ qua. `parseCatalog` đã bỏ. Hằng số `LESSONS_INDEX`, `PICTURES_INDEX`.
+- **`loadCatalog()`** tải song song hai file (`Promise.allSettled`), không bao giờ ném lỗi; một file hỏng không làm mất file kia. Lỗi file bài: `lessons = []` và `error` như cũ; lỗi file tranh: `pictures = []` và cảnh báo "Không tải được danh sách tranh.".
+- **Test**: `shippedCatalog.test.ts` đọc cả hai file thật (không cảnh báo, ảnh tồn tại, quy tắc nội dung và credit); `catalog.test.ts` có test `loadCatalog` khi một file lỗi và khi file bài còn mảng `pictures` cũ; `test_process_lesson.py` có test file bài không có khóa `pictures`.

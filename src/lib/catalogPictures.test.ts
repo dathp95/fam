@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCatalog, parsePicture } from './catalog.ts'
+import { parsePicture, parsePicturesFile } from './catalog.ts'
 import { contentIssues } from './pictures.ts'
 
 /** Valid picture fixture (test data only). */
@@ -19,22 +19,9 @@ const picture = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-const withPictures = (...list: unknown[]) => parseCatalog({ version: 1, lessons: [], pictures: list })
+const withPictures = (...list: unknown[]) => parsePicturesFile({ version: 1, pictures: list })
 
-/** Minimal valid lesson, to check that lessons and pictures are parsed independently. */
-const lesson = () => ({
-  id: 'l1',
-  kind: 'static',
-  title: 'Lesson',
-  audioUrl: 'lessons/l1.mp3',
-  duration: 10,
-  sentences: [{ id: 's1', text: 'Hello.', start: 0, end: 4 }],
-  level: 'A1',
-  topic: 'Greetings',
-  source: { name: 'Test source', url: 'https://example.com/x', license: 'public domain' },
-})
-
-describe('parseCatalog: pictures', () => {
+describe('parsePicturesFile: pictures', () => {
   it('accepts a valid picture', () => {
     const r = withPictures(picture())
     expect(r.warnings).toEqual([])
@@ -108,16 +95,11 @@ describe('parseCatalog: pictures', () => {
     expect(contentIssues(r.pictures[0]).length).toBeGreaterThan(0)
   })
 
-  it('skips a duplicate id, keeps the first and does not drop lessons', () => {
-    const r = parseCatalog({
-      version: 1,
-      lessons: [lesson()],
-      pictures: [picture({ title: 'First' }), picture({ title: 'Second' })],
-    })
+  it('skips a duplicate id and keeps the first', () => {
+    const r = withPictures(picture({ title: 'First' }), picture({ title: 'Second' }))
     expect(r.pictures.map((p) => p.title)).toEqual(['First'])
     expect(r.warnings).toHaveLength(1)
     expect(r.warnings[0]).toContain('trùng id')
-    expect(r.lessons).toHaveLength(1)
   })
 
   it('keeps valid pictures next to invalid ones', () => {
@@ -127,15 +109,26 @@ describe('parseCatalog: pictures', () => {
     expect(r.warnings[0]).toContain('met-bad')
   })
 
-  it('does not break lessons when pictures are invalid', () => {
-    const r = parseCatalog({ version: 1, lessons: [lesson()], pictures: [null, 5, 'x'] })
-    expect(r.lessons).toHaveLength(1)
+  it('warns for every invalid entry', () => {
+    const r = withPictures(null, 5, 'x')
     expect(r.pictures).toEqual([])
     expect(r.warnings).toHaveLength(3)
   })
+
+  it('returns no pictures and one warning for a malformed file', () => {
+    for (const raw of [null, 'x', 42, [], {}, { version: 2, pictures: [] }, { version: 1 }, { version: 1, pictures: {} }]) {
+      const r = parsePicturesFile(raw)
+      expect(r.pictures).toEqual([])
+      expect(r.warnings).toHaveLength(1)
+    }
+  })
+
+  it('accepts an empty pictures file', () => {
+    expect(parsePicturesFile({ version: 1, pictures: [] })).toEqual({ pictures: [], warnings: [] })
+  })
 })
 
-describe('parseCatalog: commentary (required, strict)', () => {
+describe('parsePicturesFile: commentary (required, strict)', () => {
   const GOOD = { story: 'Cảnh một.', view: 'Cách nhìn.', takeaway: 'Điều rút ra.' }
 
   it('rejects a picture without commentary, with a Vietnamese error', () => {
@@ -182,7 +175,7 @@ describe('parseCatalog: commentary (required, strict)', () => {
   })
 })
 
-describe('parseCatalog: byline (optional)', () => {
+describe('parsePicturesFile: byline (optional)', () => {
   it('accepts and trims a byline', () => {
     expect(withPictures(picture({ byline: '  Artist · 1900 ' })).pictures[0].byline).toBe('Artist · 1900')
   })

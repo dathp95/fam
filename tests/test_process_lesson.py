@@ -645,6 +645,18 @@ class CatalogTests(unittest.TestCase):
         (self.dir / "bom.json").write_bytes(b"\xef\xbb\xbf" + json.dumps(self.catalog).encode("utf-8"))
         self.assertEqual(pl.load_catalog(self.dir / "bom.json")["version"], 1)
 
+    def test_a_lessons_file_without_a_pictures_key_is_read_and_written_back(self):
+        only = {"version": 1, "lessons": [{"id": "old-1", "title": "Old"}]}
+        self.path.write_text(pl.dump_catalog(only), encoding="utf-8")
+        loaded = pl.load_catalog(self.path)
+        self.assertNotIn("pictures", loaded)
+        new, status = pl.update_catalog(loaded, good_lesson(), force=False)
+        self.assertEqual(status, "added")
+        pl.write_catalog(self.path, new)
+        written = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(list(written.keys()), ["version", "lessons"])  # no "pictures" key appears
+        self.assertEqual([x["id"] for x in written["lessons"]], ["old-1", "test-l01"])
+
     def test_catalog_ids(self):
         self.assertEqual(pl.catalog_ids({"lessons": [{"id": "a"}, {"id": "b"}, "junk", {"x": 1}]}), {"a", "b"})
 
@@ -799,6 +811,14 @@ class PipelineTests(unittest.TestCase):
 
     def output(self) -> str:
         return "\n".join(self.messages)
+
+    def test_full_run_on_a_lessons_file_without_pictures(self):
+        self.catalog_path.write_text(pl.dump_catalog({"version": 1, "lessons": []}), encoding="utf-8")
+        self.put_inbox()
+        self.assertEqual(pl.run(self.ctx(), None), 0, self.output())
+        cat = self.catalog()
+        self.assertEqual(list(cat.keys()), ["version", "lessons"])
+        self.assertEqual([x["id"] for x in cat["lessons"]], ["test-l01"])
 
     def test_full_run_adds_the_lesson(self):
         self.put_inbox()

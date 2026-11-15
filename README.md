@@ -13,7 +13,7 @@ npm test         # chạy test (Vitest)
 
 ## Thêm tranh vào bộ sưu tập
 
-Xem mục Task E trong `docs/TASKS.md`. Tóm tắt: đặt ảnh `<objectId>.jpg` vào `inbox/images/`, chạy `npm run ingest:pictures` (chỉ nhận tác phẩm public domain; cần ffmpeg), viết file `<objectId>.content.json` từ file `.draft.json`, rồi chạy `npm run ingest:pictures -- --merge`.
+Tranh nằm trong `public/pictures/index.json` (tách khỏi danh mục bài `public/lessons/index.json`). Xem mục Task E và Task I trong `docs/TASKS.md`. Tóm tắt: đặt ảnh `<objectId>.jpg` vào `inbox/images/`, chạy `npm run ingest:pictures` (chỉ nhận tác phẩm public domain; cần ffmpeg), viết file `<objectId>.content.json` từ file `.draft.json`, rồi chạy `npm run ingest:pictures -- --merge` (ghi vào `public/pictures/index.json`, tự tạo nếu chưa có).
 
 ## Nạp bài bằng Python
 
@@ -57,4 +57,5 @@ Kiểm thử script: `npm run test:py` (hoặc `python -m unittest discover -s t
 - `src/workers/`: chỗ dành cho nhận dạng giọng nói (Whisper) ở bước sau; hiện chỉ có kiểu dữ liệu.
 - `scripts/`: công cụ dòng lệnh (`ingest-pictures.ts`).
 - `process_lesson.py`, `tests/`: nạp bài bằng Python và test của nó.
-- `public/lessons/index.json`: danh mục bài và tranh; `public/pictures/`: ảnh tranh.
+- `public/lessons/index.json`: danh mục bài (`{ version, lessons }`); dán bài xuất từ màn Review ("Xuất bài (JSON)") vào mảng `lessons` ở đây. `process_lesson.py` ghi vào file này.
+- `public/pictures/index.json`: danh mục tranh (`{ version, pictures }`), do `npm run ingest:pictures -- --merge` ghi; `public/pictures/*.webp`: ảnh tranh.

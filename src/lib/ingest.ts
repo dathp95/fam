@@ -1,9 +1,9 @@
 /**
  * Pure parts of the picture ingest tool (scripts/ingest-pictures.ts): file names, Met API data,
- * credit text, building a Picture and merging it into public/lessons/index.json.
+ * credit text, building a Picture and merging it into public/pictures/index.json.
  */
 
-import { parseCatalog, parseCommentary, type ParseResult } from './catalog.ts'
+import { parseCommentary, parsePicturesFile, type ParseResult } from './catalog.ts'
 import { contentIssues } from './pictures.ts'
 import type { Picture, PictureCommentary } from './types.ts'
 
@@ -139,23 +139,25 @@ export function mergePicture(pictures: Picture[], picture: Picture): Picture[] {
 }
 
 /**
- * Merge pictures into the raw index.json object (same id replaces, others are kept as they are)
- * and validate the whole result with the catalog parser and the content rules. Returns the new
- * object only when there are no problems, so the caller never writes an invalid index.json.
+ * Merge pictures into the raw public/pictures/index.json object ({ version, pictures }): the same
+ * id replaces, others are kept as they are. The whole result is validated with the pictures
+ * parser and the content rules. Returns the new object only when there are no problems, so the
+ * caller never writes an invalid file. `null` (file not created yet) starts an empty file.
  */
 export function mergeIntoCatalog(
-  rawCatalog: unknown,
+  rawFile: unknown,
   pictures: Picture[],
 ): { ok: true; catalog: Record<string, unknown> } | { ok: false; errors: string[] } {
-  if (!isRecord(rawCatalog)) return { ok: false, errors: ['index.json không phải một đối tượng JSON.'] }
-  let list: unknown[] = Array.isArray(rawCatalog.pictures) ? [...(rawCatalog.pictures as unknown[])] : []
+  const start = rawFile === null ? { version: 1, pictures: [] as unknown[] } : rawFile
+  if (!isRecord(start)) return { ok: false, errors: ['pictures/index.json không phải một đối tượng JSON.'] }
+  let list: unknown[] = Array.isArray(start.pictures) ? [...(start.pictures as unknown[])] : []
   for (const picture of pictures) {
     const i = list.findIndex((x) => isRecord(x) && x.id === picture.id)
     list = i === -1 ? [...list, picture] : list.map((x, k) => (k === i ? picture : x))
   }
-  const catalog: Record<string, unknown> = { ...rawCatalog, pictures: list }
+  const catalog: Record<string, unknown> = { ...start, pictures: list }
 
-  const parsed = parseCatalog(catalog)
+  const parsed = parsePicturesFile(catalog)
   const errors = [...parsed.warnings]
   for (const picture of pictures) {
     if (!parsed.pictures.some((p) => p.id === picture.id)) {

@@ -237,27 +237,14 @@ describe('mergePicture', () => {
 })
 
 describe('mergeIntoCatalog', () => {
-  const lesson = {
-    id: 'l1',
-    kind: 'static',
-    title: 'Lesson',
-    audioUrl: 'lessons/l1.mp3',
-    duration: 10,
-    sentences: [{ id: 's1', text: 'Hello.', start: 0, end: 4 }],
-    level: 'A1',
-    topic: 'Greetings',
-    source: { name: 'Test source', url: 'https://example.com/x', license: 'public domain' },
-    seriesId: 'nature',
-    order: 1,
-  }
-  const base = () => ({ version: 1, lessons: [lesson], pictures: [] as unknown[] })
+  const base = () => ({ version: 1, pictures: [] as unknown[] })
 
   it('adds a picture and leaves everything else as it was', () => {
     const r = mergeIntoCatalog(base(), [picture()])
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.catalog.version).toBe(1)
-    expect(r.catalog.lessons).toEqual([lesson])
+    expect(Object.keys(r.catalog)).toEqual(['version', 'pictures'])
     expect(r.catalog.pictures).toEqual([picture()])
   })
 
@@ -309,18 +296,22 @@ describe('mergeIntoCatalog', () => {
     if (!r.ok) expect(r.errors.join(' ')).toContain('met-broken')
   })
 
-  it('refuses when an existing lesson is invalid', () => {
-    const start = { ...base(), lessons: [{ id: 'l1' }] }
-    expect(mergeIntoCatalog(start, [picture()]).ok).toBe(false)
-  })
-
   it('refuses a catalog that is not an object, or has the wrong version', () => {
-    for (const raw of [null, 'x', [], { version: 2, lessons: [] }]) expect(mergeIntoCatalog(raw, [picture()]).ok).toBe(false)
+    for (const raw of ['x', [], { version: 2, pictures: [] }]) expect(mergeIntoCatalog(raw, [picture()]).ok).toBe(false)
   })
 
-  it('works when the catalog has no pictures key yet', () => {
-    const r = mergeIntoCatalog({ version: 1, lessons: [lesson] }, [picture()])
+  it('works when the file has no pictures key yet', () => {
+    const r = mergeIntoCatalog({ version: 1 }, [picture()])
     expect(r.ok).toBe(true)
+  })
+
+  it('starts a new { version: 1, pictures } file when there is none (null)', () => {
+    const r = mergeIntoCatalog(null, [picture()])
+    expect(r.ok && r.catalog).toEqual({ version: 1, pictures: [picture()] })
+  })
+
+  it('keeps a lessons catalog untouched by refusing it (no version/pictures mix-up)', () => {
+    expect(mergeIntoCatalog({ version: 2, pictures: [] }, [picture()]).ok).toBe(false)
   })
 
   it('merges several pictures at once', () => {
@@ -380,12 +371,7 @@ describe('buildByline', () => {
 })
 
 describe('mergeIntoCatalog: description cleanup and commentary', () => {
-  const lesson = {
-    id: 'l1', kind: 'static', title: 'Lesson', audioUrl: 'lessons/l1.mp3', duration: 10,
-    sentences: [{ id: 's1', text: 'Hello.', start: 0, end: 4 }],
-    level: 'A1', topic: 'Greetings', source: { name: 'n', url: 'https://example.com/x', license: 'l' },
-  }
-  const base = () => ({ version: 1, lessons: [lesson], pictures: [] as unknown[] })
+  const base = () => ({ version: 1, pictures: [] as unknown[] })
 
   it('merges the commentary into index.json', () => {
     const r = mergeIntoCatalog(base(), [picture()])

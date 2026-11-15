@@ -1,22 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import shipped from '../../public/lessons/index.json'
-import { parseCatalog } from './catalog.ts'
+import shippedLessons from '../../public/lessons/index.json'
+import shippedPictures from '../../public/pictures/index.json'
+import { parseLessonsFile, parsePicturesFile } from './catalog.ts'
 import { contentIssues } from './pictures.ts'
 
 /** Files in public/pictures/ (paths are relative to this test file). */
 const pictureFiles = Object.keys(import.meta.glob('../../public/pictures/*.webp')).map((p) => p.split('/').pop())
 
-/** Guards the real data in public/lessons/index.json, so a typo there is caught by `npm test`. */
-describe('shipped catalog (public/lessons/index.json)', () => {
-  const catalog = parseCatalog(shipped as unknown)
+/** Guards the real data in public/lessons/index.json and public/pictures/index.json, so a typo there is caught by `npm test`. */
+describe('shipped catalogs', () => {
+  const lessonsFile = parseLessonsFile(shippedLessons as unknown)
+  const catalog = { ...parsePicturesFile(shippedPictures as unknown), lessons: lessonsFile.lessons }
 
-  it('has no validation warnings', () => {
-    expect(catalog.warnings).toEqual([])
+  it('lessons file has no validation warnings and only version + lessons', () => {
+    expect(lessonsFile.warnings).toEqual([])
+    expect(Object.keys(shippedLessons).sort()).toEqual(['lessons', 'version'])
   })
 
-  it('uses "pictures" and no longer has a "series" key', () => {
-    expect(Array.isArray((shipped as Record<string, unknown>).pictures)).toBe(true)
-    expect('series' in shipped).toBe(false)
+  it('pictures file has no validation warnings and only version + pictures', () => {
+    expect(catalog.warnings).toEqual([])
+    expect(Object.keys(shippedPictures).sort()).toEqual(['pictures', 'version'])
   })
 
   it('has at least one picture, with unique "met-<objectId>" ids', () => {
