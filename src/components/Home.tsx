@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import type { LoadedCatalog } from '../lib/catalog.ts'
 import { groupStaticLessons } from '../lib/lessonGroups.ts'
 import { bonusLessonId, buildBonusLesson } from '../lib/pictures.ts'
 import { PASS_SCORE, type LessonDone, type Progress } from '../lib/progress.ts'
 import { LESSON_SOURCES, type LessonSourceId } from '../lib/sources.ts'
 import { assetUrl } from '../lib/catalog.ts'
-import { PROGRESS_NOTE } from '../lib/siteInfo.ts'
 import type { Lesson, MediaLesson, Picture, StaticLesson } from '../lib/types.ts'
 import { PictureCard } from './PictureCard.tsx'
 
@@ -48,8 +46,6 @@ export function Home({
   onAbout,
   onDonate,
 }: Props) {
-  // Not persisted: the note is hidden every time Home is shown.
-  const [noteOpen, setNoteOpen] = useState(false)
   function pickSource(id: LessonSourceId) {
     switch (id) {
       case 'catalog':
@@ -74,25 +70,6 @@ export function Home({
 
   return (
     <div className="stack">
-      <div className="stack">
-        <button
-          className="progress-note-btn"
-          aria-expanded={noteOpen}
-          aria-controls="progress-note"
-          onClick={() => setNoteOpen((v) => !v)}
-        >
-          <span aria-hidden="true">ⓘ </span>
-          {PROGRESS_NOTE.button}
-        </button>
-        {noteOpen && (
-          <p className="muted progress-note" id="progress-note">
-            {PROGRESS_NOTE.vi}
-            <br />
-            <span lang="en">{PROGRESS_NOTE.en}</span>
-          </p>
-        )}
-      </div>
-
       {showSources && (
         <section className="stack" aria-labelledby="sources-title">
           <h2 id="sources-title">Chọn nguồn bài</h2>

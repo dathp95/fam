@@ -206,15 +206,21 @@ body:has(.album-detail) { overscroll-behavior-x: none; }
 .donate-qr { display: block; width: 100%; max-width: 280px; height: auto; margin: 0 auto; border-radius: 8px; }
 .donate-center { text-align: center; justify-content: center; }
 .home-footer { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 8px; }
-.home-footer .btn.link, .progress-note-btn { font-size: 14px; color: var(--muted); }
-.progress-note-btn { align-self: flex-start; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; font-family: inherit; }
-.progress-note { margin: 0; }
+.home-footer .btn.link { font-size: 14px; color: var(--muted); }
 .wrap p a { color: var(--accent); }
 
-.theme-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
-.theme-switch button { border: 0; background: none; padding: 6px 10px; min-height: 36px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted); }
-.theme-switch button + button { border-left: 1px solid var(--line); }
-.theme-switch button[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); }
+
+.theme-toggle { border: 1px solid var(--line); background: var(--card); border-radius: 50%; width: 44px; height: 44px; font-size: 22px; line-height: 1; cursor: pointer; padding: 0; }
+.theme-toggle:hover { border-color: var(--accent); }
+/* Narrow screens, first row: logo | level | theme button (all vertically centred); second row: XP bar | streak. */
+@media (max-width: 600px) {
+  .top { display: grid; grid-template-columns: 1fr auto auto; column-gap: 12px; row-gap: 12px; }
+  .top > .brand { grid-area: 1 / 1; margin-right: 0; min-width: 0; }
+  .top > .stat:nth-child(2) { grid-area: 1 / 2; }
+  .top > .theme-toggle { grid-area: 1 / 3; }
+  .top > .stat:nth-child(3) { grid-area: 2 / 1; }
+  .top > .stat:nth-child(4) { grid-area: 2 / 2 / 2 / 4; }
+}
 
 .update-banner { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 50; max-width: 480px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 18%, transparent); }
 .update-banner span { flex: 1; font-weight: 600; }

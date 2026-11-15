@@ -267,7 +267,7 @@ Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, l
 - **Hosting**: `vite.config.ts` đặt `base` từ `VITE_BASE` qua `normalizeBase` (`scripts/base.ts`, có test; chỉ nhận `/` hoặc đường dẫn con như `/fam/`, giá trị lạ báo lỗi tiếng Việt). `npm run build:pages` (`scripts/build-pages.ts`, không thêm thư viện, chạy được trên PowerShell) build với `VITE_BASE` mặc định `/fam/`. `.github/workflows/deploy.yml` triển khai lên GitHub Pages khi push `main` (test → build → đăng `dist`), không đặt `VITE_ADMIN_TOKEN`. Hiện app chưa có cơ chế token nên `?admin` vẫn là tiện ích không phải bảo mật.
 - **Màn "Giới thiệu và nguồn"** (`About.tsx`) mở từ liên kết ở chân Home: giới thiệu FAM (FAMILY, "farm", phi lợi nhuận), nguồn VOA và Met Open Access (liên kết mở tab mới, `rel="noreferrer noopener"`), email mời hợp tác (`mailto:`) và nút "Ủng hộ dự án".
 - **Màn "Ủng hộ FAM"** (`Donate.tsx`) mở từ chân Home hoặc từ màn giới thiệu (nút quay lại về đúng nơi đã mở): lời kêu gọi tiếng Việt và tiếng Anh, ảnh QR `public/support-qr.jpg` (tối đa ~280 px; lỗi tải thì hiện "Mã QR sẽ được cập nhật. / The QR code will be added soon."), chủ tài khoản, ngân hàng, nội dung chuyển khoản, nút sao chép (`navigator.clipboard`, im lặng nếu không dùng được) và email. App không thu tiền hay dữ liệu cá nhân; số tài khoản hiển thị công khai theo `ACCOUNT_NUMBER` trong `siteInfo.ts`.
-- **Ghi chú nơi lưu tiến độ**: nút "Tiến độ được lưu ở đâu?" ở đầu Home (`aria-expanded`, `aria-controls`) bật/tắt ghi chú song ngữ; mặc định ẩn, không lưu trạng thái.
+- **Ghi chú nơi lưu tiến độ** (đã bỏ nút trên Home ở Task R, nay là dòng trong thẻ "Sao lưu tiến độ" ở màn Giới thiệu).
 - **Chỉnh nội dung**: tất cả văn bản công khai và hằng số (`SITE_NAME`, `OWNER_NAME`, `BANK_NAME`, `TRANSFER_NOTE`, `CONTACT_EMAIL`) nằm trong `src/lib/siteInfo.ts`.
 
 ## Task Q — PWA offline và sao lưu tiến độ
@@ -276,3 +276,7 @@ Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, l
 - **Đăng ký** (`src/lib/pwa.ts`, gọi ở `src/main.tsx`): chỉ ở production, URL `${BASE_URL}sw.js`. `UpdateBanner` hiện "Có bản mới / Tải lại" và chỉ tải lại khi người học bấm. `requestPersistence()` đã được `App` gọi lúc khởi động. Manifest thêm `id` và `scope` (vẫn dùng đường dẫn tương đối).
 - **Sao lưu**: `src/lib/backup.ts` (`exportProgress`, `parseBackup`, giới hạn 1 MB, từ chối app/kind/version sai) dùng `parseProgress` tách từ `loadProgress` (bỏ khóa `__proto__`); `src/lib/backupFile.ts` lo chia sẻ/tải xuống và đọc file; thẻ "Sao lưu tiến độ" và dòng hướng dẫn cài đặt (Android/iPhone) nằm ở `About.tsx`, chữ ở `siteInfo.ts` (`BACKUP`, `INSTALL_HINT`).
 - **Test**: `backup.test.ts` (đi vòng, file sai, dữ liệu rác, `__proto__`) và `sw.test.ts` (nạp `public/sw.js` bằng `?raw`, kiểm `parseRange`/`sliceResponse`). Thử tay: xem mục "PWA và chạy offline" trong README.
+
+## Task R — Đơn giản hóa phần đầu Home
+
+- Bỏ công tắc "Sáng | Tối | Theo hệ thống" và nút "Tiến độ được lưu ở đâu?". Chỉ còn hàng XP/chuỗi ngày và một nút tròn 🌕 (`theme-toggle`) đổi giao diện: đang tối thì sang sáng, đang sáng thì sang tối. Khi chưa chọn, giao diện theo hệ thống; chạm lần đầu thì lưu lựa chọn rõ ràng (`fam.theme`). Logic thuần: `resolveTheme`, `toggledMode` trong `src/lib/theme.ts` (có test).

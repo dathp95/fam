@@ -75,10 +75,4 @@ export const DONATE = {
   contactLabel: 'Email mời hợp tác:',
 } as const
 
-export const PROGRESS_NOTE = {
-  button: 'Tiến độ được lưu ở đâu?',
-  vi: 'Tiến độ học chỉ được lưu trong trình duyệt của bạn. Nếu đổi máy hoặc xóa dữ liệu trình duyệt, tiến độ sẽ mất.',
-  en: 'Your progress is saved only in this browser. If you switch devices or clear your browser data, it will be lost.',
-} as const
-
 export const mailto = (email: string = CONTACT_EMAIL) => `mailto:${email}`

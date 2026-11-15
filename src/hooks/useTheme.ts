@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { dataThemeFor, parseThemeMode, type ThemeMode } from '../lib/theme.ts'
+import { dataThemeFor, parseThemeMode, resolveTheme, toggledMode, type ThemeMode } from '../lib/theme.ts'
 
 const KEY = 'fam.theme'
+const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
 
 function readStored(): ThemeMode {
   try {
@@ -12,12 +13,20 @@ function readStored(): ThemeMode {
 }
 
 /**
- * Light / dark / system. The choice is saved in localStorage and applied as data-theme on <html>
- * ("system" removes the attribute so the CSS follows prefers-color-scheme). index.html applies the
+ * Light or dark, with one `toggle`. Until the learner taps it, the OS preference decides; after that
+ * the choice is saved in localStorage and applied as data-theme on <html>. index.html applies the
  * saved value before first paint, so there is no flash.
  */
 export function useTheme() {
-  const [mode, setModeState] = useState<ThemeMode>(readStored)
+  const [mode, setMode] = useState<ThemeMode>(readStored)
+  const [systemDark, setSystemDark] = useState(() => darkQuery().matches)
+
+  useEffect(() => {
+    const q = darkQuery()
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches)
+    q.addEventListener('change', onChange)
+    return () => q.removeEventListener('change', onChange)
+  }, [])
 
   useEffect(() => {
     const root = document.documentElement
@@ -26,15 +35,15 @@ export function useTheme() {
     else delete root.dataset.theme
   }, [mode])
 
-  const setMode = useCallback((next: ThemeMode) => {
-    setModeState(next)
+  const toggle = useCallback(() => {
+    const next = toggledMode(mode, systemDark)
+    setMode(next)
     try {
-      if (next === 'system') localStorage.removeItem(KEY)
-      else localStorage.setItem(KEY, next)
+      localStorage.setItem(KEY, next)
     } catch {
       /* storage may be disabled */
     }
-  }, [])
+  }, [mode, systemDark])
 
-  return { mode, setMode }
+  return { theme: resolveTheme(mode, systemDark), toggle }
 }

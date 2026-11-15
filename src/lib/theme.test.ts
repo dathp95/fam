@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dataThemeFor, parseThemeMode, THEME_MODES } from './theme.ts'
+import { dataThemeFor, parseThemeMode, resolveTheme, toggledMode } from './theme.ts'
 
 describe('theme mode', () => {
   it('reads a stored light or dark choice', () => {
@@ -17,7 +17,20 @@ describe('theme mode', () => {
     expect(dataThemeFor('system')).toBeNull()
   })
 
-  it('offers light, dark and system', () => {
-    expect([...THEME_MODES]).toEqual(['light', 'dark', 'system'])
+  it('resolves system to the OS preference', () => {
+    expect(resolveTheme('system', true)).toBe('dark')
+    expect(resolveTheme('system', false)).toBe('light')
+    expect(resolveTheme('light', true)).toBe('light')
+    expect(resolveTheme('dark', false)).toBe('dark')
+  })
+
+  it('toggles dark to light and light to dark', () => {
+    expect(toggledMode('dark', false)).toBe('light')
+    expect(toggledMode('light', true)).toBe('dark')
+  })
+
+  it('toggles from "system" based on what is currently shown', () => {
+    expect(toggledMode('system', true)).toBe('light')
+    expect(toggledMode('system', false)).toBe('dark')
   })
 })
