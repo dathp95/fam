@@ -74,6 +74,19 @@ Chân trang Home có hai liên kết nhỏ: "Giới thiệu và nguồn" (giới
 
 Ảnh QR đặt ở `public/support-qr.jpg` (khoảng 600×600 px; app luôn tìm đúng tên file này). Nếu thiếu file hoặc không tải được, màn hình hiện dòng "Mã QR sẽ được cập nhật." thay cho ảnh. Trên Home còn nút nhỏ "Tiến độ được lưu ở đâu?" (bấm để hiện ghi chú: tiến độ chỉ lưu trong trình duyệt; không nhớ trạng thái đóng/mở).
 
+## PWA và chạy offline
+
+`public/sw.js` là service worker viết tay (không thêm thư viện). Chỉ đăng ký ở bản production (`import.meta.env.PROD`), không bao giờ ở `npm run dev`; mọi đường dẫn suy ra từ scope của worker nên chạy được ở `/` lẫn `/fam/`.
+
+- **Chiến lược**: khi cài đặt, lưu sẵn `index.html`, manifest, icon và các file JS/CSS trong `assets/` mà `index.html` dùng, cùng hai danh mục (`lessons/index.json`, `pictures/index.json`). Điều hướng: ưu tiên mạng, mất mạng thì dùng `index.html` đã lưu. Hai danh mục: stale-while-revalidate (bài mới hiện sau một lần tải lại). `assets/`, `pictures/` và audio `.mp3`: ưu tiên bản đã lưu, lưu lần đầu được tải. Audio hỗ trợ Range (trả 206 từ file đã lưu, cần cho Safari). Chỉ xử lý GET cùng nguồn; Google Fonts và các nguồn ngoài không bị lưu.
+- **Phiên bản cache**: `fam-static-v1`, `fam-media-v1`, `fam-data-v1`. Khi đổi luật lưu trong `sw.js`, tăng `CACHE_VERSION` ở đầu file; lúc kích hoạt, mọi cache `fam-` cũ bị xóa.
+- **Cập nhật**: worker mới chờ đến khi người học bấm "Tải lại" ở thanh "Có bản mới"; app không tự tải lại (nhất là khi đang luyện). Chỉ cần đổi nội dung file `sw.js` hoặc build mới là trình duyệt tự phát hiện bản mới.
+- **Thử offline**: `npm run build` (hoặc `build:pages`), `npx vite preview`, mở trang, tải lại một lần để worker nắm quyền, nghe một bài, rồi DevTools → Network → Offline và tải lại.
+
+## Sao lưu tiến độ
+
+Màn "Giới thiệu và nguồn" có thẻ "Sao lưu tiến độ": "Xuất tiến độ" tải về `fam-progress-YYYY-MM-DD.json` (trên máy có bảng chia sẻ file như iPhone thì mở bảng chia sẻ để lưu vào Tệp) và "Nhập tiến độ" đọc file đó. Nhập sẽ **thay thế** tiến độ hiện tại sau khi xác nhận; file sai (không phải JSON, sai `app`/`kind`, phiên bản mới hơn, lớn hơn 1 MB) bị từ chối bằng thông báo tiếng Việt và không đổi gì. Dữ liệu nhập được làm sạch bằng cùng hàm `parseProgress` với dữ liệu đọc từ localStorage. Bài tự tải lên (IndexedDB) không nằm trong file sao lưu.
+
 ## Cấu trúc
 
 - `src/lib/`: logic thuần (ngôn ngữ, so sánh từ và tính điểm, tách câu và căn thời điểm, XP/streak, tranh, danh mục bài, lưu trữ IndexedDB).

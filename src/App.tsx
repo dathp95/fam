@@ -252,7 +252,15 @@ export default function App() {
         />
       )}
       {view.name === 'about' && (
-        <About onBack={goHome} onDonate={() => setView({ name: 'donate', from: 'about' })} />
+        <About
+          onBack={goHome}
+          onDonate={() => setView({ name: 'donate', from: 'about' })}
+          progress={progress}
+          onImportProgress={(p) => {
+            saveProgress(p)
+            setProgress(p)
+          }}
+        />
       )}
       {view.name === 'donate' && (
         <Donate onBack={() => (view.from === 'about' ? setView({ name: 'about' }) : goHome())} />

@@ -34,6 +34,24 @@ export const ABOUT = {
   donateButton: 'Ủng hộ dự án',
 } as const
 
+/** "Sao lưu tiến độ" card and the install hint on the About screen. */
+export const BACKUP = {
+  title: 'Sao lưu tiến độ',
+  exportButton: 'Xuất tiến độ',
+  importButton: 'Nhập tiến độ',
+  noteVi: 'Tiến độ chỉ lưu trong trình duyệt của bạn. Xuất file để chuyển sang máy khác hoặc phòng khi xóa dữ liệu.',
+  noteEn: 'Your progress is kept only in your browser. Export a file to move it to another device or in case you clear your data.',
+  confirmImport: 'Nhập sẽ thay thế tiến độ hiện tại trên máy này. Tiếp tục?',
+  exported: 'Đã xuất tiến độ.',
+  shared: 'Đã mở bảng chia sẻ: chọn "Lưu vào Tệp" để giữ file.',
+  imported: 'Đã nhập tiến độ.',
+} as const
+
+export const INSTALL_HINT = {
+  android: 'Android: mở menu trình duyệt → Cài đặt ứng dụng.',
+  iphone: 'iPhone: Chia sẻ → Thêm vào Màn hình chính.',
+} as const
+
 export const DONATE = {
   title: 'Ủng hộ FAM',
   vi: 'Ủng hộ FAM – FAMILY. Chào bạn! FAM là một dự án giáo dục phi lợi nhuận, làm ra để cùng nhau học tiếng Anh mỗi ngày. Mọi bài học đều miễn phí và không cần đăng ký. Nếu bạn thấy hữu ích và có điều kiện, bạn có thể ủng hộ để FAM duy trì hoạt động, thêm bài nghe mới và sau này mở rộng sang nhiều ngôn ngữ khác. Không ủng hộ cũng không sao, FAM luôn dành cho bạn.',

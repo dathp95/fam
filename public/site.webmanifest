@@ -2,6 +2,8 @@
   "name": "FAM",
   "short_name": "FAM",
   "description": "Cả nhà cùng học mỗi ngày",
+  "id": ".",
+  "scope": ".",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FFF7E6",

@@ -67,6 +67,7 @@ function parseLessonsDone(raw: unknown): Record<string, LessonDone> {
   const out: Record<string, LessonDone> = {}
   if (!isRecord(raw)) return out
   for (const [id, v] of Object.entries(raw)) {
+    if (id === '__proto__') continue
     if (isRecord(v) && finite(v.best) && finite(v.at)) out[id] = { best: v.best, at: v.at }
   }
   return out
@@ -111,29 +112,34 @@ function legacyAlbum(picturesDone: string[], picture: PictureProgress | null): s
   return ids
 }
 
+/**
+ * Sanitise any value into a valid Progress: well-formed fields are kept, everything else is dropped
+ * or defaulted. Used for localStorage and for imported backups. Never throws.
+ */
+export function parseProgress(raw: unknown): Progress {
+  if (!isRecord(raw)) return emptyProgress()
+  const picture = parsePictureProgress(raw.picture)
+  const picturesDone = parseIds(raw.picturesDone)
+  return {
+    xp: Number(raw.xp) || 0,
+    streak: Number(raw.streak) || 0,
+    last: typeof raw.last === 'string' ? raw.last : '',
+    sentences: Number(raw.sentences) || 0,
+    lessonsDone: parseLessonsDone(raw.lessonsDone),
+    picture,
+    picturesDone,
+    // Saved before the album existed: start it from what is known to be completed.
+    album: Array.isArray(raw.album) ? parseIds(raw.album) : legacyAlbum(picturesDone, picture),
+    history: parseHistory(raw.history),
+  }
+}
+
 export function loadProgress(): Progress {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null')
-    if (isRecord(raw)) {
-      const picture = parsePictureProgress(raw.picture)
-      const picturesDone = parseIds(raw.picturesDone)
-      return {
-        xp: Number(raw.xp) || 0,
-        streak: Number(raw.streak) || 0,
-        last: typeof raw.last === 'string' ? raw.last : '',
-        sentences: Number(raw.sentences) || 0,
-        lessonsDone: parseLessonsDone(raw.lessonsDone),
-        picture,
-        picturesDone,
-        // Saved before the album existed: start it from what is known to be completed.
-        album: Array.isArray(raw.album) ? parseIds(raw.album) : legacyAlbum(picturesDone, picture),
-        history: parseHistory(raw.history),
-      }
-    }
+    return parseProgress(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
   } catch {
-    /* corrupted or unavailable storage: start fresh */
+    return emptyProgress() // corrupted or unavailable storage: start fresh
   }
-  return emptyProgress()
 }
 
 export function saveProgress(p: Progress): void {
