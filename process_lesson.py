@@ -22,6 +22,14 @@ Phần đầu (tùy chọn) của file .txt, kết thúc bằng một dòng ch�
 
 Ví dụ:  python process_lesson.py --id voa-l02-at-home --dry-run
 
+Hai chế độ khác:
+
+    --audio-only        chỉ chuyển audio trong inbox/lessons sang public/lessons/voa/<id>.mp3
+                        (không cần .txt, không đụng index.json)
+    --import-json FILE  nhận MỘT bài đã xuất từ màn Review ("-" = đọc stdin), chuyển audio gốc
+                        inbox/lessons/<id>.mp3 nếu có, rồi thêm bài vào index.json. Nhật ký in ra
+                        stderr; dòng cuối của stdout là một dòng JSON {"ok": ...} cho chương trình gọi.
+
 Phần tách câu, tìm quãng im lặng và căn thời điểm là bản port từ src/lib/segment.ts
 (cùng hằng số, cùng kết quả), và kiểm tra bài theo đúng luật của parseStaticLesson
 trong src/lib/catalog.ts.
@@ -708,16 +716,20 @@ def _unique_destination(folder: Path, name: str) -> Path:
     return folder / f"{dest.stem}-{stamp}{dest.suffix}"
 
 
-def move_to_done(item: Item, inbox: Path) -> list[Path]:
+def move_files_to_done(files: list[Path], inbox: Path) -> list[Path]:
     """Chuyển file đã xử lý sang inbox/lessons/done/ (không bao giờ xóa, không ghi đè)."""
     done = inbox / "done"
     done.mkdir(parents=True, exist_ok=True)
     moved = []
-    for src in (item.audio, item.text):
+    for src in files:
         dest = _unique_destination(done, src.name)
         shutil.move(str(src), str(dest))
         moved.append(dest)
     return moved
+
+
+def move_to_done(item: Item, inbox: Path) -> list[Path]:
+    return move_files_to_done([item.audio, item.text], inbox)
 
 
 def process_item(item: Item, ctx: Context) -> Result:
@@ -817,6 +829,205 @@ def process_item(item: Item, ctx: Context) -> Result:
             tmp_mp3.unlink(missing_ok=True)  # chỉ xóa file tạm do chính script tạo
 
 
+# --------------------------------------------------------------------------------------------
+# Chỉ chuyển audio (--audio-only)
+# --------------------------------------------------------------------------------------------
+def audio_by_stem(inbox: Path) -> dict[str, list[Path]]:
+    """File audio ngay trong inbox/lessons (không đi vào thư mục done), nhóm theo tên không đuôi."""
+    found: dict[str, list[Path]] = {}
+    if inbox.is_dir():
+        for p in sorted(inbox.iterdir()):
+            if p.is_file() and p.suffix.lower() in AUDIO_EXTS:
+                found.setdefault(p.stem, []).append(p)
+    return found
+
+
+def fmt_size(n: int) -> str:
+    if n >= 1024 * 1024:
+        return f"{n / (1024 * 1024):.2f} MB"
+    return f"{n / 1024:.1f} KB"
+
+
+def convert_to_catalog_audio(ctx: Context, src: Path, target: Path) -> None:
+    """Chuyển src thành target (mono, 48 kbps) qua file tạm; target cũ được giữ thành .bak."""
+    assert ctx.ffmpeg is not None
+    ctx.audio_dir.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(target.stem + ".tmp.mp3")
+    try:
+        convert_audio(ctx.ffmpeg, src, tmp)
+        if target.exists():
+            shutil.copyfile(target, target.with_name(target.name + ".bak"))
+        os.replace(tmp, target)
+    finally:
+        tmp.unlink(missing_ok=True)  # chỉ xóa file tạm do chính script tạo
+
+
+def audio_only_item(stem: str, files: list[Path], ctx: Context) -> Result:
+    say = ctx.out
+    say(f'\n=== Audio "{stem}" ===')
+    try:
+        check_id(stem)
+        if len(files) > 1:
+            raise LessonError(f'Có nhiều file audio cùng tên ({", ".join(f.name for f in files)}).')
+        src = files[0]
+        target = ctx.audio_dir / f"{stem}.mp3"
+        if target.exists() and not ctx.force:
+            say(f"{target} đã tồn tại, bỏ qua (dùng --force để ghi đè).")
+            return Result(stem, "skipped", "đã có file audio")
+        assert ctx.ffprobe is not None
+        duration = probe_duration(ctx.ffprobe, src)
+        before = src.stat().st_size
+        if ctx.dry_run:
+            say(f"[CHẠY THỬ] {src.name}: {duration:.2f} giây, {fmt_size(before)}.")
+            say(f"  - chuyển {src.name} -> {target}")
+            if not ctx.keep_inbox:
+                say(f"  - chuyển {src.name} vào {ctx.inbox / 'done'}")
+            return Result(stem, "dry")
+        say(f"Đang chuyển sang mono 48 kbps: {target.name} ...")
+        convert_to_catalog_audio(ctx, src, target)
+        say(f"Độ dài {duration:.2f} giây; dung lượng {fmt_size(before)} -> {fmt_size(target.stat().st_size)}.")
+        if not ctx.keep_inbox:
+            moved = move_files_to_done([src], ctx.inbox)
+            say(f"Đã chuyển file gốc vào {moved[0].parent}.")
+        return Result(stem, "ok")
+    except LessonError as e:
+        say(f"LỖI: {e}")
+        return Result(stem, "failed", str(e))
+
+
+def run_audio_only(ctx: Context, only_id: str | None) -> int:
+    say = ctx.out
+    if ctx.ffmpeg is None or ctx.ffprobe is None:
+        missing = [n for n, p in (("ffmpeg", ctx.ffmpeg), ("ffprobe", ctx.ffprobe)) if p is None]
+        say("LỖI: " + INSTALL_HINT.format(name=" và ".join(missing)))
+        return 1
+    if only_id:
+        try:
+            check_id(only_id)
+        except LessonError as e:
+            say(f"LỖI: {e}")
+            return 1
+    found = audio_by_stem(ctx.inbox)
+    if only_id:
+        if only_id not in found:
+            say(f"LỖI: Không thấy file audio {only_id}.mp3/.m4a/.wav trong {ctx.inbox}.")
+            return 1
+        found = {only_id: found[only_id]}
+    if not found:
+        say(f"Không có file audio nào trong {ctx.inbox}.")
+        return 0
+    results = [audio_only_item(stem, files, ctx) for stem, files in found.items()]
+    counts = {k: sum(1 for r in results if r.status == k) for k in ("ok", "dry", "skipped", "failed")}
+    say(
+        f"\nTổng kết: {counts['ok']} file đã chuyển, {counts['dry']} chạy thử, "
+        f"{counts['skipped']} bỏ qua, {counts['failed']} lỗi."
+    )
+    return 1 if counts["failed"] else 0
+
+
+# --------------------------------------------------------------------------------------------
+# Nhận bài đã xuất từ màn Review (--import-json)
+# --------------------------------------------------------------------------------------------
+class LessonExistsError(LessonError):
+    """Bài đã có trong catalog và chưa dùng --force."""
+
+
+def parse_import_text(text: str) -> dict[str, Any]:
+    try:
+        data = json.loads(text.lstrip("\ufeff"))
+    except json.JSONDecodeError as e:
+        raise LessonError(f"Nội dung không phải JSON hợp lệ: {e}") from None
+    if not isinstance(data, dict):
+        raise LessonError("Cần đúng MỘT bài (một đối tượng JSON), không phải danh sách hay giá trị khác.")
+    return data
+
+
+def import_lesson(lesson: dict[str, Any], ctx: Context) -> dict[str, Any]:
+    """Nạp một bài đã xuất: kiểm tra, chuyển audio gốc (nếu có), thêm vào catalog, dọn inbox.
+
+    Trả về {"id", "action": "added" | "replaced" | "dry", "audio"}; ném LessonError khi lỗi.
+    """
+    say = ctx.out
+    lesson_id = lesson.get("id")
+    if not isinstance(lesson_id, str):
+        raise LessonError("Bài không hợp lệ:\n    - thiếu id.")
+    check_id(lesson_id)
+    errors = validate_lesson(lesson, ctx.levels)
+    expected_audio = f"lessons/voa/{lesson_id}.mp3"
+    if lesson.get("audioUrl") != expected_audio and _text(lesson.get("audioUrl")):
+        errors.append(f'audioUrl phải là "{expected_audio}" (khớp với mã bài).')
+    if errors:
+        raise LessonError("Bài không hợp lệ:\n    - " + "\n    - ".join(errors))
+
+    catalog = load_catalog(ctx.catalog_path)
+    if lesson_id in catalog_ids(catalog) and not ctx.force:
+        raise LessonExistsError(f'Bài "{lesson_id}" đã có trong danh mục. Dùng --force (hoặc "Thay bài cũ") để thay thế.')
+
+    raws = audio_by_stem(ctx.inbox).get(lesson_id, [])
+    if len(raws) > 1:
+        raise LessonError(f'Có nhiều file audio cùng tên ({", ".join(f.name for f in raws)}) trong {ctx.inbox}.')
+    target = ctx.audio_dir / f"{lesson_id}.mp3"
+    if not raws and not target.exists():
+        raise LessonError(
+            f"Không tìm thấy file audio. Đặt file gốc vào inbox/lessons/{lesson_id}.mp3 (tên file = mã bài) rồi thử lại."
+        )
+    if raws:
+        if ctx.ffmpeg is None:
+            raise LessonError(INSTALL_HINT.format(name="ffmpeg"))
+        if target.exists() and not ctx.force:
+            raise LessonError(f"{target} đã tồn tại. Dùng --force để ghi đè (file cũ được giữ thành .bak).")
+
+    action = "replaced" if lesson_id in catalog_ids(catalog) else "added"
+    if ctx.dry_run:
+        say("[CHẠY THỬ] Kế hoạch (chưa ghi gì):")
+        if raws:
+            say(f"  - chuyển {raws[0].name} -> {target}")
+        else:
+            say(f"  - dùng lại {target}")
+        say(f"  - {'thay thế' if action == 'replaced' else 'thêm'} bài vào {ctx.catalog_path}")
+        return {"id": lesson_id, "action": "dry", "audio": expected_audio}
+
+    if raws:
+        say(f"Đang chuyển audio sang mono 48 kbps: {target.name} ...")
+        convert_to_catalog_audio(ctx, raws[0], target)
+    else:
+        say(f"Dùng lại audio đã chuyển: {target}")
+    new_catalog, status = update_catalog(catalog, lesson, ctx.force)
+    write_catalog(ctx.catalog_path, new_catalog)
+    say(f"Đã {'thay thế' if status == 'replaced' else 'thêm'} bài vào {ctx.catalog_path} (bản sao lưu: index.json.bak).")
+    if raws and not ctx.keep_inbox:
+        moved = move_files_to_done(raws, ctx.inbox)
+        say(f"Đã chuyển file gốc vào {moved[0].parent}.")
+    return {"id": lesson_id, "action": status, "audio": expected_audio}
+
+
+def run_import(ctx: Context, source: str, stdin_bytes: Any = None) -> int:
+    """--import-json: nhật ký ra ctx.out (stderr); dòng cuối của stdout là JSON kết quả."""
+    try:
+        if source == "-":
+            data = (stdin_bytes() if stdin_bytes else sys.stdin.buffer.read())
+        else:
+            try:
+                data = Path(source).read_bytes()
+            except OSError as e:
+                raise LessonError(f"Không đọc được {source}: {e.strerror or e}") from None
+        try:
+            text = data.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            raise LessonError("Nội dung không phải UTF-8.") from None
+        result = import_lesson(parse_import_text(text), ctx)
+        payload: dict[str, Any] = {"ok": True, **result}
+        code = 0
+    except LessonExistsError as e:
+        ctx.out(f"LỖI: {e}")
+        payload, code = {"ok": False, "error": str(e), "exists": True}, 1
+    except LessonError as e:
+        ctx.out(f"LỖI: {e}")
+        payload, code = {"ok": False, "error": str(e)}, 1
+    print(json.dumps(payload, ensure_ascii=True), flush=True)
+    return code
+
+
 NEXT_STEPS = "Nghe thử từng câu; sửa mốc thời gian trong public/lessons/index.json nếu lệch; chạy npm run build và npm test."
 
 
@@ -868,11 +1079,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="thay thế bài đã có cùng id (và ghi đè mp3 đã có)")
     parser.add_argument("--dry-run", action="store_true", help="chạy thử: in kế hoạch và bảng câu, không ghi gì")
     parser.add_argument("--keep-inbox", action="store_true", help="không chuyển file gốc sang inbox/lessons/done/")
+    parser.add_argument("--audio-only", action="store_true", help="chỉ chuyển audio inbox/lessons -> public/lessons/voa (không cần .txt)")
+    parser.add_argument("--import-json", metavar="FILE", help='nhận một bài đã xuất từ màn Review ("-" = stdin) và thêm vào index.json')
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent, help=argparse.SUPPRESS)
     parser.add_argument("--catalog", type=Path, help="đường dẫn index.json khác (mặc định: public/lessons/index.json)")
     args = parser.parse_args(argv)
 
+    if args.audio_only and args.import_json is not None:
+        parser.error("--audio-only và --import-json không dùng cùng lúc.")
     root: Path = args.root.resolve()
+    importing = args.import_json is not None
     ctx = Context(
         root=root,
         catalog_path=(args.catalog or root / "public" / "lessons" / "index.json").resolve(),
@@ -882,7 +1098,13 @@ def main(argv: list[str] | None = None) -> int:
         force=args.force,
         dry_run=args.dry_run,
         keep_inbox=args.keep_inbox,
+        # --import-json: stdout chỉ dành cho dòng JSON kết quả, nhật ký đi vào stderr.
+        out=(lambda line: print(line, file=sys.stderr, flush=True)) if importing else print,
     )
+    if importing:
+        return run_import(ctx, args.import_json)
+    if args.audio_only:
+        return run_audio_only(ctx, args.only_id)
     return run(ctx, args.only_id)
 
 

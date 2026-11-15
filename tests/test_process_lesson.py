@@ -975,3 +975,257 @@ class PipelineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# ------------------------------------------------------------------------------ --audio-only and --import-json
+def fake_convert(ffmpeg: str, src: Path, dst: Path) -> None:
+    dst.write_bytes(b"mp3:" + src.read_bytes())
+
+
+class AudioFixture(unittest.TestCase):
+    """A temporary project root; ffmpeg/ffprobe are mocked, so these tests never run the real tools."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        (self.root / "inbox" / "lessons").mkdir(parents=True)
+        (self.root / "public" / "lessons").mkdir(parents=True)
+        self.catalog_path = self.root / "public" / "lessons" / "index.json"
+        self.catalog_path.write_text(pl.dump_catalog({"version": 1, "lessons": [{"id": "old-l01", "title": "Old"}]}), encoding="utf-8")
+        self.messages: list[str] = []
+        for target, kwargs in (
+            ("process_lesson.convert_audio", {"side_effect": fake_convert}),
+            ("process_lesson.probe_duration", {"return_value": 12.5}),
+        ):
+            patcher = mock.patch(target, **kwargs)
+            self.addCleanup(patcher.stop)
+            patcher.start()
+
+    def ctx(self, **kw) -> pl.Context:
+        return pl.Context(self.root, self.catalog_path, "ffmpeg", "ffprobe", out=self.messages.append, **kw)
+
+    def raw(self, lesson_id: str, ext: str = ".mp3", data: bytes = b"RAW") -> Path:
+        p = self.root / "inbox" / "lessons" / f"{lesson_id}{ext}"
+        p.write_bytes(data)
+        return p
+
+    @property
+    def converted(self) -> Path:
+        return self.root / "public" / "lessons" / "voa"
+
+    def output(self) -> str:
+        return "\n".join(self.messages)
+
+    def catalog(self) -> dict:
+        return json.loads(self.catalog_path.read_text(encoding="utf-8"))
+
+
+class AudioOnlyTests(AudioFixture):
+    def test_converts_every_audio_file_without_a_txt_and_leaves_index_json_alone(self):
+        before = self.catalog_path.read_bytes()
+        self.raw("voa-l90-a")
+        self.raw("voa-l91-b", ".wav", b"WAVDATA")
+        self.assertEqual(pl.run_audio_only(self.ctx(), None), 0, self.output())
+        self.assertEqual((self.converted / "voa-l90-a.mp3").read_bytes(), b"mp3:RAW")
+        self.assertEqual((self.converted / "voa-l91-b.mp3").read_bytes(), b"mp3:WAVDATA")
+        self.assertEqual(self.catalog_path.read_bytes(), before)
+        self.assertFalse(self.catalog_path.with_name("index.json.bak").exists())
+
+    def test_originals_move_to_done_unless_keep_inbox(self):
+        a = self.raw("voa-l90-a")
+        self.assertEqual(pl.run_audio_only(self.ctx(), "voa-l90-a"), 0)
+        self.assertFalse(a.exists())
+        self.assertTrue((self.root / "inbox" / "lessons" / "done" / "voa-l90-a.mp3").is_file())
+        b = self.raw("voa-l91-b")
+        self.assertEqual(pl.run_audio_only(self.ctx(keep_inbox=True), "voa-l91-b"), 0)
+        self.assertTrue(b.exists())
+
+    def test_only_id_leaves_the_other_files_alone(self):
+        self.raw("voa-l90-a")
+        other = self.raw("voa-l91-b")
+        self.assertEqual(pl.run_audio_only(self.ctx(), "voa-l90-a"), 0)
+        self.assertTrue(other.exists())
+        self.assertFalse((self.converted / "voa-l91-b.mp3").exists())
+
+    def test_an_existing_destination_is_skipped_with_a_notice_unless_force(self):
+        self.converted.mkdir(parents=True)
+        (self.converted / "voa-l90-a.mp3").write_bytes(b"OLD")
+        raw = self.raw("voa-l90-a")
+        self.assertEqual(pl.run_audio_only(self.ctx(), "voa-l90-a"), 0)
+        self.assertIn("bỏ qua", self.output())
+        self.assertEqual((self.converted / "voa-l90-a.mp3").read_bytes(), b"OLD")
+        self.assertTrue(raw.exists())
+        self.assertEqual(pl.run_audio_only(self.ctx(force=True), "voa-l90-a"), 0)
+        self.assertEqual((self.converted / "voa-l90-a.mp3").read_bytes(), b"mp3:RAW")
+        self.assertEqual((self.converted / "voa-l90-a.mp3.bak").read_bytes(), b"OLD")
+
+    def test_dry_run_writes_and_moves_nothing(self):
+        raw = self.raw("voa-l90-a")
+        self.assertEqual(pl.run_audio_only(self.ctx(dry_run=True), None), 0)
+        self.assertFalse(self.converted.exists())
+        self.assertTrue(raw.exists())
+        self.assertIn("CHẠY THỬ", self.output())
+        self.assertIn("12.50 giây", self.output())
+
+    def test_prints_duration_and_sizes(self):
+        self.raw("voa-l90-a", data=b"x" * 2048)
+        pl.run_audio_only(self.ctx(), "voa-l90-a")
+        self.assertRegex(self.output(), r"12\.50 giây; dung lượng 2\.0 KB -> ")
+
+    def test_invalid_id_is_an_error(self):
+        self.raw("Bad Name")
+        self.assertEqual(pl.run_audio_only(self.ctx(), None), 1)
+        self.assertIn("LỖI", self.output())
+        self.assertFalse(self.converted.exists())
+
+    def test_unknown_id_and_missing_tools_exit_with_1_but_an_empty_inbox_does_not(self):
+        self.assertEqual(pl.run_audio_only(self.ctx(), "voa-l99-none"), 1)
+        self.assertEqual(pl.run_audio_only(self.ctx(), None), 0)
+        self.assertEqual(pl.run_audio_only(pl.Context(self.root, self.catalog_path, None, None, out=self.messages.append), None), 1)
+
+    def test_a_conversion_error_is_reported_and_the_exit_code_is_non_zero(self):
+        self.raw("voa-l90-a")
+        with mock.patch("process_lesson.convert_audio", side_effect=pl.LessonError("ffmpeg báo lỗi: x")):
+            self.assertEqual(pl.run_audio_only(self.ctx(), None), 1)
+        self.assertFalse((self.converted / "voa-l90-a.mp3").exists())
+
+    def test_two_files_with_the_same_name_are_refused(self):
+        self.raw("voa-l90-a", ".mp3")
+        self.raw("voa-l90-a", ".wav")
+        self.assertEqual(pl.run_audio_only(self.ctx(), "voa-l90-a"), 1)
+
+    def test_main_wires_the_flag(self):
+        self.raw("voa-l90-a")
+        with mock.patch("process_lesson.find_tool", side_effect=lambda name, *a: name):
+            code = pl.main(["--root", str(self.root), "--audio-only", "--id", "voa-l90-a"])
+        self.assertEqual(code, 0)
+        self.assertTrue((self.converted / "voa-l90-a.mp3").is_file())
+
+
+def exported(lesson_id: str = "voa-l90-a", **over) -> dict:
+    """What the Review screen's "Xuất bài (JSON)" produces (test data only)."""
+    lesson = good_lesson(id=lesson_id, audioUrl=f"lessons/voa/{lesson_id}.mp3")
+    lesson.update(over)
+    return lesson
+
+
+class ImportJsonTests(AudioFixture):
+    def run_import(self, source, stdin=None, **kw):
+        import contextlib
+        import io
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = pl.run_import(self.ctx(**kw), source, (lambda: stdin) if stdin is not None else None)
+        lines = buf.getvalue().strip().splitlines()
+        return code, json.loads(lines[-1]), lines
+
+    def write_json(self, lesson: dict, name: str = "lesson.json") -> str:
+        p = self.root / name
+        p.write_text(json.dumps(lesson, ensure_ascii=False), encoding="utf-8")
+        return str(p)
+
+    def test_valid_import_converts_adds_and_moves_the_raw_file(self):
+        raw = self.raw("voa-l90-a")
+        code, result, lines = self.run_import(self.write_json(exported()))
+        self.assertEqual(code, 0, self.output())
+        self.assertEqual(result, {"ok": True, "id": "voa-l90-a", "action": "added", "audio": "lessons/voa/voa-l90-a.mp3"})
+        self.assertEqual(len(lines), 1)  # only the JSON line goes to stdout; logs went to ctx.out
+        self.assertEqual((self.converted / "voa-l90-a.mp3").read_bytes(), b"mp3:RAW")
+        cat = self.catalog()
+        self.assertEqual([x["id"] for x in cat["lessons"]], ["old-l01", "voa-l90-a"])
+        self.assertEqual(cat["lessons"][1], exported())
+        self.assertTrue(self.catalog_path.with_name("index.json.bak").exists())
+        self.assertFalse(raw.exists())
+        self.assertTrue((self.root / "inbox" / "lessons" / "done" / "voa-l90-a.mp3").is_file())
+
+    def test_keep_inbox_leaves_the_raw_file(self):
+        raw = self.raw("voa-l90-a")
+        code, _, _ = self.run_import(self.write_json(exported()), keep_inbox=True)
+        self.assertEqual(code, 0)
+        self.assertTrue(raw.exists())
+
+    def test_an_invalid_lesson_is_rejected_in_vietnamese_and_nothing_is_written(self):
+        self.raw("voa-l90-a")
+        before = self.catalog_path.read_bytes()
+        code, result, _ = self.run_import(self.write_json(exported(level="C2", topic="")))
+        self.assertEqual(code, 1)
+        self.assertFalse(result["ok"])
+        self.assertIn("Bài không hợp lệ", result["error"])
+        self.assertIn("level", result["error"])
+        self.assertIn("topic", result["error"])
+        self.assertEqual(self.catalog_path.read_bytes(), before)
+        self.assertFalse(self.converted.exists())
+
+    def test_an_audio_url_that_does_not_match_the_id_is_rejected(self):
+        self.raw("voa-l90-a")
+        code, result, _ = self.run_import(self.write_json(exported(audioUrl="lessons/voa/other.mp3")))
+        self.assertEqual(code, 1)
+        self.assertIn("audioUrl", result["error"])
+
+    def test_missing_audio_gives_the_instruction(self):
+        code, result, _ = self.run_import(self.write_json(exported()))
+        self.assertEqual(code, 1)
+        self.assertEqual(
+            result["error"],
+            "Không tìm thấy file audio. Đặt file gốc vào inbox/lessons/voa-l90-a.mp3 (tên file = mã bài) rồi thử lại.",
+        )
+        self.assertEqual([x["id"] for x in self.catalog()["lessons"]], ["old-l01"])
+
+    def test_an_already_converted_file_is_reused_when_there_is_no_raw_file(self):
+        self.converted.mkdir(parents=True)
+        (self.converted / "voa-l90-a.mp3").write_bytes(b"CONVERTED")
+        code, result, _ = self.run_import(self.write_json(exported()))
+        self.assertEqual(code, 0, self.output())
+        self.assertEqual(result["action"], "added")
+        self.assertEqual((self.converted / "voa-l90-a.mp3").read_bytes(), b"CONVERTED")
+
+    def test_an_existing_id_is_reported_unless_force(self):
+        self.raw("voa-l90-a")
+        self.run_import(self.write_json(exported()))
+        code, result, _ = self.run_import(self.write_json(exported(title="Changed")))
+        self.assertEqual(code, 1)
+        self.assertFalse(result["ok"])
+        self.assertTrue(result["exists"])
+        self.assertIn("đã có", result["error"])
+        self.assertEqual(self.catalog()["lessons"][1]["title"], "Test")
+
+    def test_force_replaces_in_place(self):
+        self.raw("voa-l90-a")
+        self.run_import(self.write_json(exported()))
+        code, result, _ = self.run_import(self.write_json(exported(title="Changed")), force=True)
+        self.assertEqual(code, 0, self.output())
+        self.assertEqual(result["action"], "replaced")
+        lessons = self.catalog()["lessons"]
+        self.assertEqual([x["id"] for x in lessons], ["old-l01", "voa-l90-a"])
+        self.assertEqual(lessons[1]["title"], "Changed")
+
+    def test_reads_the_lesson_from_stdin(self):
+        self.raw("voa-l90-a")
+        data = json.dumps(exported(title="Tiêu đề tiếng Việt"), ensure_ascii=False).encode("utf-8")
+        code, result, _ = self.run_import("-", stdin=data)
+        self.assertEqual(code, 0, self.output())
+        self.assertEqual(self.catalog()["lessons"][1]["title"], "Tiêu đề tiếng Việt")
+        self.assertTrue(result["ok"])
+
+    def test_bad_input_always_ends_with_one_json_line(self):
+        for data in (b"not json", b"[1, 2]", b"\xff\xfe", b'"text"'):
+            code, result, lines = self.run_import("-", stdin=data)
+            self.assertEqual(code, 1)
+            self.assertFalse(result["ok"])
+            self.assertEqual(len(lines), 1)
+        code, result, _ = self.run_import(str(self.root / "missing.json"))
+        self.assertEqual((code, result["ok"]), (1, False))
+
+    def test_dry_run_changes_nothing(self):
+        raw = self.raw("voa-l90-a")
+        before = self.catalog_path.read_bytes()
+        code, result, _ = self.run_import(self.write_json(exported()), dry_run=True)
+        self.assertEqual((code, result["action"]), (0, "dry"))
+        self.assertEqual(self.catalog_path.read_bytes(), before)
+        self.assertTrue(raw.exists())
+        self.assertFalse(self.converted.exists())
+
+    def test_the_two_modes_cannot_be_combined(self):
+        with self.assertRaises(SystemExit):
+            pl.main(["--root", str(self.root), "--audio-only", "--import-json", "-"])

@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { useSegmentPlayer } from '../hooks/useSegmentPlayer.ts'
+import { publishLesson } from '../lib/adminPublish.ts'
 import { buildStaticLesson, downloadJson } from '../lib/export.ts'
+import { hasAdminParam } from '../lib/features.ts'
 import { getLanguage } from '../lib/languages.ts'
 import { mergeSentences, splitSentenceAt } from '../lib/segment.ts'
 import { topicsOf } from '../lib/lessonGroups.ts'
@@ -37,6 +39,8 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
   const [topic, setTopic] = useState('')
   const [exportError, setExportError] = useState('')
   const [exportNote, setExportNote] = useState('')
+  const [canReplace, setCanReplace] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const player = useSegmentPlayer(draft.media)
   const lang = getLanguage(draft.langId)
 
@@ -67,10 +71,8 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
     setSentences((list) => list.filter((_, k) => k !== i))
   }
 
-  function exportJson() {
-    setExportError('')
-    setExportNote('')
-    const result = buildStaticLesson({
+  function buildLesson() {
+    return buildStaticLesson({
       title,
       langId: draft.langId,
       createdAt: draft.createdAt,
@@ -82,11 +84,40 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
       fileName: draft.fileName ?? draft.title,
       existing: catalogLessons,
     })
+  }
+
+  function exportJson() {
+    setExportError('')
+    setExportNote('')
+    setCanReplace(false)
+    const result = buildLesson()
     if (!result.ok) return setExportError(result.error)
     downloadJson(`${result.value.id}.json`, result.value)
     setExportNote(
       `Đã tải ${result.value.id}.json. Đặt file audio vào public/${result.value.audioUrl} rồi dán nội dung vào mảng "lessons" trong public/lessons/index.json.`,
     )
+  }
+
+  // Dev server only: `import.meta.env.DEV` is false in production builds, so this (and the whole
+  // bridge client) is removed from the public bundle.
+  const showPublish = import.meta.env.DEV && hasAdminParam(window.location.search)
+
+  async function publishToCatalog(force: boolean) {
+    if (!import.meta.env.DEV) return
+    setExportError('')
+    setExportNote('')
+    setCanReplace(false)
+    const built = buildLesson()
+    if (!built.ok) return setExportError(built.error)
+    setPublishing(true)
+    const result = await publishLesson(built.value, force)
+    setPublishing(false)
+    if (result.ok) {
+      setExportNote(`Đã đưa bài ${result.id} vào danh mục (public/lessons/index.json). Tải lại trang để thấy bài.`)
+    } else {
+      setExportError(result.error)
+      setCanReplace(result.exists)
+    }
   }
 
   async function save() {
@@ -167,6 +198,16 @@ export function Review({ draft, onSave, onCancel, catalogLessons }: Props) {
             <button className="btn" onClick={exportJson}>
               Xuất bài (JSON)
             </button>
+            {showPublish && (
+              <button className="btn" onClick={() => void publishToCatalog(false)} disabled={publishing}>
+                {publishing ? 'Đang đưa vào danh mục…' : 'Đưa vào danh mục'}
+              </button>
+            )}
+            {showPublish && canReplace && (
+              <button className="btn" onClick={() => void publishToCatalog(true)} disabled={publishing}>
+                Thay bài cũ
+              </button>
+            )}
           </div>
           {exportError && (
             <p className="err wide" role="alert">
