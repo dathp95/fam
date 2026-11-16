@@ -328,3 +328,8 @@ Chỉ tổ chức lại dữ liệu và bộ nạp; không đổi giao diện, l
 ## Chuyển sang chế độ thật cho tranh
 
 - `TILES_PER_PASS` = 1: mỗi lần qua bài mở một mảnh, đủ 6 lần thì mở cả tranh và vào album. Test mặc định kiểm tra 1 mảnh/lần; các test chế độ thử (6 mảnh) truyền `tilesPerPass` rõ ràng.
+
+## Sửa lỗi Safari "Response served by service worker has redirections" (Cloudflare)
+
+- Nguyên nhân: Cloudflare (Workers Assets) chuyển hướng `/index.html` sang `/`. Service worker lấy `index.html`, nhận phản hồi đã qua chuyển hướng (`redirected`) và trả thẳng cho trang điều hướng; Safari từ chối loại phản hồi này.
+- Cách sửa (`public/sw.js`): điều hướng và cài đặt lấy địa chỉ gốc (`/`, không bị chuyển hướng); mọi phản hồi `redirected` được dựng lại thành phản hồi thường (`clean`), cả khi lấy từ cache; tăng `CACHE_VERSION` lên 3 để bỏ bản `index.html` đã lưu hỏng ở máy đã truy cập. Có test cho `clean`.

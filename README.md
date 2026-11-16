@@ -90,7 +90,7 @@ Chân trang Home có hai liên kết nhỏ: "Giới thiệu và nguồn" (giới
 `public/sw.js` là service worker viết tay (không thêm thư viện). Chỉ đăng ký ở bản production (`import.meta.env.PROD`), không bao giờ ở `npm run dev`; mọi đường dẫn suy ra từ scope của worker nên chạy được ở `/` lẫn `/fam/`.
 
 - **Chiến lược**: khi cài đặt, lưu sẵn `index.html`, manifest, icon và các file JS/CSS trong `assets/` mà `index.html` dùng, cùng hai danh mục (`lessons/index.json`, `pictures/index.json`). Điều hướng: ưu tiên mạng, mất mạng thì dùng `index.html` đã lưu. Hai danh mục: stale-while-revalidate (bài mới hiện sau một lần tải lại). `assets/`, `pictures/` và audio `.mp3`: ưu tiên bản đã lưu, lưu lần đầu được tải. Audio hỗ trợ Range (trả 206 từ file đã lưu, cần cho Safari). Chỉ xử lý GET cùng nguồn; Google Fonts và các nguồn ngoài không bị lưu.
-- **Phiên bản cache**: `fam-static-v2`, `fam-media-v2`, `fam-data-v2` (số cuối là `CACHE_VERSION` trong `sw.js`). Khi đổi luật lưu trong `sw.js`, tăng `CACHE_VERSION` ở đầu file; lúc kích hoạt, mọi cache `fam-` cũ bị xóa.
+- **Phiên bản cache**: `fam-static-v3`, `fam-media-v3`, `fam-data-v3` (số cuối là `CACHE_VERSION` trong `sw.js`). Khi đổi luật lưu trong `sw.js`, tăng `CACHE_VERSION` ở đầu file; lúc kích hoạt, mọi cache `fam-` cũ bị xóa.
 - **Cập nhật**: worker mới chờ đến khi người học bấm "Tải lại" ở thanh "Có bản mới"; app không tự tải lại (nhất là khi đang luyện). Chỉ cần đổi nội dung file `sw.js` hoặc build mới là trình duyệt tự phát hiện bản mới.
 - **Thử offline**: `npm run build` (hoặc `build:pages`), `npx vite preview`, mở trang, tải lại một lần để worker nắm quyền, nghe một bài, rồi DevTools → Network → Offline và tải lại.
 

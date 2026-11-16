@@ -10,7 +10,7 @@ function loadSw(scope = 'http://localhost/fam/') {
     location: new URL(scope),
     addEventListener: (type: string, fn: unknown) => (listeners[type] = fn),
   }
-  const module = { exports: {} as { parseRange: (h: string, size: number) => unknown; sliceResponse: (r: Response, h: string) => Promise<Response> } }
+  const module = { exports: {} as { parseRange: (h: string, size: number) => unknown; sliceResponse: (r: Response, h: string) => Promise<Response>; clean: (r: Response) => Promise<Response> } }
   new Function('self', 'module', source)(self, module)
   return { ...module.exports, listeners }
 }
@@ -85,5 +85,25 @@ describe('sw.js: wiring', () => {
   it('registers install, activate, message and fetch handlers and derives its scope from the registration', () => {
     const { listeners } = loadSw('http://example.com/some/base/')
     for (const type of ['install', 'activate', 'message', 'fetch']) expect(listeners[type], type).toBeTypeOf('function')
+  })
+})
+
+describe('sw.js: clean', () => {
+  const { clean } = loadSw()
+
+  it('returns a response that was not redirected as it is', async () => {
+    const res = new Response('x')
+    expect(await clean(res)).toBe(res)
+  })
+
+  it('rebuilds a redirected response so Safari accepts it', async () => {
+    const res = new Response('<html></html>', { status: 200, headers: { 'Content-Type': 'text/html' } })
+    Object.defineProperty(res, 'redirected', { value: true })
+    const out = await clean(res)
+    expect(out).not.toBe(res)
+    expect(out.redirected).toBe(false)
+    expect(out.status).toBe(200)
+    expect(out.headers.get('Content-Type')).toBe('text/html')
+    expect(await out.text()).toBe('<html></html>')
   })
 })

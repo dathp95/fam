@@ -13,7 +13,7 @@
  * A new worker waits until the page sends {type: 'SKIP_WAITING'}, so an update never swaps files mid-lesson.
  */
 
-const CACHE_VERSION = 2
+const CACHE_VERSION = 3
 const STATIC_CACHE = `fam-static-v${CACHE_VERSION}`
 const MEDIA_CACHE = `fam-media-v${CACHE_VERSION}`
 const DATA_CACHE = `fam-data-v${CACHE_VERSION}`
@@ -23,6 +23,7 @@ const SCOPE = self.registration.scope // absolute URL, always ends with "/"
 const at = (path) => new URL(path, SCOPE).href
 
 const INDEX_HTML = at('index.html')
+const HOME = SCOPE // the app's own address: hosts such as Cloudflare redirect /index.html to /
 const SHELL = ['site.webmanifest', 'favicon.ico', 'icons/favicon.svg', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'].map(at)
 const CATALOGS = [at('lessons/index.json'), at('pictures/index.json')]
 
@@ -66,6 +67,15 @@ async function sliceResponse(cached, rangeHeader) {
   })
 }
 
+/**
+ * A response that came through a redirect cannot be handed to the page: Safari refuses it with
+ * "Response served by service worker has redirections". Rebuild it as a plain response.
+ */
+async function clean(res) {
+  if (!res.redirected) return res
+  return new Response(await res.blob(), { status: res.status, statusText: res.statusText, headers: res.headers })
+}
+
 async function putOk(cacheName, key, response) {
   if (response && response.status === 200) {
     const cache = await caches.open(cacheName)
@@ -92,7 +102,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(STATIC_CACHE)
-      const res = await fetch(INDEX_HTML, { cache: 'reload' })
+      const res = await clean(await fetch(HOME, { cache: 'reload' }))
       if (!res.ok) throw new Error(`index.html: HTTP ${res.status}`)
       const html = await res.clone().text()
       await cache.put(INDEX_HTML, res)
@@ -137,12 +147,12 @@ self.addEventListener('message', (event) => {
 
 async function networkFirstNavigation() {
   try {
-    const res = await fetch(INDEX_HTML)
+    const res = await clean(await fetch(HOME))
     if (res.ok) await putOk(STATIC_CACHE, INDEX_HTML, res.clone())
     return res
   } catch {
     const cached = await caches.match(INDEX_HTML)
-    if (cached) return cached
+    if (cached) return clean(cached)
     throw new Error('offline and not cached')
   }
 }
@@ -222,4 +232,4 @@ self.addEventListener('fetch', (event) => {
 })
 
 // Lets tests load the pure helpers (a classic worker has no `module`).
-if (typeof module !== 'undefined') module.exports = { parseRange, sliceResponse }
+if (typeof module !== 'undefined') module.exports = { parseRange, sliceResponse, clean }
